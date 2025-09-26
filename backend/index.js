@@ -19,7 +19,7 @@ app.use(cors({
 await connectDB();
 
 app.get('/', (req, res) => {
-  res.send('Hello, Express!');
+  res.status(200).json({ message: 'Hello, Express!' });
 });
 
 app.listen(PORT, () => {

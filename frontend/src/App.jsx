@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import PublicRoutes from "./routes/PublicRoutes";
+import StudentRoutes from "./routes/StudentRoutes";
+import InstructorRoutes from "./routes/InstructorRoutes";
 
 function App() {
     return (
