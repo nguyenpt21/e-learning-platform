@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import courseRoute from "./routes/courseRoute.js"
 
 dotenv.config();
 
@@ -28,12 +29,18 @@ app.use(cors({
   }
 })();
 
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello, Express!' });
 });
 
 // Mount routes
 app.use('/api/student', studentRoutes);
+app.use('/api/courses', courseRoute);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
