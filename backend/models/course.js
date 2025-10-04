@@ -1,30 +1,42 @@
-// import mongoose from "mongoose";
+import mongoose from "mongoose";
 
-// const SectionSchema = new mongoose.Schema({
-//     title: { type: String, required: true },
-//     order: { type: Number, required: true },
-//     curriculumItems: [{
-//         _id: false,
-//         itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
-//         itemType: { type: String, enum: ["Lecture", "Quiz"], required: true },
-//     },],
-// });
+const CourseSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    thumbnail: {
+        url: { type: String, default: "" },
+        public_id: { type: String, default: "" }
+    },
+    subtitle: { type: String, default: "" },
+    description: { type: String, default: "" },
+    learningOutcomes: [{ 
+        type: String, default: [] 
+    }],
+    requirements: [{ 
+        type: String, default: [] 
+    }],
+    intendedLearners: [{ 
+        type: String, default: [] 
+    }],
+    instructor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    language: { type: String, default: "English" },
+    level: { 
+        type: String, 
+        enum: ["Beginner", "Intermediate", "Advanced", "All Level"], 
+        default: "All Level" 
+    },
+    category: { type: String, default: "" },
+    subcategory: { type: String, default: "" },
+    isFree: { type: Boolean },
+    isPublished: { type: Boolean, default: false },
+    price: { type: Number, default: 0 },
+    averageRating: { type: Number, default: 0 },
+    sections: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Section" 
+    }],
+    // courseDuration: { type: Number, default: 0 },
+    // totalCurriculumItems: { type: Number, default: 0 },
+}, { timestamps: true });
 
-// const CourseSchema = new mongoose.Schema({
-//     title: { type: String, required: true },
-//     thumbnail: String,
-//     subtitle: String,
-//     description: String,
-//     learningOutcomes: [String],
-//     requirements: [String],
-//     intendedLearners: [String],
-//     instructor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-//     category: String,
-//     price: { type: Number, default: 0 },
-//     language: { type: String, default: "English" },
-//     level: { type: String, enum: ["Beginner Level", "Intermediate Level", "Advanced Level", "All Level"], default: "Beginner Level" },
-//     sections: [SectionSchema],
-// });
-
-// const Course = mongoose.model("Course", CourseSchema);
-// export default Course;
+const Course = mongoose.model("Course", CourseSchema);
+export default Course;
