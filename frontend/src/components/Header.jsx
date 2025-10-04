@@ -57,7 +57,7 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center space-x-4">
           <Link to="/">
-            <img src={"https://placehold.co/120x30"} alt="Logo" />
+            <img src={"/logo_with_text.png"} alt="Logo" className="w-[120px] h-[30px]"/>
           </Link>
           <Button
             variant="default"
