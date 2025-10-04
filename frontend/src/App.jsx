@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import InstructorRoutes from "./routes/InstructorRoutes";
+import StudentRoutes from "./routes/StudentRoutes";
+import PublicRoutes from "./routes/PublicRoutes";
 
 function App() {
     return (
@@ -11,7 +14,7 @@ function App() {
                     <Route path="/instructor/*" element={<InstructorRoutes />} />
                     <Route path="*" element={<PublicRoutes />} />
                 </Routes>
-            </BrowserRouter>
+            </BrowserRouter> 
         </>
     );
 }
