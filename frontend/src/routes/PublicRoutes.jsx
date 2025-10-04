@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import HomePage from "../pages/Student/HomePage";
 
 const PublicRoutes = () => {
 
     return (
         <Routes>
-            <Route path="/" element={<h1>Public Home Page</h1>} />
+            <Route path="/" element={<HomePage/>} />
         </Routes>
     );
 };
