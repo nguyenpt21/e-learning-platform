@@ -10,6 +10,7 @@ const SectionSchema = new mongoose.Schema({
     curriculumItems: {
         type: [{
             _id: false,
+            order: { type: Number },
             itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
             itemType: { type: String, enum: ["Lecture", "Quiz"], required: true },
         }],

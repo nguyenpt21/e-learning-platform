@@ -4,6 +4,51 @@ import User from "../models/user.js";
 import Lecture from "../models/lecture.js";
 import cloudinary from "../config/cloudinary.js";
 import Section from "../models/section.js";
+import Quiz from "../models/quiz.js";
+
+const getCourseById = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+
+        const course = await Course.findById(courseId)
+            .populate("instructor", "firstName lastName")
+            .populate("sections")
+            .lean();
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+        const lectureIds = [];
+        const quizIds = [];
+        for (const section of course.sections) {
+            for (const item of section.curriculumItems) {
+                if (item.itemType === "Lecture") lectureIds.push(item.itemId);
+                else if (item.itemType === "Quiz") quizIds.push(item.itemId);
+            }
+        }
+        const [lectures, quizzes] = await Promise.all([
+            Lecture.find({ _id: { $in: lectureIds } }).lean(),
+            Quiz.find({ _id: { $in: quizIds } }).lean(),
+        ]);
+        const lectureMap = new Map(lectures.map((l) => [l._id.toString(), l]));
+        const quizMap = new Map(quizzes.map((q) => [q._id.toString(), q]));
+        course.sections = course.sections.map((section) => ({
+            ...section,
+            curriculumItems: section.curriculumItems.map((item) => ({
+                itemId: item.itemId,
+                itemType: item.itemType,
+                order: item.order,
+                itemDetails:
+                    item.itemType === "Lecture"
+                        ? lectureMap.get(item.itemId.toString()) || null
+                        : quizMap.get(item.itemId.toString()) || null,
+            })),
+        }));
+        res.status(200).json(course);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
 
 const createCourse = async (req, res) => {
     try {
@@ -378,6 +423,7 @@ const getSearchCourseResults = async (req, res) => {
 
 
 export {
+    getCourseById,
     getCoursesByInstructor,
     getAllCourses,
     createCourse,

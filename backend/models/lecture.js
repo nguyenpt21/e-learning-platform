@@ -11,7 +11,7 @@ const LectureSchema = new mongoose.Schema({
         duration: { type: Number }, // duration in seconds
         text: { type: String },
     },
-    order: { type: Number, required: true },
+    // order: { type: Number, required: true },
     resources: {
         type: [{
             fileUrl: { type: String },

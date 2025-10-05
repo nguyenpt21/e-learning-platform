@@ -4,6 +4,53 @@ import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Section from "../models/section.js";
 
+const getAllSectionsByCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Course.findById(courseId).populate("sections");
+        if (!course) return res.status(404).json({ message: "Course not found" });
+        res.status(200).json(course.sections);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
+const getAllCurriculumItemsBySection = async (req, res) => {
+    try {
+        const { courseId, sectionId } = req.params;
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+        if (!course.sections.includes(sectionId))
+            return res.status(404).json({ message: "Section not found in course" });
+        const section = await Section.findById(sectionId);
+        if (!section) return res.status(404).json({ message: "Section not found" });
+
+        const curriculumItems = [];
+        for (const item of section.curriculumItems) {
+            let detailedItem;
+            if (item.itemType === "Lecture") {
+                detailedItem = await Lecture.findById(item.itemId);
+            } else if (item.itemType === "Quiz") {
+                detailedItem = await Quiz.findById(item.itemId);
+            }
+            if (detailedItem) {
+                curriculumItems.push({
+                    order: item.order,
+                    itemType: item.itemType,
+                    data: detailedItem
+                });
+            }
+        }
+        // sort by order
+        curriculumItems.sort((a, b) => a.order - b.order);
+        res.status(200).json(curriculumItems);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
 const addSectionToCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
@@ -91,15 +138,16 @@ const addCurriculumItemToSection = async (req, res) => {
         let newItem;
         if (itemType === "Lecture") {
             newItem = new Lecture({
-                courseId, sectionId, title, description, order,
+                courseId, sectionId, title, description,
             });
         } else if (itemType === "Quiz") {
             newItem = new Quiz({
-                courseId, sectionId, title, description, order,
+                courseId, sectionId, title, description,
             });
         }
         await newItem.save();
         section.curriculumItems.push({
+            order,
             itemId: newItem._id,
             itemType
         });
@@ -126,13 +174,23 @@ const updateCurriculumItem = async (req, res) => {
             return res.status(404).json({ message: "Section not found in course" });
         const section = await Section.findById(sectionId);
         if (!section) return res.status(404).json({ message: "Section not found" });
+        const curriculumItemIndex = section.curriculumItems.findIndex(
+            ci => ci.itemId.toString() === itemId
+        );
+        if (curriculumItemIndex === -1)
+            return res.status(404).json({ message: "Curriculum item not found in section" });
+
+        if (order !== undefined) {
+            section.curriculumItems[curriculumItemIndex].order = order;
+            await section.save();
+        }
 
         let item;
         if (itemType === "Lecture") {
             item = await Lecture.findById(itemId);
             item.title = title || item.title;
             item.description = description || item.description;
-            item.order = order !== undefined ? order : item.order;
+            // item.order = order !== undefined ? order : item.order;
             item.type = type || item.type;
             item.content = content || item.content;
             if (resource) {
@@ -143,7 +201,7 @@ const updateCurriculumItem = async (req, res) => {
             item = await Quiz.findById(itemId);
             item.title = title || item.title;
             item.description = description || item.description;
-            item.order = order !== undefined ? order : item.order;
+            // item.order = order !== undefined ? order : item.order;
             if (question) {
                 item.questions.push(question);
             }
@@ -229,6 +287,8 @@ const deleteQuestionFromQuiz = async (req, res) => {
 
 
 export {
+    getAllSectionsByCourse,
+    getAllCurriculumItemsBySection,
     addSectionToCourse,
     updateSection,
     deleteSection,
