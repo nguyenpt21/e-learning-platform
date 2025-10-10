@@ -8,7 +8,7 @@ import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 
 export default function Header() {
-  const user = useSelector((state) => state.auth.user);
+  const user = useSelector((state) => state.auth.userInfo);
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
   const [openDropDown, setOpenDropDown] = useState(false);
