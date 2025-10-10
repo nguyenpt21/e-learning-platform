@@ -1,5 +1,6 @@
 import express from "express";
 import {
+    getCourseById,
     getAllCourses,
     getCoursesByInstructor,
     createCourse,
@@ -8,6 +9,8 @@ import {
 } from "../controllers/courseController.js";
 
 import {
+    getAllSectionsByCourse,
+    getAllCurriculumItemsBySection,
     addSectionToCourse,
     updateSection,
     deleteSection,
@@ -26,23 +29,26 @@ router.route("/")
     .get(getAllCourses)
     .post(createCourse);
 router.route("/:courseId")
+    .get(getCourseById)
     .put(updateCourse)
     .delete(deleteCourse);
 router.get("/instructor/:instructorId", getCoursesByInstructor);
 
 
 // section
-router.post("/:courseId/sections", addSectionToCourse);
+router.route("/:courseId/sections")
+    .get(getAllSectionsByCourse)
+    .post(addSectionToCourse);
+//.post("/:courseId/sections", addSectionToCourse);
 router.route("/:courseId/sections/:sectionId")
     .put(updateSection)
     .delete(deleteSection);
 
 
 // curriculum
-router.post(
-    "/:courseId/sections/:sectionId/curriculum", 
-    addCurriculumItemToSection
-);
+router.route("/:courseId/sections/:sectionId/curriculum")
+    .get(getAllCurriculumItemsBySection)
+    .post(addCurriculumItemToSection);
 router.route("/:courseId/sections/:sectionId/curriculum/:itemId")
     .put(updateCurriculumItem)
     .delete(deleteCurriculumItem);

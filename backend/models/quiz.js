@@ -16,7 +16,7 @@ const QuizSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String },
     questions: [QuestionAnswerSchema],
-    order: { type: Number, required: true },
+    // order: { type: Number, required: true },
 }, { timestamps: true });
 
 const Quiz = mongoose.model("Quiz", QuizSchema);

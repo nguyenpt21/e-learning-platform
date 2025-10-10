@@ -52,7 +52,7 @@ export default function Header() {
   };
 
   return (
-    <header className="absolute top-0 left-0 w-full shadow-lg bg-white z-50">
+    <header className="sticky top-0 w-full shadow-lg bg-white z-50">
       <div className="flex items-center justify-between px-4 lg:px-8 py-3">
         {/* Logo */}
         <div className="flex items-center space-x-4">

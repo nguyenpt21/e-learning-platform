@@ -1,0 +1,16 @@
+{
+    "files": [
+        "src/main.jsx"
+    ],
+    "references": [
+        
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ]
+        }
+    }
+}
