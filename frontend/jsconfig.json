@@ -1,16 +1,11 @@
 {
-    "files": [
-        "src/main.jsx"
-    ],
-    "references": [
-        
-    ],
-    "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "./src/*"
-            ]
-        }
+
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+
     }
+  },
+  "include": ["src/**/*"]
 }

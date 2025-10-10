@@ -1,3 +1,4 @@
+
 import { Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -39,3 +40,4 @@ export default function CourseCard({ course, isInSlider = false }) {
     </div>
   );
 }
+
