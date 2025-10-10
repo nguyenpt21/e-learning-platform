@@ -1,130 +1,43 @@
-"use client"
 
-import { useState } from "react"
-import { Star, Check, Heart } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-export function CourseCard({ course, index, columns = 4 }) {
-  const [isHovered, setIsHovered] = useState(false)
-
-  const formatPrice = (price) => `₫${price.toLocaleString()}`
-
-  // Kiểm tra xem card này có phải ở cột cuối không
-  const isRightEdge = (index + 1) % columns === 0
-
+// dùng như này: <CourseCard course={course} />
+export default function CourseCard({ course, isInSlider = false }) {
   return (
     <div
-      className="relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onClick={()=>{}}
+      className={`${
+        isInSlider ? "" : "w-[330px] h-[300px]"
+      }  rounded-lg text-left`}
     >
-      {/* Main Card */}
-      <Card className="overflow-hidden border-border bg-card transition-all hover:border-primary/50">
-        <div className="relative aspect-video overflow-hidden">
-          <img
-            src={course.image || "/placeholder.svg"}
-            alt={course.title}
-            className="object-cover w-full h-full"
-          />
-        </div>
-        <CardContent className="p-4">
-          <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-card-foreground">
-            {course.title}
-          </h3>
-          <p className="mb-2 text-sm text-muted-foreground">
-            {course.instructor}
-          </p>
-          <div className="mb-2 flex items-center gap-1">
-            <span className="text-sm font-bold text-card-foreground">
-              {course.rating}
-            </span>
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3 ${
-                    i < Math.floor(course.rating)
-                      ? "fill-yellow-500 text-yellow-500"
-                      : "fill-muted text-muted"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              ({course.reviews})
+      <div className="bg-white border border-gray-200 rounded-lg">
+        <img
+          src={course.img}
+          alt={course.title}
+          className="w-full h-36 object-cover rounded-t-lg"
+        />
+        <div className="px-5 py-3">
+          <h3 className="text-sm font-semibold line-clamp-2">{course.title}</h3>
+          <p className="text-xs text-gray-600 truncate">{course.author}</p>
+          <div className="flex items-center gap-1 text-xs mt-1">
+            <span className="text-yellow-500">{course.rating}</span>
+            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+            <span className="text-gray-500">
+              ({course.reviews.toLocaleString()})
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-card-foreground">
-              {formatPrice(course.price)}
+          <p className="text-sm font-semibold mt-1">{course.price}</p>
+          {course.badge ? (
+            <span className="inline-block font-semibold mt-2 text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded">
+              {course.badge}
             </span>
-            <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(course.originalPrice)}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Hover Popover */}
-      {isHovered && (
-        <div
-          className={`absolute -top-20 z-50 w-80 animate-in fade-in ${
-            isRightEdge
-              ? "right-full mr-2 slide-in-from-right-2"
-              : "left-full ml-2 slide-in-from-left-2"
-          }`}
-        >
-          <Card className="border-border bg-popover shadow-2xl">
-            <CardContent className="p-6">
-              <h3 className="mb-3 text-xl font-bold leading-tight text-popover-foreground text-balance">
-                {course.title}
-              </h3>
-              <div className="mb-4 flex items-center gap-2 text-sm text-popover-foreground/80">
-                <span className="font-medium text-green-600">
-                  Updated {course.updated}
-                </span>
-              </div>
-              <div className="mb-4 flex items-center gap-2 text-sm text-popover-foreground/70">
-                <span>{course.duration}</span>
-                <span>•</span>
-                <span>{course.level}</span>
-                {course.hasSubtitles && (
-                  <>
-                    <span>•</span>
-                    <span>Subtitles</span>
-                  </>
-                )}
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-popover-foreground/90">
-                {course.description}
-              </p>
-              <ul className="mb-6 space-y-2">
-                {course.learningPoints.map((point, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-popover-foreground/70" />
-                    <span className="leading-relaxed text-popover-foreground/80">
-                      {point}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-2">
-                <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                  Add to cart
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="shrink-0 border-popover-foreground/20 hover:bg-popover-foreground/10 bg-transparent"
-                >
-                  <Heart className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          ) : (
+            <div className="h-8"></div>
+          )}
         </div>
-      )}
+      </div>
     </div>
-  )
+  );
 }
+

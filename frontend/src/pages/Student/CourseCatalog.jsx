@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/pagination";
 
 import { Star } from "lucide-react";
-import { CourseCard } from "@/components/CourseCard";
+import { CardCatalog } from "@/components/CardCatalog";
+
 
 const courses = [
   {
@@ -42,7 +43,6 @@ const courses = [
       "Build Powerful & Scalable AI Agents in n8n without writing a single line of Code",
     learningPoints: [
       "Set up and configure an n8n environment for building AI agents either through cloud services or self-hosting",
-      "Create basic workflow automations using n8n's visual interface and understand the role of triggers, nodes, and actions",
       "Implement LLM-powered agents that can process information, make decisions, and take actions within automated workflows",
     ],
   },
@@ -340,7 +340,7 @@ const courses = [
   },
   {
     id: 16,
-    title: "Vue.js 3 Complete Course",
+    title: "Vue.js 3 Course",
     instructor: "Chris Johnson",
     rating: 4.5,
     reviews: 1890,
@@ -702,7 +702,7 @@ export function CoursesCatalog() {
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
 
-  const COURSES_PER_PAGE = 15;
+  const COURSES_PER_PAGE = 16;
   const totalPages = Math.ceil(courses.length / COURSES_PER_PAGE);
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
   const endIndex = startIndex + COURSES_PER_PAGE;
@@ -993,7 +993,7 @@ export function CoursesCatalog() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {currentCourses.map((course, index) => (
-                <CourseCard
+                <CardCatalog
                   key={course.id}
                   course={course}
                   index={index}

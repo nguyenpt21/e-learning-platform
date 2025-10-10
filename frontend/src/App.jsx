@@ -4,7 +4,6 @@ import InstructorRoutes from "./routes/InstructorRoutes";
 import StudentRoutes from "./routes/StudentRoutes";
 import PublicRoutes from "./routes/PublicRoutes";
 
-
 function App() {
     return (
         <>
