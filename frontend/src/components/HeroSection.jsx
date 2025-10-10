@@ -41,7 +41,7 @@ export default function HeroSection() {
     };
     
   return (
-    <section className="w-full bg-white h-full py-16">
+    <section className="w-full bg-white h-full py-12">
       <div className="container mx-auto px-6 flex items-center justify-between">
         {/* Left content */}
         <div className="flex-1 space-y-6 text-center lg:text-left">
