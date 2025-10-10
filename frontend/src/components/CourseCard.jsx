@@ -3,17 +3,12 @@ import { useEffect, useRef, useState } from "react";
 
 // dùng như này: <CourseCard course={course} />
 export default function CourseCard({ course, isInSlider = false }) {
-  const [popUp, setPopUp] = useState(false);
   return (
     <div
-      onMouseEnter={() => {
-        if (isInSlider) setPopUp(true);
-      }}
-      onMouseLeave={() => setPopUp(false)}
       onClick={()=>{}}
       className={`${
         isInSlider ? "" : "w-[330px] h-[300px]"
-      } px-2 rounded-lg relative`}
+      }  rounded-lg text-left`}
     >
       <div className="bg-white border border-gray-200 rounded-lg">
         <img

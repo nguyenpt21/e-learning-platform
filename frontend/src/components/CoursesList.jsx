@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Slider from "react-slick";
 import Button from "./Button";
@@ -9,10 +9,10 @@ function NextArrow(props) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center absolute right-1 top-1/2 translate-x-1/2 -translate-y-1/2 bg-white shadow-xl rounded-full p-2 z-10 hover:bg-gray-200"
+      className="flex items-center justify-center absolute right-[15px] top-1/2 translate-x-1/2 -translate-y-1/2 bg-white shadow-xl rounded-full p-2 z-10 hover:bg-gray-200"
       style={{ ...style }}
     >
-      <ChevronRight className="w-6 h-6"/>
+      <ChevronRight className="w-6 h-6" />
     </button>
   );
 }
@@ -22,10 +22,10 @@ function PrevArrow(props) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center absolute left-1 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-xl rounded-full p-2 z-10 hover:bg-gray-200"
+      className="flex items-center justify-center absolute left-[15px] top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-xl rounded-full p-2 z-10 hover:bg-gray-200"
       style={{ ...style }}
     >
-      <ChevronLeft className="w-6 h-6"/>
+      <ChevronLeft className="w-6 h-6" />
     </button>
   );
 }
@@ -40,6 +40,29 @@ export default function CoursesList() {
     "Giao Tiếp",
     "Phân Tích Nghiệp Vụ & Nghiệp Vụ Thông Minh",
   ];
+
+  const [popUp, setPopUp] = useState(-1);
+  const [cardLeave, setCardLeave] = useState(false);
+  const [popUpLeave, setPopUpLeave] = useState(true);
+  useEffect(() => {
+    if (cardLeave && popUpLeave) {
+      setPopUp(-1);
+    }
+  }, [cardLeave, popUpLeave]);
+  const [coursePopUp, setCoursePopUp] = useState(null);
+  const [popUpCoords, setPopUpCoords] = useState({ x: 0, y: 0 });
+  const enterPopUp = (e, index) => {
+    setPopUp(index);
+    setPopUpLeave(false); // Set to false when entering the popup
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPopUpCoords({ x: rect.left, y: rect.top });
+    setCoursePopUp(courses[index] || null);
+  };
+
+  const leavePopUp = () => {
+    setPopUpLeave(true); // Set to true when leaving the popup
+    setCardLeave(true); // Set to true when leaving the card
+  };
 
   const courses = [
     {
@@ -277,11 +300,111 @@ export default function CoursesList() {
 
       {/* Course Carousel*/}
       <div className="py-12 px-20 bg-gray-100 ">
-        <Slider className={"overflow-visible"} ref={sliderRef} {...settings}>
-          {filteredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} isInSlider={true}/>
+        <Slider
+          className={"overflow-visible bg-none"}
+          ref={sliderRef}
+          {...settings}
+        >
+          {filteredCourses.map((course, index) => (
+            <Button
+              onMouseEnter={(e) => enterPopUp(e, index)}
+              onMouseLeave={leavePopUp}
+              key={course.id}
+              className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
+            >
+              <CourseCard course={course} isInSlider={true} />
+            </Button>
           ))}
         </Slider>
+
+        {popUp !== -1 && (
+          <div
+            style={{
+              position: "fixed",
+              top: popUpCoords.y - 20,
+              left:
+                popUp % 4 == 3 ? popUpCoords.x - 340 : popUpCoords.x + 340 + 10,
+              width: "330px", // equivalent to w-64
+              height: "auto", // equivalent to h-40
+              backgroundColor: "white",
+              zIndex: 999,
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // equivalent to shadow-lg
+              borderRadius: "0.5rem", // equivalent to rounded-lg
+              padding: "1rem",
+              opacity: popUp === -1 ? 0 : 1,
+              transform: popUp === -1 ? "scale(0.5)" : "scale(1)",
+              transition:
+                "opacity 0.3s ease-in-out, transform 0.3s ease-in-out",
+            }}
+            onMouseEnter={() => setPopUpLeave(false)}
+            onMouseLeave={() => setPopUpLeave(true)}
+          >
+            {/* mũi tên */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 0,
+                height: 0,
+                ...(popUp % 4 === 3
+                  ? {
+                      // popup ở bên trái -> mũi tên sang phải
+                      right: "-10px",
+                      borderTop: "12px solid transparent",
+                      borderBottom: "12px solid transparent",
+                      borderLeft: "12px solid white",
+                    }
+                  : {
+                      // popup ở bên phải -> mũi tên sang trái
+                      left: "-10px",
+                      borderTop: "12px solid transparent",
+                      borderBottom: "12px solid transparent",
+                      borderRight: "12px solid white",
+                    }),
+              }}
+            ></div>
+            <div>
+              <p className="font-semibold">{coursePopUp.title}</p>
+              <div className="flex space-x-2 w-full items-center h-8 ">
+                {coursePopUp.badge && (
+                  <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded max-w-1/2">
+                    {coursePopUp.badge}
+                  </span>
+                )}
+                <p className="text-xs py-1 italic max-w-1/2">
+                  Cập nhật:{" "}
+                  {(coursePopUp.updatedAt
+                    ? new Date(coursePopUp.updatedAt)
+                    : new Date()
+                  ).toLocaleDateString("vi")}
+                </p>
+              </div>
+
+              <div className="text-xs/5 text-gray-800 py-2 space-y-2">
+                <p>
+                  Master Data Science and AI: Learn Python, EDA, Stats, SQL,
+                  Machine Learning, NLP, Deep Learning and Gen AI
+                </p>
+                <ul className="list-disc  px-6 ">
+                  <li>
+                    Xây dựng nền tảng vững chắc về lập trình Python để triển
+                    khai hiệu quả các khái niệm và ứng dụng AI.
+                  </li>
+                  <li>Tìm hiểu cách thức hoạt động của Học máy và Học sâu</li>
+                  <li>
+                    Tìm hiểu cách các mô hình biến đổi cách mạng hóa các tác vụ
+                    NLP và cách tận dụng chúng cho nhiều ứng dụng khác nhau.
+                  </li>
+                </ul>
+              </div>
+
+              <Button variant="reverse" className="w-full mt-2">
+                Thêm vào giỏ hàng
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Button variant="outline" className="mt-5 mx-2">
           Hiển thị toàn bộ khóa học {activeTab}
