@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope, FaUserPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
-import authService from "../services/authService";
+
 import Modal from "./Modal";
+import { useSignupMutation } from "../redux/api/authSlice";
 
 const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,7 +15,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
     firstName: "",
     lastName: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [signup, { isLoading }] = useSignupMutation();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -32,96 +33,76 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
 
     // Validate required fields
     if (!formData.firstName.trim()) {
-      toast.error("👤 Vui lòng nhập tên của bạn");
+      toast.error("Vui lòng nhập tên của bạn", { position: "bottom-right" });
       return;
     }
     if (!formData.lastName.trim()) {
-      toast.error("👤 Vui lòng nhập họ của bạn");
+      toast.error("Vui lòng nhập họ của bạn", { position: "bottom-right" });
       return;
     }
     if (!formData.email.trim()) {
-      toast.error("📧 Vui lòng nhập email của bạn");
+      toast.error("Vui lòng nhập email của bạn", { position: "bottom-right" });
       return;
     }
     if (!formData.password.trim()) {
-      toast.error("🔒 Vui lòng nhập mật khẩu");
+      toast.error("Vui lòng nhập mật khẩu", { position: "bottom-right" });
       return;
     }
     if (!formData.confirmPassword.trim()) {
-      toast.error("🔐 Vui lòng xác nhận mật khẩu");
+      toast.error("Vui lòng xác nhận mật khẩu", { position: "bottom-right" });
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error("📧 Email không hợp lệ. Vui lòng kiểm tra lại!");
+      toast.error("Email không hợp lệ. Vui lòng kiểm tra lại!", { position: "bottom-right" });
       return;
     }
 
     // Validate password match
     if (formData.password !== formData.confirmPassword) {
-      toast.error("🔐 Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại!");
+      toast.error("Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại!", { position: "bottom-right" });
       return;
     }
 
     // Validate password length
     if (formData.password.length < 6) {
-      toast.error("🔒 Mật khẩu phải có ít nhất 6 ký tự");
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự", { position: "bottom-right" });
       return;
     }
 
-    setLoading(true);
     try {
-      // Remove confirmPassword before sending to API
-      const { confirmPassword, ...registerData } = formData;
-
-      // Explicitly set role to 'user'
-      registerData.role = "user";
-
-      const response = await authService.register(registerData);
-
-      if (response && response.success) {
-        toast.success("🎉 Đăng ký thành công! Chào mừng bạn đến với cộng đồng học tập!");
-        onClose();
-        onSwitchToSignIn();
-      } else {
-        toast.error(response?.message || "❌ Đăng ký thất bại");
-      }
+      const { confirmPassword, ...rest } = formData;
+      const payload = {
+        ...rest,
+        role: "user",
+      };
+      await signup(payload).unwrap();
+      toast.success("Đăng ký thành công! Chào mừng bạn đến với cộng đồng học tập!", { position: "bottom-right" });
+      onClose();
+      onSwitchToSignIn();
     } catch (error) {
       console.error("Registration error details:", error);
-
-      if (error.response) {
-        const status = error.response.status;
-        const errorMessage = error.response.data?.message;
-        
-        switch (status) {
-          case 400:
-            if (errorMessage && errorMessage.includes("email")) {
-              toast.error("📧 Email đã được sử dụng. Vui lòng chọn email khác!");
-            } else {
-              toast.error(errorMessage || "⚠️ Thông tin đăng ký không hợp lệ");
-            }
-            break;
-          case 409:
-            toast.error("👥 Email đã tồn tại. Bạn có muốn đăng nhập không?");
-            break;
-          case 404:
-            toast.error("🔗 Lỗi kết nối với máy chủ. Vui lòng thử lại sau");
-            break;
-          case 500:
-            toast.error("🚨 Lỗi máy chủ. Vui lòng thử lại sau");
-            break;
-          default:
-            toast.error(errorMessage || "❌ Đăng ký thất bại");
-        }
-      } else if (error.request) {
-        toast.error("🌐 Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng");
-      } else {
-        toast.error("💥 Đã xảy ra lỗi khi gửi yêu cầu đăng ký");
+      const status = error?.status;
+      const errorMessage = error?.data?.message;
+      switch (status) {
+        case 400:
+          if (errorMessage && errorMessage.toLowerCase().includes("email")) {
+            toast.error("Email đã được sử dụng. Vui lòng chọn email khác!", { position: "bottom-right" });
+          } else {
+            toast.error(errorMessage || "Thông tin đăng ký không hợp lệ", { position: "bottom-right" });
+          }
+          break;
+        case 409:
+          toast.error("Email đã tồn tại. Bạn có muốn đăng nhập không?", { position: "bottom-right" });
+          break;
+        case 500:
+          toast.error("Lỗi máy chủ. Vui lòng thử lại sau", { position: "bottom-right" });
+          break;
+        default:
+          toast.error(errorMessage || "Đăng ký thất bại", { position: "bottom-right" });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -158,16 +139,14 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
                 Tên
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaUser className="h-5 w-5 text-gray-400" />
-                </div>
+               
                 <input
                   type="text"
                   id="firstName"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
+                  className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
                   placeholder="Nhập tên"
                   required
                 />
@@ -178,16 +157,14 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
                 Họ
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaUser className="h-5 w-5 text-gray-400" />
-                </div>
+                
                 <input
                   type="text"
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
+                  className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
                   placeholder="Nhập họ"
                   required
                 />
@@ -201,16 +178,14 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
               Email
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="h-5 w-5 text-gray-400" />
-              </div>
+             
               <input
                 type="email"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
+                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
                 placeholder="Nhập email của bạn"
                 required
               />
@@ -224,16 +199,14 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
                 Mật khẩu
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="h-5 w-5 text-gray-400" />
-                </div>
+                
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
+                  className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
                   placeholder="Tạo mật khẩu"
                   required
                 />
@@ -251,16 +224,14 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
                 Xác nhận mật khẩu
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="h-5 w-5 text-gray-400" />
-                </div>
+               
                 <input
                   type={showPassword ? "text" : "password"}
                   id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
+                  className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:border-[#27B5FC] transition-all duration-200"
                   placeholder="Xác nhận mật khẩu"
                   required
                 />
@@ -302,10 +273,10 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
           {/* Submit button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full py-3 bg-gradient-to-r from-[#27B5FC] to-[#098be4] text-white rounded-xl hover:from-[#098be4] hover:to-[#27B5FC] focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 Đang tạo tài khoản...
@@ -317,7 +288,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
         </form>
 
         {/* Social signup options */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300" />
@@ -344,7 +315,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
               <span className="ml-2">Facebook</span>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </Modal>
   );

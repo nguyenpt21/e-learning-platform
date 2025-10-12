@@ -1,52 +1,26 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/user.js';
-import response from '../utils/responseHandler.js';
+import jwt from "jsonwebtoken";
+import User from "../models/user.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'vagabond123';
-
-export const protect = async (req, res, next) => {
+export const protectRoute = async (req, res, next) => {
     try {
-        let token;
-
-        // Get token from header
-        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-            token = req.headers.authorization.split(' ')[1];
+        const token = req.cookies.jwt;
+        if (!token) {
+            return res.status(401).json({ message: "Unauthorized - No Token Provided" });
         }
 
-        if (!token || token === 'undefined') {
-            console.warn('No token provided or token is undefined');
-            return response(res, 401, false, 'Not authorized, no token');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded) {
+            return res.status(401).json({ message: "Unauthorized - Invalid Token" });
         }
-
-        // Verify token
-        let decoded;
-        try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (err) {
-            console.warn('Token verification failed:', err.message);
-            return response(res, 401, false, 'Not authorized, token invalid');
-        }
-
-        // Get user from token
-        const user = await User.findById(decoded.userId).select('-password');
+        const user = await User.findById(decoded.userId).select("-password");
         if (!user) {
-            console.warn('User not found for token:', decoded.userId);
-            return response(res, 401, false, 'Not authorized, user not found');
+            return res.status(404).json({ message: "User not found" });
         }
-
         req.user = user;
         next();
     } catch (error) {
-        console.error('Auth middleware error:', error);
-        return response(res, 401, false, 'Not authorized, token failed');
+        console.log("Error in protectRoute middleware: ", error.message);
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 
-export const admin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
-        next();
-    } else {
-        console.warn('User is not admin:', req.user ? req.user.email : 'No user');
-        return response(res, 403, false, 'Not authorized as admin');
-    }
-}; 

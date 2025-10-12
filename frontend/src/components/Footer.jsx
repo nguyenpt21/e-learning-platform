@@ -7,7 +7,7 @@ export default function Footer() {
         {/* Cột 1: Logo + Thông tin liên hệ */}
         <div className="flex flex-col space-y-2">
           <img
-            src={"https://placehold.co/120x30"}
+            src={"/logo_with_text.png"}
             alt="Logo"
             className="mb-4 w-[300px] h-auto"
           />
