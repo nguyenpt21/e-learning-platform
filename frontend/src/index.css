@@ -195,3 +195,33 @@
 .quiz-explanation-editor .ql-editor {
    min-height: 40px;
 }
+
+.html-content ol,
+.html-content ul {
+    padding-left: 1.25rem;
+    list-style: disc; /* hoặc decimal nếu dùng <ol> */
+}
+
+.html-content li {
+    margin-top: 0.4rem;
+    margin-bottom: 0.4rem; 
+    color: #545454;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.html-content li::marker {
+    font-size: 0.9rem;  
+    margin-right: 0.5rem; 
+}
+
+.html-content li span,
+.html-content li p {
+    display: inline-block;
+    margin-left: 0.25rem; 
+}
+
+.html-content p, h1, h2 {
+  margin-bottom: 0.75rem; /* khoảng cách giữa các đoạn */
+  line-height: 1.65;      /* chỉnh giãn dòng */
+}
