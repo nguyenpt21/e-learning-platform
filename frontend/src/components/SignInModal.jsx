@@ -4,7 +4,8 @@ import { FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../redux/features/authSlice";
-import authService from "../services/authService";
+import { useLoginMutation } from "../redux/api/authSlice";
+
 import Modal from "./Modal";
 
 const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
@@ -12,7 +13,7 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [login, { isLoading } ] = useLoginMutation();
   const [errors, setErrors] = useState({});
 
   const togglePasswordVisibility = () => {
@@ -39,51 +40,26 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
       return;
     }
 
-    setLoading(true);
     try {
-      const result = await authService.login(email, password);
-      console.log("Login result:", result);
-
-      if (result.success) {
-        dispatch(setCredentials(result.data.user));
-        toast.success("🎉 Đăng nhập thành công! Chào mừng bạn trở lại!");
-        onClose();
-
-        // Không redirect, chỉ đóng modal và cập nhật UI
-        // Redux sẽ tự động cập nhật trạng thái user trong Header và HeroSection
-      } else {
-        toast.error(result.message || "Đăng nhập thất bại");
-      }
+      const user = await login({ email, password }).unwrap();
+      dispatch(setCredentials(user));
+      toast.success("Đăng nhập thành công! Chào mừng bạn trở lại!", { position: "bottom-right" });
+      onClose();
     } catch (error) {
       console.error("Login error:", error);
-      
-      if (error.response) {
-        const status = error.response.status;
-        const errorMessage = error.response.data?.message;
-        
-        switch (status) {
-          case 401:
-            toast.error("🔐 Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!");
-            break;
-          case 404:
-            toast.error("👤 Không tìm thấy tài khoản với email này. Bạn đã đăng ký chưa?");
-            break;
-          case 400:
-            toast.error(errorMessage || "⚠️ Thông tin đăng nhập không hợp lệ");
-            break;
-          case 500:
-            toast.error("🚨 Lỗi máy chủ. Vui lòng thử lại sau");
-            break;
-          default:
-            toast.error(errorMessage || "❌ Đăng nhập thất bại");
-        }
-      } else if (error.request) {
-        toast.error("🌐 Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng");
-      } else {
-        toast.error("💥 Có lỗi xảy ra khi đăng nhập");
+      const status = error?.status;
+      const errorMessage = error?.data?.message;
+      switch (status) {
+        case 400:
+        case 401:
+          toast.error("Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!", { position: "bottom-right" });
+          break;
+        case 500:
+          toast.error("Lỗi máy chủ. Vui lòng thử lại sau", { position: "bottom-right" });
+          break;
+        default:
+          toast.error(errorMessage || "❌ Đăng nhập thất bại", { position: "bottom-right" });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -205,10 +181,10 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
           {/* Submit button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full py-3 bg-gradient-to-r from-[#27B5FC] to-[#098be4] text-white rounded-xl hover:from-[#098be4] hover:to-[#27B5FC] focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 Đang đăng nhập...
@@ -220,7 +196,7 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
         </form>
 
         {/* Social login options */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300" />
@@ -247,7 +223,7 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
               <span className="ml-2">Facebook</span>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </Modal>
   );
