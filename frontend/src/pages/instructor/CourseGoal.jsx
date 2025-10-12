@@ -35,13 +35,13 @@ const SortableItem = ({ id, value, placeholder, onChange, onDelete, canDelete })
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
-            <div className="hover:bg-primary/5 w-[80%] border border-primary/20 p-2 rounded-md focus-within:border-primary">
+            <div className=" w-[80%] border focus-within:bg-white transition-colors border-gray-300 py-2 px-3 rounded-md focus-within:border-primary">
                 <input
                     value={value}
                     onChange={(e) => onChange(id, e.target.value)}
                     onFocus={() => setHover(true)}
                     onBlur={() => setHover(false)}
-                    className="w-full placeholder:text-grayText/50"
+                    className="w-full placeholder:text-grayText/70"
                     placeholder={placeholder}
                 />
             </div>
