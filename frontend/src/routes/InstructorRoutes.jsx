@@ -5,6 +5,7 @@ import InstructorLayout from "../components/instructor/InstructorLayout";
 import CourseManageLayout from "../components/instructor/CourseManageLayout";
 import CourseGoal from "../pages/instructor/CourseGoal";
 import Curriculum from "../pages/instructor/Curriculum";
+import CourseInfo from "../pages/instructor/CourseInfo";
 
 const InstructorRoutes = () => {
     return (
@@ -19,6 +20,7 @@ const InstructorRoutes = () => {
                 <Route index element={<Navigate to="goal" replace />} />
                 <Route path="goal" element={<CourseGoal />} />
                 <Route path="curriculum" element={<Curriculum />}></Route>
+                <Route path="basics" element={<CourseInfo></CourseInfo>}></Route>
             </Route>
         </Routes>
     );
