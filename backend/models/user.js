@@ -10,6 +10,8 @@ const UserSchema = new mongoose.Schema({
         url: { type: String, default: "" },
         public_id: { type: String, default: "" }
     },
+    major: { type: String, default: "" },
+    biography : { type: String, default: "" },
     role: { type: String, enum: ["user", "instructor"], default: "user" },
 }, { timestamps: true });
 
