@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
-import studentRoutes from "./routes/studentRoutes.js";
+import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
 
 dotenv.config();
@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
 });
 
 // Mount routes
-app.use('/api/student', studentRoutes);
+app.use("/api/auth", authRoutes)
 app.use('/api/courses', courseRoute);
 
 app.listen(PORT, () => {
