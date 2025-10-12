@@ -9,40 +9,34 @@ import Quiz from "../models/quiz.js";
 const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
-
         const course = await Course.findById(courseId)
-            .populate("instructor", "firstName lastName")
+            .populate("instructor", "firstName lastName major biography profilePicture")
             .populate("sections")
             .lean();
-        if (!course) {
-            return res.status(404).json({ message: "Course not found" });
-        }
-        const lectureIds = [];
-        const quizIds = [];
-        for (const section of course.sections) {
-            for (const item of section.curriculumItems) {
-                if (item.itemType === "Lecture") lectureIds.push(item.itemId);
-                else if (item.itemType === "Quiz") quizIds.push(item.itemId);
-            }
-        }
+
+        if (!course) return res.status(404).json({ message: "Course not found" });
+
+        const lectureIds = [], quizIds = [];
+        course.sections.forEach(section =>
+            section.curriculumItems.forEach(item => {
+                item.itemType === "Lecture" ? lectureIds.push(item.itemId) : quizIds.push(item.itemId);
+            })
+        );
+
         const [lectures, quizzes] = await Promise.all([
             Lecture.find({ _id: { $in: lectureIds } }).lean(),
             Quiz.find({ _id: { $in: quizIds } }).lean(),
         ]);
-        const lectureMap = new Map(lectures.map((l) => [l._id.toString(), l]));
-        const quizMap = new Map(quizzes.map((q) => [q._id.toString(), q]));
-        course.sections = course.sections.map((section) => ({
-            ...section,
-            curriculumItems: section.curriculumItems.map((item) => ({
-                itemId: item.itemId,
-                itemType: item.itemType,
-                order: item.order,
-                itemDetails:
-                    item.itemType === "Lecture"
-                        ? lectureMap.get(item.itemId.toString()) || null
-                        : quizMap.get(item.itemId.toString()) || null,
-            })),
-        }));
+
+        const lectureMap = new Map(lectures.map(l => [l._id.toString(), l]));
+        const quizMap = new Map(quizzes.map(q => [q._id.toString(), q]));
+
+        course.sections.forEach(section =>
+            section.curriculumItems.forEach(item => {
+                item.itemDetails = item.itemType === "Lecture" ? lectureMap.get(item.itemId.toString()) : quizMap.get(item.itemId.toString());
+            })
+        );
+
         res.status(200).json(course);
     } catch (error) {
         console.error(error);
@@ -194,7 +188,7 @@ const getAllCourses = async (req, res) => {
         const pageSize = Number(limit) || 6;
         const skip = (pageNumber - 1) * pageSize;
 
-        let filter = {};
+        let filter = { isPublished: true };
         if (courseDuration) {
             const durations = courseDuration.split(",");
             const durationFilters = durations.map(d => {
