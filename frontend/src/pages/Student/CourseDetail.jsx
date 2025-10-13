@@ -107,7 +107,7 @@ const CourseDetail = () => {
             </div>
             <div className="bg-[#e0f3ff] text-black">
                 <div className="container mx-auto px-8 py-10">
-                    <div className="grid grid-cols-3 gap-14">
+                    <div className="grid grid-cols-3 gap-14 ">
                         <div className="col-span-2 space-y-4">
                             <CourseBreadcrumb course={course} />
                             <h1 className="text-4xl font-bold leading-tight">
@@ -136,16 +136,21 @@ const CourseDetail = () => {
                                 </span>
                             </div>
                         </div>
-                        <div className="col-span-1 ">
+                        <div className="col-span-1">
                             <div
-                                className={`w-1/4 transform transition-all duration-300 
-                                    ${reachedFooter ? "absolute bottom-96"
-                                    : showSticky
-                                        ? "fixed top-[12%] z-50"
-                                        : "absolute top-30"
-                                    }`}
+                                className={`w-1/4 transition-all duration-300 transform lg:right-10 xl:right-28
+                                    ${reachedFooter
+                                        ? "absolute bottom-96"
+                                        : showSticky
+                                            ? "fixed top-[12%] z-50"
+                                            : "absolute top-30 "
+                                    } right-[clamp(0.5rem,4vw,7rem)]`}
                             >
-                                <RightCard course={course} courseWithDurations={courseWithDurations} formatDuration={formatDuration} />
+                                <RightCard
+                                    course={course}
+                                    courseWithDurations={courseWithDurations}
+                                    formatDuration={formatDuration}
+                                />
                             </div>
                         </div>
                     </div>
