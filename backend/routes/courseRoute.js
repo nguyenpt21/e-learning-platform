@@ -14,7 +14,8 @@ import {
     addSectionToCourse,
     updateSection,
     deleteSection,
-    addCurriculumItemToSection,
+    addLectureToSection,
+    addQuizToSection,
     updateCurriculumItem,
     deleteCurriculumItem,
     deleteResourceFromLecture,
@@ -48,11 +49,16 @@ router.route("/:courseId/sections/:sectionId")
 // curriculum
 router.route("/:courseId/sections/:sectionId/curriculum")
     .get(getAllCurriculumItemsBySection)
-    .post(addCurriculumItemToSection);
+
 router.route("/:courseId/sections/:sectionId/curriculum/:itemId")
     .put(updateCurriculumItem)
     .delete(deleteCurriculumItem);
 
+router.route("/:courseId/sections/:sectionId/lectures")
+    .post(addLectureToSection)
+
+router.route("/:courseId/sections/:sectionId/quizzes")
+    .post(addQuizToSection)
 // resources
 router.delete(
     "/lectures/:lectureId/resources/:resourceIndex",
@@ -60,7 +66,7 @@ router.delete(
 );
 
 // quiz questions
-router.route("/quizzes/:quizId/questions/:questionIndex")
+router.route("/quizzes/:quizId/questions/:questionId")
     .put(updateQuestionInQuiz)
     .delete(deleteQuestionFromQuiz);
 

@@ -17,7 +17,7 @@ const CourseSchema = new mongoose.Schema({
     intendedLearners: [{ 
         type: String, default: [] 
     }],
-    instructor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    
     language: { type: String, default: "English" },
     level: { 
         type: String, 
@@ -30,10 +30,15 @@ const CourseSchema = new mongoose.Schema({
     isPublished: { type: Boolean, default: false },
     price: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
-    sections: [{ 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Section" 
-    }],
+    sections: {
+        type: [{
+            sectionId: { 
+                type: mongoose.Schema.Types.ObjectId, 
+                ref: "Section" 
+            },
+            order: Number
+        }],
+        default: []},
     // courseDuration: { type: Number, default: 0 },
     // totalCurriculumItems: { type: Number, default: 0 },
 }, { timestamps: true });

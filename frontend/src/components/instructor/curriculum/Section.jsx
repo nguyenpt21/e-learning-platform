@@ -29,8 +29,9 @@ import { IoClose } from "react-icons/io5";
 import LectureModal from "./LectureModal";
 import QuizModal from "./QuizModal";
 import Quiz from "./Quiz";
+import { useGetAllCurriculumItemsBySectionQuery } from "@/redux/api/sectionApiSlice";
 
-const Section = ({ section }) => {
+const Section = ({ section, courseId }) => {
     const [sectionForm, setSectionForm] = useState({
         title: section.title || "",
         objective: section.objective || "",
@@ -43,6 +44,15 @@ const Section = ({ section }) => {
 
     const [isLectureModalOpen, setIsLectureModalOpen] = useState(false);
     const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+
+    const { data: curriculumItems, isLoading } = useGetAllCurriculumItemsBySectionQuery({
+        courseId,
+        sectionId: section._id,
+    });
+
+    if (isLoading) {
+        return <></>;
+    }
 
     return (
         <div className="border rounded-md bg-primary/2 px-2 pb-4 border-gray-200 ">
@@ -141,11 +151,11 @@ const Section = ({ section }) => {
             )}
 
             <div className="mt-2 pl-10 pr-3 space-y-4">
-                {items.map((item, index) => {
+                {curriculumItems.map((item, index) => {
                     if (item.itemType === "Lecture") {
-                        return <Lecture key={index} item={item.itemContent}></Lecture>;
+                        return <Lecture key={index} item={item.itemContent} sectionOrder={section.order} lectureOrder={item.order} sectionId={section._id} courseId={courseId}></Lecture>;
                     } else {
-                        return <Quiz key={index} item={item.itemContent}></Quiz>;
+                        return <Quiz key={index} item={item.itemContent} sectionOrder={section.order} quizOrder={item.order} sectionId={section._id} courseId={courseId}></Quiz>;
                     }
                 })}
 
@@ -193,8 +203,15 @@ const Section = ({ section }) => {
                     <LectureModal
                         open={isLectureModalOpen}
                         onOpenChange={setIsLectureModalOpen}
+                        sectionId={section._id}
+                        courseId={courseId}
                     ></LectureModal>
-                    <QuizModal open={isQuizModalOpen} onOpenChange={setIsQuizModalOpen}></QuizModal>
+                    <QuizModal
+                        open={isQuizModalOpen}
+                        onOpenChange={setIsQuizModalOpen}
+                        sectionId={section._id}
+                        courseId={courseId}
+                    ></QuizModal>
                 </div>
             </div>
         </div>

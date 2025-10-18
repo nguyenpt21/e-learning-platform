@@ -13,6 +13,9 @@ import {
     DialogFooter,
     DialogClose,
 } from "@/components/ui/dialog";
+
+import { useCreateCourseMutation } from "@/redux/api/courseApiSlice";
+import { useAddSectionToCourseMutation } from "@/redux/api/sectionApiSlice";
 const CoursesManage = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOption, setSortOption] = useState("Mới nhất");
@@ -60,9 +63,28 @@ const CoursesManage = () => {
         }
     };
 
-    const handleCreateCourse = () => {
-        const id = "123";
-        navigate(`/instructor/courses/${id}/manage`);
+    const [createCourse, { isLoading: isLoadingCreateCourse }] = useCreateCourseMutation();
+    const [createSection, { isLoading: isLoadingCreateSection }] = useAddSectionToCourseMutation();
+
+    const handleCreateCourse = async () => {
+        try {
+            const courseResponse = await createCourse({
+                title: courseName,
+                category: selectedCourseCategory,
+            }).unwrap();
+            const courseId = courseResponse._id;
+
+            const sectionResponse = await createSection({
+                courseId,
+                sectionData: {
+                    title: "Giới thiệu",
+                },
+            });
+
+            navigate(`/instructor/courses/${courseId}/manage`);
+        } catch (error) {
+            console.error("Lỗi khi tạo khóa học:", error);
+        }
     };
 
     return (
@@ -189,8 +211,10 @@ const CoursesManage = () => {
                                             </button>
 
                                             {isCategoryDropdownOpen && (
-                                                <div className="absolute top-full left-0 mt-1 right-0 bg-white border border-gray-300 rounded
-                                                 shadow-lg z-10 h-[200px] pr-1 overflow-hidden">
+                                                <div
+                                                    className="absolute top-full left-0 mt-1 right-0 bg-white border border-gray-300 rounded
+                                                 shadow-lg z-10 h-[200px] pr-1 overflow-hidden"
+                                                >
                                                     <div className="h-full overflow-auto">
                                                         {courseCategories.map((cate) => (
                                                             <button
@@ -248,7 +272,11 @@ const CoursesManage = () => {
                                 ) : (
                                     <button
                                         onClick={handleCreateCourse}
-                                        disabled={selectedCourseCategory === "Chọn danh mục"}
+                                        disabled={
+                                            selectedCourseCategory === "Chọn danh mục" ||
+                                            isLoadingCreateCourse ||
+                                            isLoadingCreateSection
+                                        }
                                         className="px-4 py-2 cursor-pointer bg-primary hover:bg-primary/80 text-white rounded "
                                     >
                                         Thêm khóa học

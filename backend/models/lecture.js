@@ -7,9 +7,13 @@ const LectureSchema = new mongoose.Schema({
     type: { type: String, enum: ["video", "article"] },
     description: { type: String },
     content: {
-        videoUrl: { type: String },
+        s3Key: { type: String },
+        publicURL: { type: String },
         duration: { type: Number }, // duration in seconds
         text: { type: String },
+        thumbnailS3Key : { type: String },
+        thumbnailURL: { type: String },
+        fileName: { type: String },
     },
     // order: { type: Number, required: true },
     resources: {
