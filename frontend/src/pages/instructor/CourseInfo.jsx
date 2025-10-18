@@ -138,7 +138,6 @@ const CourseInfo = () => {
         price: course.price,
         language: course.language,
         level: course.level,
-        price: course.price,
     });
 
     const handleChange = (field, value) => {
