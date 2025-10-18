@@ -17,7 +17,7 @@ export default function CourseCard({ course, isInSlider = false }) {
           alt={course.title}
           className="w-full h-36 object-cover rounded-t-lg"
         />
-        <div className="px-5 py-3">
+        <div className="px-3 xl:px-5 py-2 xl:py-3">
           <h3 className="text-sm font-semibold line-clamp-2">{course.title}</h3>
           <p className="text-xs text-gray-600 truncate">{course.author}</p>
           <div className="flex items-center gap-1 text-xs mt-1">
