@@ -13,7 +13,7 @@ import { LuDot } from "react-icons/lu";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion"
 import { MdOutlineOndemandVideo } from "react-icons/md";
 import { PiPuzzlePieceBold } from "react-icons/pi";
-import InstructorCard from "../../components/student/course/InstructorCard";
+import InstructorCard from "../../components/student/course-detail/InstructorCard";
 import Footer from "../../components/Footer";
 
 const CourseDetail = () => {

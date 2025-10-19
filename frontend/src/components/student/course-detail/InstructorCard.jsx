@@ -14,9 +14,9 @@ const InstructorCard = ({ instructor }) => {
                 <div className="flex items-start gap-8 mb-4">
                     <Skeleton className="w-[120px] h-[120px] rounded-full" />
                     <div className="flex-1 space-y-3">
-                        <Skeleton className="h-5 w-[180px]" /> 
-                        <Skeleton className="h-4 w-[150px]" /> 
-                        <Skeleton className="h-4 w-[220px]" /> 
+                        <Skeleton className="h-5 w-[180px]" />
+                        <Skeleton className="h-4 w-[150px]" />
+                        <Skeleton className="h-4 w-[220px]" />
                         <Skeleton className="h-4 w-[180px]" />
                     </div>
                 </div>
@@ -33,11 +33,19 @@ const InstructorCard = ({ instructor }) => {
         <div className="">
             <p className="text-2xl font-semibold mb-5">Giảng viên</p>
             <div className="flex items-start gap-8 mb-4">
-                <img
-                    src={instructor.profilePicture.url}
-                    alt={instructor.firstName}
-                    className="w-30 h-30 rounded-full object-cover"
-                />
+                {instructor?.profilePicture?.url ? (
+                    <img
+                        src={instructor.profilePicture.url}
+                        alt={instructor.firstName}
+                        className="w-30 h-30 rounded-full object-cover"
+                    />
+                ) : (
+                    <img
+                        src="/logo.png"
+                        alt="Default avatar"
+                        className="w-30 h-30 rounded-full object-cover"
+                    />
+                )}
                 <div className="">
                     <a
                         href="#"

@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
+import progressRoute from "./routes/progressRoute.js"
 
 dotenv.config();
 
@@ -39,8 +40,9 @@ app.get('/', (req, res) => {
 });
 
 // Mount routes
-app.use("/api/auth", authRoutes)
+app.use("/api/auth", authRoutes);
 app.use('/api/courses', courseRoute);
+app.use('/api/progress', progressRoute);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
