@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+
 import {
   Select,
   SelectContent,
@@ -22,7 +23,8 @@ import {
 } from "@/components/ui/pagination";
 
 import { Star } from "lucide-react";
-import { CardCatalog } from "@/components/CardCatalog";
+import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 
 const courses = [
@@ -56,11 +58,11 @@ const courses = [
     originalPrice: 499000,
     image: "/aws-cloud.jpg",
     updated: "February 2025",
-    duration: "12 total hours",
+    duration: "12 hours",
     level: "Intermediate",
-    hasSubtitles: true,
+    hasSubtitles: false,
     description:
-      "Master React from basics to advanced concepts including hooks, context, and performance optimization",
+      "React from basics to advanced",
     learningPoints: [
       "Build modern React applications using functional components and hooks",
       "Implement state management with Context API and Redux",
@@ -666,12 +668,7 @@ const priceRanges = [
   { label: "₫300,000 - ₫500,000", value: "300k-500k" },
 ];
 
-const ratingOptions = [
-  { value: "4.5", label: "4.5 & up", count: 78 },
-  { value: "4.0", label: "4.0 & up", count: 146 },
-  { value: "3.5", label: "3.5 & up", count: 163 },
-  { value: "3.0", label: "3.0 & up", count: 164 },
-];
+
 
 const durationOptions = [
   { value: "0-1", label: "0-1 Hour", count: 25 },
@@ -694,11 +691,11 @@ export function CoursesCatalog() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
-  const [selectedRating, setSelectedRating] = useState("");
+
   const [selectedDurations, setSelectedDurations] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showMoreRatings, setShowMoreRatings] = useState(false);
+
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
 
@@ -707,6 +704,18 @@ export function CoursesCatalog() {
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
   const endIndex = startIndex + COURSES_PER_PAGE;
   const currentCourses = courses.slice(startIndex, endIndex);
+
+  const breakpoint = useBreakpoint();
+
+// Tự động tính số cột theo kích thước màn hình
+const columns =
+  breakpoint === "xl" || breakpoint === "2xl"
+    ? 4
+    : breakpoint === "lg"
+    ? 3
+    : breakpoint === "md"
+    ? 2
+    : 1;
 
   const toggleCategory = (category) => {
     setSelectedCategories((prev) =>
@@ -785,7 +794,7 @@ export function CoursesCatalog() {
         <div className="flex gap-8">
           {/* Sidebar Filters */}
           <aside className="w-64 shrink-0">
-            <div className="sticky top-8 space-y-6">
+            <div className=" top-8 space-y-6">
               {/* Category */}
               <div>
                 <h3 className="mb-3 text-sm font-medium">Category</h3>
@@ -805,48 +814,7 @@ export function CoursesCatalog() {
                 </div>
               </div>
 
-              {/* Ratings */}
-              <div>
-                <h3 className="mb-3 text-sm font-medium">Ratings</h3>
-                <RadioGroup
-                  value={selectedRating}
-                  onValueChange={setSelectedRating}
-                >
-                  <div className="space-y-2">
-                    {ratingOptions
-                      .slice(0, showMoreRatings ? ratingOptions.length : 3)
-                      .map((option) => (
-                        <div
-                          key={option.value}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem
-                            value={option.value}
-                            id={`rating-${option.value}`}
-                          />
-                          <Label
-                            htmlFor={`rating-${option.value}`}
-                            className="flex items-center gap-2 text-sm font-normal"
-                          >
-                            {renderStars(parseFloat(option.value))}
-                            <span>{option.label}</span>
-                            <span className="text-muted-foreground">
-                              ({option.count})
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                  </div>
-                </RadioGroup>
-                {ratingOptions.length > 3 && (
-                  <button
-                    onClick={() => setShowMoreRatings(!showMoreRatings)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
-                  >
-                    {showMoreRatings ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
+        
 
               {/* Video Duration */}
               <div>
@@ -997,7 +965,7 @@ export function CoursesCatalog() {
                   key={course.id}
                   course={course}
                   index={index}
-                  columns={4} // cột hiện tại ở breakpoint xl (tuỳ chỉnh)
+                  columns={columns}// cột hiện tại ở breakpoint xl (tuỳ chỉnh)
                 />
               ))}
             </div>
