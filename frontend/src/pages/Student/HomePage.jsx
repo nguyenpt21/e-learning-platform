@@ -1,5 +1,3 @@
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
 import CoursesList from "../../components/CoursesList";
 import FeatureSection from "../../components/FeatureSection";
 import HeroSection from "../../components/HeroSection";
@@ -18,7 +16,6 @@ export default function HomePage() {
 
   return (
     <div className="w-full min-h-screen">
-      <Header />
       <div className="flex-col mt-18">
         <section
           id="heroSection"
@@ -64,7 +61,6 @@ export default function HomePage() {
           <Testimonials />
         </section>
       </div>
-      <Footer />
     </div>
   );
 }
