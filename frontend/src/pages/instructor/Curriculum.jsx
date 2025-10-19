@@ -3,20 +3,20 @@ import { useState } from "react";
 import Section from "../../components/instructor/curriculum/Section";
 import { IoClose } from "react-icons/io5";
 import { LuPlus } from "react-icons/lu";
-const sections = [
-    {
-        id: "1",
-        title: "Giới thiệu",
-        order: 1,
-    },
-];
+import { useParams } from "react-router-dom";
+import { useGetAllSectionsByCourseQuery } from "@/redux/api/sectionApiSlice";
 const Curriculum = () => {
+    const { courseId } = useParams();
+    const { data: sections, isLoading } = useGetAllSectionsByCourseQuery(courseId);
+
     const [sectionForm, setSectionForm] = useState({
         title: "",
         objective: "",
     });
 
     const [isAddingSection, setIsAddingSection] = useState(false);
+
+    if (isLoading) return <></>;
 
     return (
         <div>
@@ -27,14 +27,14 @@ const Curriculum = () => {
                     <div className="flex flex-col gap-4">
                         {" "}
                         {sections.map((section, index) => (
-                            <Section index={index} section={section}></Section>
+                            <Section index={index} section={section} courseId={courseId}></Section>
                         ))}
                     </div>
                     <div className="mt-3">
                         {isAddingSection ? (
                             <div className="">
                                 <button className="p-1 rounded hover:bg-gray-200 flex items-center justify-center">
-                                    <IoClose size={18}/>
+                                    <IoClose size={18} />
                                 </button>
 
                                 <div className="p-3 mt-2 bg-white border border-gray-300 rounded space-y-3">

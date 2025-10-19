@@ -6,8 +6,9 @@ import { MdOutlineDragIndicator } from "react-icons/md";
 import ReactQuillNew from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import QuizQuestionModal from "./QuizQuestionModal";
-
-const Quiz = ({ item }) => {
+import { useUpdateCurriculumItemMutation } from "@/redux/api/sectionApiSlice";
+import Question from "./Question";
+const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [quizTitle, setQuizTitle] = useState(item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -15,6 +16,9 @@ const Quiz = ({ item }) => {
     const [isQuizQuestionOpen, setIsQuizQuestionOpen] = useState(false);
     const [quizDescription, setQuizDescription] = useState(item.description || "");
     const [isQuizQuestionModalOpen, setIsQuizQuestionModalOpen] = useState(false);
+
+    const [addQuestion, { isLoading: isAddingQuestion }] = useUpdateCurriculumItemMutation();
+    const [updateTitle, { isLoading }] = useUpdateCurriculumItemMutation();
     return (
         <div>
             <div
@@ -28,7 +32,9 @@ const Quiz = ({ item }) => {
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                     >
-                        <span>Quiz: {item.title}</span>
+                        <span>
+                            Quiz {sectionOrder}.{quizOrder}: {quizTitle}
+                        </span>
                         <div
                             className={`ml-2 flex items-center gap-1 transition-opacity duration-200 ${
                                 isHovered ? "opacity-100" : "opacity-0"
@@ -105,6 +111,16 @@ const Quiz = ({ item }) => {
                             </button>
                             <button
                                 onClick={() => {
+                                    updateTitle({
+                                        courseId,
+                                        sectionId,
+                                        itemId: item._id,
+                                        data: {
+                                            itemType: "Quiz",
+                                            title: quizTitle,
+                                            description: quizDescription,
+                                        },
+                                    });
                                     setIsEditingTitle(false);
                                 }}
                                 className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
@@ -126,10 +142,28 @@ const Quiz = ({ item }) => {
                             Câu hỏi mới
                         </button>
                         <QuizQuestionModal
+                            itemId={item._id}
                             open={isQuizQuestionModalOpen}
                             onOpenChange={setIsQuizQuestionModalOpen}
+                            onAddQuestion={addQuestion}
+                            sectionId={sectionId}
+                            courseId={courseId}
                         ></QuizQuestionModal>
                     </div>
+                    {item.questions && (
+                        <div className="space-y-2">
+                            {item.questions.map((question, index) => (
+                                <div key={index}>
+                                    <Question
+                                        quizId={item._id}
+                                        question={question}
+                                        index={index}
+                                        sectionId={sectionId}
+                                    ></Question>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

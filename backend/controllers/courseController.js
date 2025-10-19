@@ -47,13 +47,10 @@ const getCourseById = async (req, res) => {
 const createCourse = async (req, res) => {
     try {
         // const instructorId = req.user._id;
-        const { title, category, instructorId } = req.body;
-        const instructor = await User.findById(instructorId);
-        if (!instructor || instructor.role !== "Instructor") {
-            return res.status(400).json({ message: "Invalid instructor ID" });
-        }
+        const { title, category } = req.body;
+        
         const course = await Course.create({
-            title, category, instructor: instructorId
+            title, category
         });
         res.status(201).json(course);
     } catch (error) {

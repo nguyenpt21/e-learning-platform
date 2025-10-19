@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
+import { generateUploadURL } from "./controllers/uploadController.js";
 import progressRoute from "./routes/progressRoute.js"
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.get('/', (req, res) => {
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use('/api/courses', courseRoute);
+app.post("/api/generateUploadURL", generateUploadURL)
 app.use('/api/progress', progressRoute);
 
 app.listen(PORT, () => {
