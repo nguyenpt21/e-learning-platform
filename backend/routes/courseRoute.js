@@ -2,7 +2,7 @@ import express from "express";
 import {
     getCourseById,
     getAllCourses,
-    getCoursesByInstructor,
+    getCourses,
     createCourse,
     updateCourse,
     deleteCourse,
@@ -23,6 +23,8 @@ import {
     deleteQuestionFromQuiz,
 } from "../controllers/sectionController.js";
 
+import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
+
 const router = express.Router();
 
 //course
@@ -33,7 +35,7 @@ router.route("/:courseId")
     .get(getCourseById)
     .put(updateCourse)
     .delete(deleteCourse);
-router.get("/instructor/:instructorId", getCoursesByInstructor);
+router.get("/manage", getCourses);
 
 
 // section
@@ -69,5 +71,7 @@ router.delete(
 router.route("/quizzes/:quizId/questions/:questionId")
     .put(updateQuestionInQuiz)
     .delete(deleteQuestionFromQuiz);
+
+router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
 export default router;

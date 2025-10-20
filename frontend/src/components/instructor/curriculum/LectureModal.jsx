@@ -294,6 +294,7 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                                                 accept="video/*"
                                                 onChange={handleFileChange}
                                                 hidden
+                                                
                                             />
                                         </div>
                                     </label>

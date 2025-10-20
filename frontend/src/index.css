@@ -206,7 +206,7 @@
     margin-top: 0.4rem;
     margin-bottom: 0.4rem; 
     color: #545454;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
 }
 
@@ -219,9 +219,20 @@
 .html-content li p {
     display: inline-block;
     margin-left: 0.25rem; 
+    font-size: 30px;
 }
 
-.html-content p, h1, h2 {
-  margin-bottom: 0.75rem; /* khoảng cách giữa các đoạn */
+.html-h1, .html-h2, .html-h3 {
+  margin-bottom: 1rem; /* khoảng cách giữa các đoạn */
   line-height: 1.65;      /* chỉnh giãn dòng */
+}
+
+
+.plyr--paused:not(.plyr--started) .plyr__controls {
+    opacity: 0;
+    pointer-events: none; 
+}
+
+.plyr .plyr__controls {
+    transition: opacity 0.3s ease;
 }
