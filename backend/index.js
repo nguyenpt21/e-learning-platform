@@ -5,7 +5,9 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
-import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
+
+import { generateUploadURL } from "./controllers/uploadController.js";
+
 import paymentRoute from "./routes/paymentRoute.js"
 
 dotenv.config();
@@ -41,10 +43,10 @@ app.get('/', (req, res) => {
 });
 
 // Mount routes
-app.use("/api/auth", authRoutes)
+app.use("/api/auth", authRoutes);
 app.use('/api/courses', courseRoute);
 app.post("/api/generateUploadURL", generateUploadURL)
-app.delete("/api/deleteFile", deleteFileFromS3);
+
 app.use('/api/checkout', paymentRoute)
 
 app.listen(PORT, () => {

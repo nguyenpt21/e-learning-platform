@@ -139,8 +139,10 @@ const QuizQuestionModal = ({
         }
 
         const emptyOptions = options.filter(
-            (option) => !option.OptionText || stripHtml(option.OptionText).trim() === ""
+            (option) =>
+                !option.optionText || option.optionText.replace(/<(.|\n)*?>/g, "").trim() === ""
         );
+
         if (emptyOptions.length > 0) {
             toast.error("Điền các câu trả lời hoặc xóa những câu trả lời trống", {
                 position: "bottom-right",

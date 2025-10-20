@@ -13,7 +13,6 @@ import { LuDot } from "react-icons/lu";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion"
 import { MdOutlineOndemandVideo } from "react-icons/md";
 import { PiPuzzlePieceBold } from "react-icons/pi";
-import InstructorCard from "../../components/student/course/InstructorCard";
 import Footer from "../../components/Footer";
 
 const CourseDetail = () => {
@@ -25,6 +24,8 @@ const CourseDetail = () => {
     const [reachedFooter, setReachedFooter] = useState(false);
     const footerRef = useRef(null);
 
+    console.log(course)
+
     const calculateCourseStats = (courseData) => {
         if (!courseData?.sections) return { courseDuration: 0, totalLectures: 0, totalResources: 0, sections: [] };
         let courseDuration = 0;
@@ -34,10 +35,10 @@ const CourseDetail = () => {
             let sectionLectures = 0;
             let sectionResources = 0;
             const sectionDuration = section.curriculumItems?.reduce((sum, ci) => {
-                if ((ci.itemType === "Lecture" || ci.itemType === "Article") && ci.itemDetails?.content?.duration) {
+                if ((ci.type === "video" || ci.type === "article") && ci?.content?.duration) {
                     sectionLectures += 1;
-                    sectionResources += ci.itemDetails?.resources?.length || 0;
-                    return sum + ci.itemDetails.content.duration;
+                    sectionResources += ci?.resources?.length || 0;
+                    return sum + ci.content.duration;
                 }
                 return sum;
             }, 0);
@@ -119,12 +120,6 @@ const CourseDetail = () => {
                             <div className="flex items-center gap-2">
                                 <AverageRating averageRating={course?.averageRating} />
                             </div>
-                            <p className="text-gray-500 text-[14px]">
-                                Được tạo bởi:{" "}
-                                <span className="font-semibold text-black hover:underline cursor-pointer">
-                                    {course?.instructor.firstName} {course?.instructor.lastName}
-                                </span>
-                            </p>
                             <div className="flex items-center gap-2 text-gray-500 text-sm">
                                 <ClockAlert className="w-4 h-4 text-[#098ce9]" />
                                 Lần cập nhật gần đây nhất:{" "}
@@ -162,7 +157,7 @@ const CourseDetail = () => {
                         {course?.learningOutcomes && course.learningOutcomes.length > 0 && (
                             <div className="">
                                 <p className="text-2xl font-semibold mb-5">Bạn sẽ học được</p>
-                                <ul className="grid grid-cols-2 gap-x-4 gap-y-4 text-gray-700 text-[14px]">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-4 text-gray-700 text-sm">
                                     {course.learningOutcomes.map((outcome, index) => (
                                         <li key={index}>
                                             <IoCheckmark className="inline text-[#098ce9] mr-2" />
@@ -179,7 +174,7 @@ const CourseDetail = () => {
                         {course?.requirements && course.requirements.length > 0 && (
                             <div className="">
                                 <p className="text-2xl font-semibold mb-5">Yêu cầu</p>
-                                <ul className="list-disc ml-6 text-gray-700 text-[14px] space-y-3">
+                                <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
                                     {course.requirements.map((requirement, index) => (
                                         <li key={index}>
                                             {requirement}
@@ -191,7 +186,7 @@ const CourseDetail = () => {
                         {course?.intendedLearners && course.intendedLearners.length > 0 && (
                             <div className="">
                                 <p className="text-2xl font-semibold mb-5">Đối tượng khoá học</p>
-                                <ul className="list-disc ml-6 text-gray-700 text-[14px] space-y-3">
+                                <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
                                     {course.intendedLearners.map((intendedLearner, index) => (
                                         <li key={index}>
                                             {intendedLearner}
@@ -204,14 +199,11 @@ const CourseDetail = () => {
                             <div>
                                 <p className="text-2xl font-semibold mb-5">Mô tả</p>
                                 <div
-                                    className="text-gray-700 text-[14px] html-content font-light"
+                                    className="text-gray-700 text-sm html-content font-light"
                                     dangerouslySetInnerHTML={{ __html: course.description }}
                                 ></div>
                             </div>
                         )}
-                        <div>
-                            <InstructorCard instructor={course.instructor} />
-                        </div>
                     </div>
                     <div className="col-span-1"></div>
                 </div>
@@ -251,7 +243,7 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                 onClick={()=>course?.price && navigate(`/course/${course._id}/payment`)}>
                     Mua ngay
                 </button>
-                <div className="text-gray-900 text-[14px] px-3">
+                <div className="text-gray-900 text-sm px-3">
                     <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
                         <span className="flex items-center gap-1.5">
                             <TbChartBarPopular className="text-[20px]" />
@@ -308,7 +300,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
     return (
         <div className="">
             <div className="flex items-center justify-between mb-2">
-                <p className="pl-1 text-gray-700 text-[14px] flex items-center">
+                <p className="pl-1 text-gray-700 text-sm flex items-center">
                     {courseWithDurations?.sections.length} phần<LuDot className="text-xl" />
                     {courseWithDurations?.totalLectures} bài học<LuDot className="text-xl" />
                     {formatDuration(courseWithDurations?.courseDuration)} thời lượng
@@ -333,10 +325,10 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                     );
                     return (
                         <AccordionItem key={section._id} value={section._id} className="border-b border-[#cee1ef]">
-                            <AccordionTrigger className="text-[16px] px-6 flex items-center bg-[#f4faff] rounded-bl-none rounded-br-none">
+                            <AccordionTrigger className="text-[16px] px-6 flex items-center bg-[#f4faff] rounded-md rounded-bl-none rounded-br-none">
                                 <span className="font-semibold">{section.title}</span>
                                 {foundSection && (
-                                    <div className="text-gray-500 text-[14px] flex items-center ml-auto">
+                                    <div className="text-gray-500 text-sm flex items-center ml-auto">
                                         {foundSection.sectionLectures} bài giảng
                                         <LuDot className="text-xl" />
                                         {formatDuration(foundSection.sectionDuration)}
@@ -345,22 +337,33 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                             </AccordionTrigger>
                             <AccordionContent className="px-7 py-3 pb-6">
                                 <ul className="space-y-5">
-                                    {section.curriculumItems.map(ci => (
-                                        <div className="flex items-center text-gray-600 text-[15px] font-light" key={ci.itemId}>
-                                            <li className="flex items-center gap-4">
-                                                {ci.itemType === "Lecture" ? (
-                                                    ci.itemDetails?.type === "video" ? <MdOutlineOndemandVideo /> : <IoDocumentTextOutline />
-                                                ) : (
-                                                    <PiPuzzlePieceBold />
-                                                )}
-                                                <span>{ci.itemDetails?.title}</span>
-                                            </li>
-                                            <span className="ml-auto">
-                                                {ci.itemType === "Quiz" ? `${ci.itemDetails?.questions?.length || 0} câu hỏi`
-                                                    : formatDuration(ci.itemDetails?.content?.duration)}
-                                            </span>
-                                        </div>
-                                    ))}
+                                    {section.curriculumItems
+                                        ?.slice()
+                                        .sort((a, b) => a.order - b.order)
+                                        .map((ci) => (
+                                            <div
+                                                className="flex items-center text-gray-600 text-[15px] font-light"
+                                                key={ci._id}
+                                            >
+                                                <li className="flex items-center gap-4">
+                                                    {ci.itemType === "Lecture" ? (
+                                                        ci?.type === "video" ? (
+                                                            <MdOutlineOndemandVideo />
+                                                        ) : (
+                                                            <IoDocumentTextOutline />
+                                                        )
+                                                    ) : (
+                                                        <PiPuzzlePieceBold />
+                                                    )}
+                                                    <span>{ci?.title}</span>
+                                                </li>
+                                                <span className="ml-auto">
+                                                    {ci.itemType === "Quiz"
+                                                        ? `${ci?.questions?.length || 0} câu hỏi`
+                                                        : formatDuration(ci?.content?.duration)}
+                                                </span>
+                                            </div>
+                                        ))}
                                 </ul>
                             </AccordionContent>
                         </AccordionItem>
@@ -371,7 +374,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                 <div className="flex justify-center mt-4 border border-[#098ce9] rounded-sm hover:bg-sky-50 py-2">
                     <button
                         onClick={() => setShowAllSections(!showAllSections)}
-                        className="text-[#098ce9] text-[14px] font-medium duration-300"
+                        className="text-[#098ce9] text-sm font-medium duration-300"
                     >
                         {showAllSections ? "Thu gọn" : "Xem tất cả"}
                     </button>
@@ -434,7 +437,7 @@ const AverageRating = ({ averageRating }) => {
                 ))}
             </div>
             <p className="text-sm">
-                <span className="font-semibold text-yellow-500 text-[14px]">
+                <span className="font-semibold text-yellow-500 text-sm">
                     {r.toFixed(1)}
                 </span>{" "}
                 /5.0 – {r >= 4 ? "Tuyệt vời" : r >= 3 ? "Tốt" : "Trung bình"}
