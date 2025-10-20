@@ -6,13 +6,13 @@ export const coursePublicApiSlice = apiSlice.injectEndpoints({
         getCourseById: builder.query({
             query: (courseId) => `${COURSE_URL}/${courseId}`,
         }),
-        getCourseByInstructorId: builder.query({
-            query: (instructorId) => `${COURSE_URL}/instructor/${instructorId}`
+        getCurriculumItemById: builder.query({
+            query: ({itemId, itemType}) => `${COURSE_URL}/item/${itemId}/type/${itemType}`
         })
     }),
 });
 
 export const {
     useGetCourseByIdQuery,
-    useGetCourseByInstructorIdQuery,
+    useGetCurriculumItemByIdQuery,
 } = coursePublicApiSlice

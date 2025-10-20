@@ -110,16 +110,17 @@ export const getCourseProgress = async (req, res) => {
     }
 };
 
-export const getItemProgress = async (req, res) => {
+export const getAllUserItemsProgress = async (req, res) => {
     try {
         const userId = req.user._id;
-        const { itemId } = req.params;
-        const progress = await Progress.findOne({ userId, itemId });
-        if (!progress)
-            return res.status(404).json({ message: "No progress found for this item" });
-        res.status(200).json(progress);
+        const { courseId } = req.params;
+        const progressList = await Progress.find({ userId, courseId });
+        if (!progressList || progressList.length === 0) {
+            return res.status(404).json({ message: "No progress found for this course" });
+        }
+        res.status(200).json(progressList);
     } catch (error) {
-        console.error("Error getting item progress:", error);
+        console.error("Error getting course progress:", error);
         res.status(500).json({ message: "Server error" });
     }
 };

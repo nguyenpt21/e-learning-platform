@@ -10,36 +10,45 @@ const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
         const course = await Course.findById(courseId)
-            .populate("instructor", "firstName lastName major biography profilePicture")
-            .populate("sections")
+            .populate("sections.sectionId")
             .lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
 
-        const lectureIds = [], quizIds = [];
-        course.sections.forEach(section =>
-            section.curriculumItems.forEach(item => {
-                item.itemType === "Lecture" ? lectureIds.push(item.itemId) : quizIds.push(item.itemId);
-            })
-        );
-
+        const lectureIds = [];
+        const quizIds = [];
+        course.sections.forEach(({ sectionId }) => {
+            sectionId?.curriculumItems?.forEach(({ itemType, itemId }) => {
+                if (itemType === "Lecture") lectureIds.push(itemId);
+                else if (itemType === "Quiz") quizIds.push(itemId);
+            });
+        });
         const [lectures, quizzes] = await Promise.all([
             Lecture.find({ _id: { $in: lectureIds } }).lean(),
             Quiz.find({ _id: { $in: quizIds } }).lean(),
         ]);
 
-        const lectureMap = new Map(lectures.map(l => [l._id.toString(), l]));
-        const quizMap = new Map(quizzes.map(q => [q._id.toString(), q]));
+        const lectureMap = Object.fromEntries(lectures.map(l => [l._id.toString(), l]));
+        const quizMap = Object.fromEntries(quizzes.map(q => [q._id.toString(), q]));
 
-        course.sections.forEach(section =>
-            section.curriculumItems.forEach(item => {
-                item.itemDetails = item.itemType === "Lecture" ? lectureMap.get(item.itemId.toString()) : quizMap.get(item.itemId.toString());
-            })
-        );
+        const sections = course.sections.filter(s => s.sectionId)
+            .map(({ sectionId, order }) => ({
+                ...sectionId,
+                order,
+                curriculumItems: sectionId.curriculumItems?.map(({ itemType, itemId }) => {
+                        const itemData = itemType === "Lecture"
+                                ? lectureMap[itemId.toString()]
+                                : quizMap[itemId.toString()];
+                        if (!itemData) return null;
+                        return {
+                            itemType, ...itemData,
+                        };
+                    }).filter(Boolean) || [],
+            }));
 
-        res.status(200).json(course);
+        res.status(200).json({ ...course, sections });
     } catch (error) {
-        console.error(error);
+        console.error("getCourseById error:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -48,7 +57,7 @@ const createCourse = async (req, res) => {
     try {
         // const instructorId = req.user._id;
         const { title, category } = req.body;
-        
+
         const course = await Course.create({
             title, category
         });
@@ -129,45 +138,51 @@ const deleteCourse = async (req, res) => {
     }
 };
 
-const getCoursesByInstructor = async (req, res) => {
+
+const getCourses = async (req, res) => {
     try {
-        // const instructorId = req.user._id;
-        const { instructorId } = req.params;
-        const { sort, search } = req.query;
+        const { sort, search, category, level, isPublished, isFree } = req.query;
 
         let sortOption = {};
-        if (sort) {
-            switch (sort) {
-                case "newest":
-                    sortOption = { createdAt: -1 };
-                    break;
-                case "oldest":
-                    sortOption = { createdAt: 1 };
-                    break;
-                case "A-Z":
-                    sortOption = { title: 1 };
-                    break;
-                case "Z-A":
-                    sortOption = { title: -1 };
-                    break;
-                default:
-                    sortOption = {};
-            }
+        switch (sort) {
+            case "newest":
+                sortOption = { createdAt: -1 };
+                break;
+            case "oldest":
+                sortOption = { createdAt: 1 };
+                break;
+            case "A-Z":
+                sortOption = { title: 1 };
+                break;
+            case "Z-A":
+                sortOption = { title: -1 };
+                break;
+            default:
+                sortOption = {};
         }
 
-        if (!mongoose.Types.ObjectId.isValid(instructorId)) {
-            return res.status(400).json({ message: "Invalid instructor ID" });
-        }
-        const filter = { instructor: instructorId };
+        const filter = {};
         if (search) {
             filter.title = { $regex: search, $options: "i" };
+        }
+        if (category) {
+            filter.category = category;
+        }
+        if (level) {
+            filter.level = level;
+        }
+        if (isPublished !== undefined) {
+            filter.isPublished = isPublished === "true";
+        }
+        if (isFree !== undefined) {
+            filter.isFree = isFree === "true";
         }
 
         const courses = await Course.find(filter).sort(sortOption);
 
         res.status(200).json(courses);
     } catch (error) {
-        console.log(error);
+        console.error("Error fetching courses:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -264,9 +279,7 @@ const getAllCourses = async (req, res) => {
         const courses = await Course.find(filter)
             .sort(sortOption)
             .skip(skip)
-            .limit(pageSize)
-            .populate("instructor", "firstName lastName")
-            .populate("sections");
+            .limit(pageSize);
 
         const totalCourses = await Course.countDocuments(filter);
 
@@ -393,7 +406,6 @@ const getSearchCourseResults = async (req, res) => {
             .sort(sortOption)
             .skip(skip)
             .limit(pageSize)
-            .populate("instructor", "firstName lastName")
             .populate("sections");
 
         const totalCourses = await Course.countDocuments(filter);
@@ -412,10 +424,9 @@ const getSearchCourseResults = async (req, res) => {
     }
 };
 
-
 export {
     getCourseById,
-    getCoursesByInstructor,
+    getCourses,
     getAllCourses,
     createCourse,
     updateCourse,

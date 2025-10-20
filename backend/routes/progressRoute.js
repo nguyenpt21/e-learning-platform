@@ -3,7 +3,7 @@ import {
     updateLectureProgress,
     updateQuizProgress,
     getCourseProgress,
-    getItemProgress,
+    getAllUserItemsProgress,
 } from "../controllers/progressController.js";
 import { protectRoute } from "../middleware/authMiddleware.js"
 const router = express.Router();
@@ -12,6 +12,6 @@ router.post("/lecture", updateLectureProgress);
 router.post("/quiz", updateQuizProgress);
 
 router.get("/course/:courseId", protectRoute, getCourseProgress);
-router.get("/item/:itemId", protectRoute, getItemProgress);
+router.get("/course/:courseId/items", protectRoute, getAllUserItemsProgress);
 
 export default router;

@@ -11,7 +11,7 @@ const Header = ({ courseTitle, courseId }) => {
     };
     const { data: progress, isLoading: isProgressLoading } = useGetCourseProgressQuery(courseId);
     return (
-        <div className="flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
+        <div className="sticky top-0 z-50 flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
             <button 
                 className="px-5 hover:bg-[#2a364c] transition-colors duration-300"
                 onClick={handleGoBack}
