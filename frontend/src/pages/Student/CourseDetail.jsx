@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import { useGetCourseByIdQuery } from '../../redux/api/coursePublicApiSlice';
 import { Spinner } from "@/components/ui/spinner"
@@ -224,6 +224,7 @@ const CourseDetail = () => {
 };
 
 const RightCard = ({ course, courseWithDurations, formatDuration }) => {
+    const navigate = useNavigate()
     return (
         <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
             <div className="w-full h-48 overflow-hidden">
@@ -246,7 +247,8 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                 <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
                     Thêm vào giỏ hàng
                 </button>
-                <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200">
+                <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
+                onClick={()=>course?.price && navigate(`/course/${course._id}/payment`)}>
                     Mua ngay
                 </button>
                 <div className="text-gray-900 text-[14px] px-3">
