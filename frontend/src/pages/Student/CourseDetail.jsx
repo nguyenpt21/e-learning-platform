@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/Header";
 import { useGetCourseByIdQuery } from '../../redux/api/coursePublicApiSlice';
 import { Spinner } from "@/components/ui/spinner"
@@ -107,7 +107,7 @@ const CourseDetail = () => {
             </div>
             <div className="bg-[#e0f3ff] text-black">
                 <div className="container mx-auto px-8 py-10">
-                    <div className="grid grid-cols-3 gap-14">
+                    <div className="grid grid-cols-3 gap-14 ">
                         <div className="col-span-2 space-y-4">
                             <CourseBreadcrumb course={course} />
                             <h1 className="text-4xl font-bold leading-tight">
@@ -136,16 +136,21 @@ const CourseDetail = () => {
                                 </span>
                             </div>
                         </div>
-                        <div className="col-span-1 ">
+                        <div className="col-span-1">
                             <div
-                                className={`w-1/4 transform transition-all duration-300 
-                                    ${reachedFooter ? "absolute bottom-96"
-                                    : showSticky
-                                        ? "fixed top-[12%] z-50"
-                                        : "absolute top-30"
-                                    }`}
+                                className={`w-1/4 transition-all duration-300 transform lg:right-10 xl:right-28
+                                    ${reachedFooter
+                                        ? "absolute bottom-96"
+                                        : showSticky
+                                            ? "fixed top-[12%] z-50"
+                                            : "absolute top-30 "
+                                    } right-[clamp(0.5rem,4vw,7rem)]`}
                             >
-                                <RightCard course={course} courseWithDurations={courseWithDurations} formatDuration={formatDuration} />
+                                <RightCard
+                                    course={course}
+                                    courseWithDurations={courseWithDurations}
+                                    formatDuration={formatDuration}
+                                />
                             </div>
                         </div>
                     </div>
@@ -219,6 +224,7 @@ const CourseDetail = () => {
 };
 
 const RightCard = ({ course, courseWithDurations, formatDuration }) => {
+    const navigate = useNavigate()
     return (
         <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
             <div className="w-full h-48 overflow-hidden">
@@ -241,7 +247,8 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                 <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
                     Thêm vào giỏ hàng
                 </button>
-                <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200">
+                <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
+                onClick={()=>course?.price && navigate(`/course/${course._id}/payment`)}>
                     Mua ngay
                 </button>
                 <div className="text-gray-900 text-[14px] px-3">

@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
 import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
+import paymentRoute from "./routes/paymentRoute.js"
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use("/api/auth", authRoutes)
 app.use('/api/courses', courseRoute);
 app.post("/api/generateUploadURL", generateUploadURL)
 app.delete("/api/deleteFile", deleteFileFromS3);
+app.use('/api/checkout', paymentRoute)
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
