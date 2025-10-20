@@ -116,7 +116,7 @@ export const getAllUserItemsProgress = async (req, res) => {
         const { courseId } = req.params;
         const progressList = await Progress.find({ userId, courseId });
         if (!progressList || progressList.length === 0) {
-            return res.status(404).json({ message: "No progress found for this course" });
+            return res.status(200).json({ message: "No progress found for this course" });
         }
         res.status(200).json(progressList);
     } catch (error) {
