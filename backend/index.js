@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
-import courseRoute from "./routes/courseRoute.js"<<<<<<< quyen
+import courseRoute from "./routes/courseRoute.js"
 import progressRoute from "./routes/progressRoute.js"
 import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
 import paymentRoute from "./routes/paymentRoute.js"
