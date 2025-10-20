@@ -6,7 +6,8 @@ const SectionSchema = new mongoose.Schema({
         ref: "Course", required: true 
     },
     title: { type: String, required: true },
-    order: { type: Number, required: true },
+    objective: String,
+
     curriculumItems: {
         type: [{
             _id: false,

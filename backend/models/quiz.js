@@ -5,8 +5,8 @@ const QuestionAnswerSchema = new mongoose.Schema({
     options: [{
         optionText: { type: String, required: true },
         optionExplanation: { type: String },
+        isCorrect: Boolean,
     }],
-    correctAnswerIndex: { type: Number, required: true },
     relatedLecture: { type: mongoose.Schema.Types.ObjectId, ref: "Lecture" },
 }, { _id: true });
 

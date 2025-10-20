@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Trash2, X } from "lucide-react";
+import { toast } from "react-toastify";
 import ReactQuillNew from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {
@@ -10,41 +11,52 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 
+const stripHtml = (html) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+};
+
 const QuizQuestionModal = ({
     open,
     onOpenChange,
     initialData = null,
-    onSave,
-    mode = "create", // 'create' or 'edit'
+    sectionId,
+    courseId,
+    itemId,
+    questionId,
+    onAddQuestion = () => {},
+    onUpdateQuestion = () => {},
 }) => {
-    const [answers, setAnswers] = useState(
-        initialData?.answers || [
-            { text: "", explanation: "", isCorrect: false },
-            { text: "", explanation: "", isCorrect: false },
-            { text: "", explanation: "", isCorrect: false },
+    const [options, setOptions] = useState(
+        initialData?.options || [
+            { optionText: "", textExplanation: "", isCorrect: false },
+            { optionText: "", textExplanation: "", isCorrect: false },
+            { optionText: "", textExplanation: "", isCorrect: false },
         ]
     );
-    const [question, setQuestion] = useState(initialData?.question || "");
+    const [questionText, setQuestion] = useState(initialData?.questionText || "");
+
     const [activeEditor, setActiveEditor] = useState(null);
     const quillRef = useRef(null);
     // Reset form when modal opens with new data
     useEffect(() => {
         if (open) {
             if (initialData) {
-                setQuestion(initialData.question || "");
-                setAnswers(
-                    initialData.answers || [
-                        { text: "", explanation: "", isCorrect: false },
-                        { text: "", explanation: "", isCorrect: false },
-                        { text: "", explanation: "", isCorrect: false },
+                setQuestion(initialData.questionText || "");
+                setOptions(
+                    initialData.options || [
+                        { optionText: "", textExplanation: "", isCorrect: false },
+                        { optionText: "", textExplanation: "", isCorrect: false },
+                        { optionText: "", textExplanation: "", isCorrect: false },
                     ]
                 );
             } else {
                 setQuestion("");
-                setAnswers([
-                    { text: "", explanation: "", isCorrect: false },
-                    { text: "", explanation: "", isCorrect: false },
-                    { text: "", explanation: "", isCorrect: false },
+                setOptions([
+                    { optionText: "", textExplanation: "", isCorrect: false },
+                    { optionText: "", textExplanation: "", isCorrect: false },
+                    { optionText: "", textExplanation: "", isCorrect: false },
                 ]);
             }
             setActiveEditor(null);
@@ -66,51 +78,86 @@ const QuizQuestionModal = ({
         }
     }, [activeEditor]);
 
-    const addAnswer = () => {
-        const newAnswer = {
-            text: "",
-            explanation: "",
+    const addOption = () => {
+        const newOption = {
+            optionText: "",
+            textExplanation: "",
             isCorrect: false,
         };
-        setAnswers([...answers, newAnswer]);
+        setOptions([...options, newOption]);
     };
 
-    const removeAnswer = (index) => {
-        if (answers.length > 2) {
-            const newAnswers = answers.filter((_, i) => i !== index);
-            setAnswers(newAnswers);
+    const removeOption = (index) => {
+        if (options.length > 2) {
+            const newOptions = options.filter((_, i) => i !== index);
+            setOptions(newOptions);
 
-            if (activeEditor && activeEditor.startsWith(`answer-${index}`)) {
+            if (activeEditor && activeEditor.startsWith(`option-${index}`)) {
                 setActiveEditor(null);
             }
         }
     };
 
-    const updateAnswer = (index, field, value) => {
-        const newAnswers = [...answers];
-        newAnswers[index] = {
-            ...newAnswers[index],
+    const updateOption = (index, field, value) => {
+        const newOptions = [...options];
+        newOptions[index] = {
+            ...newOptions[index],
             [field]: value,
         };
-        setAnswers(newAnswers);
+        setOptions(newOptions);
     };
 
-    const setCorrectAnswer = (index) => {
-        const newAnswers = answers.map((answer, i) => ({
-            ...answer,
+    const setCorrectOption = (index) => {
+        const newOptions = options.map((option, i) => ({
+            ...option,
             isCorrect: i === index,
         }));
-        setAnswers(newAnswers);
+        setOptions(newOptions);
     };
-
     const handleSave = () => {
-        const data = {
-            question,
-            answers,
-        };
-        if (onSave) {
-            onSave(data);
+        if (!questionText || stripHtml(questionText).trim() === "") {
+            toast.error("Nhập câu trả lời trước khi lưu", {
+                position: "top-right",
+                autoClose: 2000,
+            });
+            return;
         }
+
+        if (options.length < 2) {
+            toast.error("Điền ít nhất hai lựa chọn.", {
+                position: "bottom-right",
+            });
+            return;
+        }
+
+        const hasCorrectAnswer = options.some((option) => option.isCorrect);
+        if (!hasCorrectAnswer) {
+            toast.error("Chọn câu trả lời đúng nhất.", {
+                position: "bottom-right",
+            });
+            return;
+        }
+
+        const emptyOptions = options.filter(
+            (option) => !option.OptionText || stripHtml(option.OptionText).trim() === ""
+        );
+        if (emptyOptions.length > 0) {
+            toast.error("Điền các câu trả lời hoặc xóa những câu trả lời trống", {
+                position: "bottom-right",
+            });
+            return;
+        }
+        const question = {
+            questionText,
+            options,
+        };
+
+        if (!initialData) {
+            onAddQuestion({ courseId, sectionId, itemId, data: { itemType: "Quiz", question } });
+        } else {
+            onUpdateQuestion({ sectionId, quizId: itemId, questionId, data: question });
+        }
+
         onOpenChange(false);
     };
 
@@ -119,10 +166,7 @@ const QuizQuestionModal = ({
     };
 
     const modules = {
-        toolbar: [
-            ["bold", "italic", "underline"],
-            ["code-block"],
-        ],
+        toolbar: [["bold", "italic", "underline"], ["code-block"]],
     };
 
     const handleEditorClick = (editorId) => {
@@ -134,7 +178,7 @@ const QuizQuestionModal = ({
             <DialogContent className="min-w-[800px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="font-bold">
-                        {mode === "edit" ? "Sửa câu hỏi" : "Tạo câu hỏi mới"}
+                        {initialData ? "Sửa câu hỏi" : "Tạo câu hỏi mới"}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -143,12 +187,12 @@ const QuizQuestionModal = ({
                         <label className="block font-semibold mb-2">Câu hỏi</label>
 
                         <div
-                            onClick={() => handleEditorClick(`question`)}
+                            onClick={() => handleEditorClick(`questionText`)}
                             className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors "
                         >
                             <ReactQuillNew
                                 ref={quillRef}
-                                value={question}
+                                value={questionText}
                                 onChange={setQuestion}
                                 modules={{
                                     toolbar: [
@@ -166,49 +210,46 @@ const QuizQuestionModal = ({
                     <div>
                         <label className="block font-semibold mb-3">Câu trả lời</label>
 
-                        {answers.map((answer, index) => (
-                            <div key={answer.id} className="mb-4">
+                        {options.map((option, index) => (
+                            <div key={option.id} className="mb-4">
                                 <div className="flex items-start gap-3">
                                     <input
                                         type="radio"
-                                        name="correctAnswer"
-                                        checked={answer.isCorrect}
-                                        onChange={() => setCorrectAnswer(index)}
+                                        name="correctOption"
+                                        checked={option.isCorrect}
+                                        onChange={() => setCorrectOption(index)}
                                         className="mt-4 w-5 h-5 cursor-pointer"
                                     />
 
                                     <div className="flex-1">
-                                        <div
-                                            
-                                        >
-                                            {activeEditor === `answer-${index}` ? (
-                                                <div
-                                                    className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors"
-                                                >
+                                        <div>
+                                            {activeEditor === `option-${index}` ? (
+                                                <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
                                                     <ReactQuillNew
                                                         ref={quillRef}
-                                                        value={answer.text}
+                                                        value={option.optionText}
                                                         onChange={(value) =>
-                                                            updateAnswer(index, "text", value)
+                                                            updateOption(index, "optionText", value)
                                                         }
                                                         modules={modules}
                                                         placeholder="Nhập câu trả lời."
-                                                        className="quiz-answer-editor"
+                                                        className="quiz-option-editor"
                                                     />
                                                 </div>
                                             ) : (
                                                 <div
                                                     onClick={() =>
-                                                        handleEditorClick(`answer-${index}`)
+                                                        handleEditorClick(`option-${index}`)
                                                     }
                                                     className={`min-h-[60px] p-3 border rounded-md cursor-text hover:border-gray-400 transition-colors border-gray-300
                                                        `}
                                                 >
-                                                    {answer.text.replace(/<(.|\n)*?>/g, "").trim()
-                                                        .length > 0 ? (
+                                                    {option.optionText
+                                                        .replace(/<(.|\n)*?>/g, "")
+                                                        .trim().length > 0 ? (
                                                         <div
                                                             dangerouslySetInnerHTML={{
-                                                                __html: answer.text,
+                                                                __html: option.optionText,
                                                             }}
                                                         />
                                                     ) : (
@@ -220,16 +261,14 @@ const QuizQuestionModal = ({
                                             )}
                                         </div>
 
-                                        <div
-                                            className="mt-2 ml-4"
-                                        >
+                                        <div className="mt-2 ml-4">
                                             {activeEditor === `explanation-${index}` ? (
                                                 <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
                                                     <ReactQuillNew
                                                         ref={quillRef}
-                                                        value={answer.explanation}
+                                                        valutextE={option.explanation}
                                                         onChange={(value) =>
-                                                            updateAnswer(
+                                                            updateOption(
                                                                 index,
                                                                 "explanation",
                                                                 value
@@ -247,17 +286,18 @@ const QuizQuestionModal = ({
                                                     }
                                                     className="p-3 border border-gray-300 rounded-md cursor-text hover:border-gray-400 transition-colors text-sm"
                                                 >
-                                                    {answer.explanation
-                                                        .replace(/<(.|\n)*?>/g, "")
+                                                    {option.textExplanation
+                                                        ?.replace(/<(.|\n)*?>/g, "")
                                                         .trim().length > 0 ? (
                                                         <div
                                                             dangerouslySetInnerHTML={{
-                                                                __html: answer.explanation,
+                                                                __html: option.explanation,
                                                             }}
                                                         />
                                                     ) : (
                                                         <span className="text-gray-400">
-                                                            Giải thích tại sao đây là câu trả lời tốt nhất hoặc sai.
+                                                            Giải thích tại sao đây là câu trả lời
+                                                            tốt nhất hoặc sai.
                                                         </span>
                                                     )}
                                                 </div>
@@ -267,10 +307,10 @@ const QuizQuestionModal = ({
 
                                     {/* Delete Button */}
                                     <button
-                                        onClick={() => removeAnswer(index)}
-                                        disabled={answers.length <= 2}
+                                        onClick={() => removeOption(index)}
+                                        disabled={options.length <= 2}
                                         className={`mt-4 p-2 rounded ${
-                                            answers.length <= 2
+                                            options.length <= 2
                                                 ? "text-gray-300 cursor-not-allowed"
                                                 : "text-gray-500 hover:bg-gray-100"
                                         }`}
@@ -281,9 +321,9 @@ const QuizQuestionModal = ({
                             </div>
                         ))}
 
-                        {/* Add Answer Button */}
+                        {/* Add Option Button */}
                         <button
-                            onClick={addAnswer}
+                            onClick={addOption}
                             className="mt-2 px-4 py-2 text-blue-600 hover:bg-primary/5 rounded-md font-medium transition-colors"
                         >
                             + Thêm câu trả lời
@@ -296,17 +336,16 @@ const QuizQuestionModal = ({
                         onClick={handleCancel}
                         className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 "
                     >
-                        Cancel
+                        Hủy
                     </button>
                     <button
                         onClick={handleSave}
                         className="px-3 py-2 bg-primary text-white rounded hover:bg-primary/70 font-medium"
                     >
-                        {mode === "edit" ? "Sửa câu hỏi" : "Lưu câu hỏi"}
+                        {initialData ? "Sửa câu hỏi" : "Lưu câu hỏi"}
                     </button>
                 </DialogFooter>
             </DialogContent>
-
         </Dialog>
     );
 };
