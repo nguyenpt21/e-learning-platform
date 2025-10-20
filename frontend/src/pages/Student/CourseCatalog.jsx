@@ -649,32 +649,30 @@ const courses = [
 ];
 
 const categories = [
-  "Development",
-  "Business",
-  "Design",
-  "Marketing",
-  "IT & Software",
-  "Personal Development",
-  "Photography",
-  "Music",
+  "Lập trình",
+  "Kinh doanh",
+  "Thiết kế",
+  "Tiếp thị",
+  "CNTT & Phần mềm",
+  "Phát triển cá nhân",
+  "Nhiếp ảnh",
+  "Âm nhạc",
 ];
 
-const levels = ["All Levels", "Beginner", "Intermediate", "Advanced"];
+const levels = ["Mọi cấp độ", "Người mới bắt đầu", "Trung cấp", "Nâng cao"];
 
 const priceRanges = [
-  { label: "Free", value: "free" },
-  { label: "Paid", value: "paid" },
-  { label: "Under ₫300,000", value: "under-300k" },
+  { label: "Miễn phí", value: "free" },
+  { label: "Trả phí", value: "paid" },
+  { label: "Dưới ₫300,000", value: "under-300k" },
   { label: "₫300,000 - ₫500,000", value: "300k-500k" },
 ];
 
-
-
 const durationOptions = [
-  { value: "0-1", label: "0-1 Hour", count: 25 },
-  { value: "1-3", label: "1-3 Hours", count: 80 },
-  { value: "3-6", label: "3-6 Hours", count: 41 },
-  { value: "6-17", label: "6-17 Hours", count: 26 },
+  { value: "0-1", label: "0–1 giờ", count: 25 },
+  { value: "1-3", label: "1–3 giờ", count: 80 },
+  { value: "3-6", label: "3–6 giờ", count: 41 },
+  { value: "6-17", label: "6–17 giờ", count: 26 },
 ];
 
 const languageOptions = [
@@ -783,9 +781,9 @@ const columns =
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-6 py-4">
-          <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
+          <h1 className="text-3xl font-bold text-foreground">Tất cả các khóa học</h1>
           <p className="mt-2 text-muted-foreground">
-            Explore our comprehensive collection of courses
+            Khám phá bộ sưu tập khóa học toàn diện của chúng tôi
           </p>
         </div>
       </header>
@@ -797,7 +795,7 @@ const columns =
             <div className=" top-8 space-y-6">
               {/* Category */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Category</h3>
+                <h3 className="mb-3 text-sm font-medium">Danh mục</h3>
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <div key={category} className="flex items-center space-x-2">
@@ -818,7 +816,7 @@ const columns =
 
               {/* Video Duration */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Video Duration</h3>
+                <h3 className="mb-3 text-sm font-medium">Thời gian video</h3>
                 <div className="space-y-2">
                   {durationOptions
                     .slice(0, showMoreDurations ? durationOptions.length : 3)
@@ -847,16 +845,16 @@ const columns =
                 {durationOptions.length > 3 && (
                   <button
                     onClick={() => setShowMoreDurations(!showMoreDurations)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
+                    className="mt-2 text-sm font-medium text-[#098be4] hover:text-[#066ab3]"
                   >
-                    {showMoreDurations ? "Show less" : "Show more"}
+                    {showMoreDurations ? "Thu gọn" : "Xem thêm"}
                   </button>
                 )}
               </div>
 
               {/* Language */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Language</h3>
+                <h3 className="mb-3 text-sm font-medium">Ngôn ngữ</h3>
                 <div className="space-y-2">
                   {languageOptions
                     .slice(0, showMoreLanguages ? languageOptions.length : 3)
@@ -885,16 +883,16 @@ const columns =
                 {languageOptions.length > 3 && (
                   <button
                     onClick={() => setShowMoreLanguages(!showMoreLanguages)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
+                    className="mt-2 text-sm font-medium text-[#098be4] hover:text-[#066ab3]"
                   >
-                    {showMoreLanguages ? "Show less" : "Show more"}
+                    {showMoreLanguages ? "Thu gọn" : "Xem thêm"}
                   </button>
                 )}
               </div>
 
               {/* Level */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Level</h3>
+                <h3 className="mb-3 text-sm font-medium">Cấp độ</h3>
                 <div className="space-y-2">
                   {levels.map((level) => (
                     <div key={level} className="flex items-center space-x-2">
@@ -913,7 +911,7 @@ const columns =
 
               {/* Price */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Price</h3>
+                <h3 className="mb-3 text-sm font-medium">Giá</h3>
                 <div className="space-y-2">
                   {priceRanges.map((range) => (
                     <div
@@ -942,19 +940,18 @@ const columns =
           <main className="flex-1">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(endIndex, courses.length)} of{" "}
-                {courses.length} results
+Hiển thị {startIndex + 1}-{Math.min(endIndex, courses.length)} trong tổng số {courses.length} kết quả
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="popular">Popular</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="popular">Phổ biến</SelectItem>
+                  <SelectItem value="newest">Mới nhất</SelectItem>
+                  <SelectItem value="price-low">Giá: Thấp đến Cao</SelectItem>
+                  <SelectItem value="price-high">Giá: Cao đến Thấp</SelectItem>
+                  <SelectItem value="rating">Đánh giá cao nhất</SelectItem>
                 </SelectContent>
               </Select>
             </div>
