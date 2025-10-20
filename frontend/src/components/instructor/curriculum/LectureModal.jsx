@@ -17,45 +17,8 @@ import {
     useAddLectureToSectionMutation,
     useGenerateUploadUrlMutation,
 } from "@/redux/api/sectionApiSlice";
-import { estimateReadingTime } from "@/utils";
+import { estimateReadingTime, generateThumbnailFromVideo } from "@/utils";
 
-// 
-
-const generateThumbnailFromVideo = (videoFile, seekTo = 1.0) => {
-    return new Promise((resolve, reject) => {
-        const video = document.createElement("video");
-        video.preload = "metadata";
-        video.muted = true;
-
-        video.onloadeddata = () => {
-            video.currentTime = seekTo;
-        };
-
-        video.onseeked = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(
-                (blob) => {
-                    URL.revokeObjectURL(video.src);
-                    resolve(blob);
-                },
-                "image/jpeg",
-                0.85
-            );
-        };
-
-        video.onerror = (e) => {
-            reject(new Error("Error loading video"));
-        };
-
-        video.src = URL.createObjectURL(videoFile);
-    });
-};
 
 const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
     const [showContentType, setShowContentType] = useState(true);
@@ -135,19 +98,18 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                 }).unwrap(),
             ]);
 
-            const [videoUpload, thumbnailUpload] = await Promise.all([
-                axios.put(videoUploadData.uploadURL, file, {
-                    headers: { "Content-Type": file.type },
-                    onUploadProgress: (e) => {
-                        setProgress(Math.round((e.loaded * 100) / e.total));
-                    },
-                    signal: controller.signal,
-                }),
-                axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
-                    headers: { "Content-Type": "image/jpeg" },
-                    signal: controller.signal,
-                }),
-            ]);
+            await axios.put(videoUploadData.uploadURL, file, {
+                headers: { "Content-Type": file.type },
+                onUploadProgress: (e) => {
+                    setProgress(Math.round((e.loaded * 100) / e.total));
+                },
+                signal: controller.signal,
+            });
+
+            await axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
+                headers: { "Content-Type": "image/jpeg" },
+                signal: controller.signal,
+            });
 
             await addLectureToSection({
                 courseId,
@@ -332,7 +294,6 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                                                 accept="video/*"
                                                 onChange={handleFileChange}
                                                 hidden
-                                                
                                             />
                                         </div>
                                     </label>

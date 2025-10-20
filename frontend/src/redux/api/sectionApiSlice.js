@@ -24,6 +24,13 @@ export const sectionApiSlice = apiSlice.injectEndpoints({
                 body,
             }),
         }),
+        deleteFileFromS3: builder.mutation({
+            query: (body) => ({
+                url: "/api/deleteFile",
+                method: "DELETE",
+                body,
+            }),
+        }),
         getAllCurriculumItemsBySection: builder.query({
             query: ({ courseId, sectionId }) => ({
                 url: `${COURSE_URL}/${courseId}/sections/${sectionId}/curriculum`,
@@ -88,6 +95,7 @@ export const sectionApiSlice = apiSlice.injectEndpoints({
 export const {
     useAddSectionToCourseMutation,
     useGetAllSectionsByCourseQuery,
+    useDeleteFileFromS3Mutation,
     useGenerateUploadUrlMutation,
     useAddLectureToSectionMutation,
     useGetAllCurriculumItemsBySectionQuery,

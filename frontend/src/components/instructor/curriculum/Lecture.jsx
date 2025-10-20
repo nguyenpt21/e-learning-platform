@@ -7,24 +7,16 @@ import { MdOutlineArticle } from "react-icons/md";
 import ReactQuillNew from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
+import axios from "axios";
 import LectureResources from "./LectureResources";
-import { useGenerateUploadUrlMutation, useUpdateCurriculumItemMutation } from "@/redux/api/sectionApiSlice";
+import {
+    useDeleteFileFromS3Mutation,
+    useGenerateUploadUrlMutation,
+    useUpdateCurriculumItemMutation,
+} from "@/redux/api/sectionApiSlice";
 import ArticleEditor from "./ArticleEditor";
 import { IoClose } from "react-icons/io5";
-import { estimateReadingTime } from "@/utils";
-
-function formatTimeShort(seconds) {
-    seconds = Math.max(0, Math.floor(seconds));
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    const mm = String(minutes).padStart(2, "0");
-    const ss = String(secs).padStart(2, "0");
-
-    return hours > 0 ? `${String(hours).padStart(2, "0")}:${mm}:${ss}` : `${mm}:${ss}`;
-}
+import { estimateReadingTime, formatTimeShort, generateThumbnailFromVideo } from "@/utils";
 
 const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
     const [isHovered, setIsHovered] = useState(false);
@@ -41,6 +33,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
 
     const [isEditingVideoLecture, setIsEditingVideoLecture] = useState(false);
     const [file, setFile] = useState(null);
+    const [videoDuration, setVideoDuration] = useState(null);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -63,8 +56,77 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
     const controllerRef = useRef(null);
 
     const [generateUploadURL] = useGenerateUploadUrlMutation();
+    const [deleteFileFromS3] = useDeleteFileFromS3Mutation();
 
     const [updateLecture] = useUpdateCurriculumItemMutation();
+
+    const handleUpdateVideoLecture = async () => {
+        if (!file) return alert("Vui lòng chọn video!");
+
+        setIsUploading(true);
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        try {
+            const thumbnailBlob = await generateThumbnailFromVideo(file, 1.0);
+
+            const [videoUploadData, thumbnailUploadData] = await Promise.all([
+                generateUploadURL({
+                    type: "lecture-video",
+                    fileName: file.name,
+                    contentType: file.type,
+                }).unwrap(),
+                generateUploadURL({
+                    type: "lecture-thumbnail",
+                    fileName: file.name.replace(/\.[^/.]+$/, "_thumbnail.jpg"),
+                    contentType: "image/jpeg",
+                }).unwrap(),
+            ]);
+
+            await axios.put(videoUploadData.uploadURL, file, {
+                headers: { "Content-Type": file.type },
+                onUploadProgress: (e) => {
+                    setProgress(Math.round((e.loaded * 100) / e.total));
+                },
+                signal: controller.signal,
+            });
+
+            await axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
+                headers: { "Content-Type": "image/jpeg" },
+                signal: controller.signal,
+            });
+
+            await updateLecture({
+                courseId,
+                sectionId,
+                itemId: item._id,
+                data: {
+                    itemType: "Lecture",
+                    content: {
+                        s3Key: videoUploadData.s3Key,
+                        publicURL: videoUploadData.publicURL,
+                        thumbnailS3Key: thumbnailUploadData.s3Key,
+                        thumbnailURL: thumbnailUploadData.publicURL,
+                        duration: videoDuration,
+                        fileName: file.name,
+                    },
+                },
+            }).unwrap();
+
+            setFile(null);
+            setIsEditingVideoLecture(false);
+            setIsCourseInfoOpen(!isCourseInfoOpen);
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                console.error("Hủy upload");
+            } else {
+                console.error("Lỗi upload:", error);
+                alert("Lỗi upload: " + error.message);
+            }
+        } finally {
+            setIsUploading(false);
+            setProgress(0);
+        }
+    };
     return (
         <div>
             {isUploading && (
@@ -81,7 +143,9 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleCancelUpload();
+                                    if (controllerRef.current) {
+                                        controllerRef.current.abort();
+                                    }
                                 }}
                                 className="text-gray-300 cursor-pointer p-1 pointer-events-auto"
                             >
@@ -93,7 +157,12 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
             )}
             <div
                 className={`border border-gray-300 p-3 ${
-                    isCourseInfoOpen || isAddingResource ? "rounded-t" : "rounded"
+                    isCourseInfoOpen ||
+                    isAddingResource ||
+                    isEditingArticleLecture ||
+                    isEditingVideoLecture
+                        ? "rounded-t"
+                        : "rounded"
                 } bg-white`}
             >
                 {!isEditingTitle ? (
@@ -131,7 +200,11 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                                 <div
                                     onClick={() => setIsCourseInfoOpen(!isCourseInfoOpen)}
                                     className={`p-1 w-6 h-6 hover:bg-gray-200 rounded ${
-                                        isAddingResource ? "opacity-0" : "opacity-100"
+                                        isAddingResource ||
+                                        isEditingArticleLecture ||
+                                        isEditingVideoLecture
+                                            ? "opacity-0"
+                                            : "opacity-100"
                                     }`}
                                 >
                                     {isCourseInfoOpen ? (
@@ -203,7 +276,13 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                             <div className="flex flex-col gap-[1px] cursor-pointer">
                                 <p>{item.content.fileName}</p>
                                 <span>{formatTimeShort(item.content.duration)}</span>
-                                <div className="flex items-center text-primary gap-1">
+                                <div
+                                    onClick={() => {
+                                        setIsEditingVideoLecture(true);
+                                        setIsCourseInfoOpen(!isCourseInfoOpen);
+                                    }}
+                                    className="flex items-center text-primary gap-1"
+                                >
                                     <button className="p-">
                                         <LuPencil size={15} className="" />
                                     </button>
@@ -329,14 +408,6 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                     <div className="flex justify-end gap-3 mt-3">
                         <button
                             onClick={() => {
-                                setIsEditingArticleLecture(false);
-                            }}
-                            className="font-medium hover:bg-gray-200 py-1 px-2 rounded"
-                        >
-                            Hủy
-                        </button>
-                        <button
-                            onClick={() => {
                                 updateLecture({
                                     courseId,
                                     sectionId,
@@ -352,6 +423,54 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                                 setIsEditingArticleLecture(false);
                                 setIsCourseInfoOpen(!isCourseInfoOpen);
                             }}
+                            className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
+                        >
+                            Lưu
+                        </button>
+                    </div>
+                </div>
+            )}
+            {isEditingVideoLecture && (
+                <div className="border-r border-l border-b rounded-b border-gray-300 bg-white p-2">
+                    <div className="p-2 rounded border border-gray-300 mt-1">
+                        <div className="flex justify-between items-center border-b pb-2 ">
+                            <div className="flex gap-6">
+                                <button className="border-b-2 border-primary">Tải lên video</button>
+                            </div>
+                            <button
+                                className="p-1 hover:bg-gray-200 rounded"
+                                onClick={() => {
+                                    setIsEditingVideoLecture(false);
+                                    setIsCourseInfoOpen(!isCourseInfoOpen);
+                                }}
+                            >
+                                <IoClose size={20}></IoClose>
+                            </button>
+                        </div>
+
+                        <label className="flex items-center gap-4 mt-4 cursor-pointer">
+                            <div className="flex-1 border rounded px-3 py-[6px] text-gray-500">
+                                {file ? file.name : "Chưa có file được chọn"}
+                            </div>
+                            <div className="px-4 py-[6px] bg-primary text-white rounded cursor-pointer">
+                                Chọn video
+                                <input
+                                    type="file"
+                                    accept="video/*"
+                                    onChange={handleFileChange}
+                                    hidden
+                                />
+                            </div>
+                        </label>
+
+                        <p className="text-xs text-gray-500 mt-2">
+                            <strong>Chủ thích:</strong> Tất cả các file tối thiểu là 720p và ít hơn
+                            4.0 GB.
+                        </p>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-3">
+                        <button
+                            onClick={handleUpdateVideoLecture}
                             className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
                         >
                             Lưu
