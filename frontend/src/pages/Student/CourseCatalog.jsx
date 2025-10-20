@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+
 import {
   Select,
   SelectContent,
@@ -22,7 +23,8 @@ import {
 } from "@/components/ui/pagination";
 
 import { Star } from "lucide-react";
-import { CardCatalog } from "@/components/CardCatalog";
+import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 
 const courses = [
@@ -56,11 +58,11 @@ const courses = [
     originalPrice: 499000,
     image: "/aws-cloud.jpg",
     updated: "February 2025",
-    duration: "12 total hours",
+    duration: "12 hours",
     level: "Intermediate",
-    hasSubtitles: true,
+    hasSubtitles: false,
     description:
-      "Master React from basics to advanced concepts including hooks, context, and performance optimization",
+      "React from basics to advanced",
     learningPoints: [
       "Build modern React applications using functional components and hooks",
       "Implement state management with Context API and Redux",
@@ -647,37 +649,30 @@ const courses = [
 ];
 
 const categories = [
-  "Development",
-  "Business",
-  "Design",
-  "Marketing",
-  "IT & Software",
-  "Personal Development",
-  "Photography",
-  "Music",
+  "Lập trình",
+  "Kinh doanh",
+  "Thiết kế",
+  "Tiếp thị",
+  "CNTT & Phần mềm",
+  "Phát triển cá nhân",
+  "Nhiếp ảnh",
+  "Âm nhạc",
 ];
 
-const levels = ["All Levels", "Beginner", "Intermediate", "Advanced"];
+const levels = ["Mọi cấp độ", "Người mới bắt đầu", "Trung cấp", "Nâng cao"];
 
 const priceRanges = [
-  { label: "Free", value: "free" },
-  { label: "Paid", value: "paid" },
-  { label: "Under ₫300,000", value: "under-300k" },
+  { label: "Miễn phí", value: "free" },
+  { label: "Trả phí", value: "paid" },
+  { label: "Dưới ₫300,000", value: "under-300k" },
   { label: "₫300,000 - ₫500,000", value: "300k-500k" },
 ];
 
-const ratingOptions = [
-  { value: "4.5", label: "4.5 & up", count: 78 },
-  { value: "4.0", label: "4.0 & up", count: 146 },
-  { value: "3.5", label: "3.5 & up", count: 163 },
-  { value: "3.0", label: "3.0 & up", count: 164 },
-];
-
 const durationOptions = [
-  { value: "0-1", label: "0-1 Hour", count: 25 },
-  { value: "1-3", label: "1-3 Hours", count: 80 },
-  { value: "3-6", label: "3-6 Hours", count: 41 },
-  { value: "6-17", label: "6-17 Hours", count: 26 },
+  { value: "0-1", label: "0–1 giờ", count: 25 },
+  { value: "1-3", label: "1–3 giờ", count: 80 },
+  { value: "3-6", label: "3–6 giờ", count: 41 },
+  { value: "6-17", label: "6–17 giờ", count: 26 },
 ];
 
 const languageOptions = [
@@ -694,11 +689,11 @@ export function CoursesCatalog() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
-  const [selectedRating, setSelectedRating] = useState("");
+
   const [selectedDurations, setSelectedDurations] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showMoreRatings, setShowMoreRatings] = useState(false);
+
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
 
@@ -707,6 +702,18 @@ export function CoursesCatalog() {
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
   const endIndex = startIndex + COURSES_PER_PAGE;
   const currentCourses = courses.slice(startIndex, endIndex);
+
+  const breakpoint = useBreakpoint();
+
+// Tự động tính số cột theo kích thước màn hình
+const columns =
+  breakpoint === "xl" || breakpoint === "2xl"
+    ? 4
+    : breakpoint === "lg"
+    ? 3
+    : breakpoint === "md"
+    ? 2
+    : 1;
 
   const toggleCategory = (category) => {
     setSelectedCategories((prev) =>
@@ -774,9 +781,9 @@ export function CoursesCatalog() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-6 py-4">
-          <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
+          <h1 className="text-3xl font-bold text-foreground">Tất cả các khóa học</h1>
           <p className="mt-2 text-muted-foreground">
-            Explore our comprehensive collection of courses
+            Khám phá bộ sưu tập khóa học toàn diện của chúng tôi
           </p>
         </div>
       </header>
@@ -785,10 +792,10 @@ export function CoursesCatalog() {
         <div className="flex gap-8">
           {/* Sidebar Filters */}
           <aside className="w-64 shrink-0">
-            <div className="sticky top-8 space-y-6">
+            <div className=" top-8 space-y-6">
               {/* Category */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Category</h3>
+                <h3 className="mb-3 text-sm font-medium">Danh mục</h3>
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <div key={category} className="flex items-center space-x-2">
@@ -805,52 +812,11 @@ export function CoursesCatalog() {
                 </div>
               </div>
 
-              {/* Ratings */}
-              <div>
-                <h3 className="mb-3 text-sm font-medium">Ratings</h3>
-                <RadioGroup
-                  value={selectedRating}
-                  onValueChange={setSelectedRating}
-                >
-                  <div className="space-y-2">
-                    {ratingOptions
-                      .slice(0, showMoreRatings ? ratingOptions.length : 3)
-                      .map((option) => (
-                        <div
-                          key={option.value}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem
-                            value={option.value}
-                            id={`rating-${option.value}`}
-                          />
-                          <Label
-                            htmlFor={`rating-${option.value}`}
-                            className="flex items-center gap-2 text-sm font-normal"
-                          >
-                            {renderStars(parseFloat(option.value))}
-                            <span>{option.label}</span>
-                            <span className="text-muted-foreground">
-                              ({option.count})
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                  </div>
-                </RadioGroup>
-                {ratingOptions.length > 3 && (
-                  <button
-                    onClick={() => setShowMoreRatings(!showMoreRatings)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
-                  >
-                    {showMoreRatings ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
+        
 
               {/* Video Duration */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Video Duration</h3>
+                <h3 className="mb-3 text-sm font-medium">Thời gian video</h3>
                 <div className="space-y-2">
                   {durationOptions
                     .slice(0, showMoreDurations ? durationOptions.length : 3)
@@ -879,16 +845,16 @@ export function CoursesCatalog() {
                 {durationOptions.length > 3 && (
                   <button
                     onClick={() => setShowMoreDurations(!showMoreDurations)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
+                    className="mt-2 text-sm font-medium text-[#098be4] hover:text-[#066ab3]"
                   >
-                    {showMoreDurations ? "Show less" : "Show more"}
+                    {showMoreDurations ? "Thu gọn" : "Xem thêm"}
                   </button>
                 )}
               </div>
 
               {/* Language */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Language</h3>
+                <h3 className="mb-3 text-sm font-medium">Ngôn ngữ</h3>
                 <div className="space-y-2">
                   {languageOptions
                     .slice(0, showMoreLanguages ? languageOptions.length : 3)
@@ -917,16 +883,16 @@ export function CoursesCatalog() {
                 {languageOptions.length > 3 && (
                   <button
                     onClick={() => setShowMoreLanguages(!showMoreLanguages)}
-                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700"
+                    className="mt-2 text-sm font-medium text-[#098be4] hover:text-[#066ab3]"
                   >
-                    {showMoreLanguages ? "Show less" : "Show more"}
+                    {showMoreLanguages ? "Thu gọn" : "Xem thêm"}
                   </button>
                 )}
               </div>
 
               {/* Level */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Level</h3>
+                <h3 className="mb-3 text-sm font-medium">Cấp độ</h3>
                 <div className="space-y-2">
                   {levels.map((level) => (
                     <div key={level} className="flex items-center space-x-2">
@@ -945,7 +911,7 @@ export function CoursesCatalog() {
 
               {/* Price */}
               <div>
-                <h3 className="mb-3 text-sm font-medium">Price</h3>
+                <h3 className="mb-3 text-sm font-medium">Giá</h3>
                 <div className="space-y-2">
                   {priceRanges.map((range) => (
                     <div
@@ -974,19 +940,18 @@ export function CoursesCatalog() {
           <main className="flex-1">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(endIndex, courses.length)} of{" "}
-                {courses.length} results
+Hiển thị {startIndex + 1}-{Math.min(endIndex, courses.length)} trong tổng số {courses.length} kết quả
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="popular">Popular</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="popular">Phổ biến</SelectItem>
+                  <SelectItem value="newest">Mới nhất</SelectItem>
+                  <SelectItem value="price-low">Giá: Thấp đến Cao</SelectItem>
+                  <SelectItem value="price-high">Giá: Cao đến Thấp</SelectItem>
+                  <SelectItem value="rating">Đánh giá cao nhất</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -997,7 +962,7 @@ export function CoursesCatalog() {
                   key={course.id}
                   course={course}
                   index={index}
-                  columns={4} // cột hiện tại ở breakpoint xl (tuỳ chỉnh)
+                  columns={columns}// cột hiện tại ở breakpoint xl (tuỳ chỉnh)
                 />
               ))}
             </div>

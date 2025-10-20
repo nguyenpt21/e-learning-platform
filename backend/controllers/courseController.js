@@ -58,6 +58,7 @@ const createCourse = async (req, res) => {
         // const instructorId = req.user._id;
         const { title, category } = req.body;
 
+        
         const course = await Course.create({
             title, category
         });

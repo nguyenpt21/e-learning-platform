@@ -4,9 +4,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
-import courseRoute from "./routes/courseRoute.js"
-import { generateUploadURL } from "./controllers/uploadController.js";
+import courseRoute from "./routes/courseRoute.js"<<<<<<< quyen
 import progressRoute from "./routes/progressRoute.js"
+import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
+import paymentRoute from "./routes/paymentRoute.js"
 
 dotenv.config();
 
@@ -45,6 +46,8 @@ app.use("/api/auth", authRoutes);
 app.use('/api/courses', courseRoute);
 app.post("/api/generateUploadURL", generateUploadURL)
 app.use('/api/progress', progressRoute);
+app.delete("/api/deleteFile", deleteFileFromS3);
+app.use('/api/checkout', paymentRoute)
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);

@@ -54,9 +54,9 @@ export default function CoursesList() {
   const [popUpWidth, setPopUpWidth] = useState(300); // default width
   const enterPopUp = (e, index) => {
     setPopUp(index);
-    setPopUpLeave(false); // Set to false when entering the popup
+    setPopUpLeave(false);
     const rect = e.currentTarget.getBoundingClientRect();
-    setPopUpCoords({ x: rect.left, y: rect.top });
+    setPopUpCoords({ x: rect.left, y: 250 });
     setPopUpWidth(rect.width);
     setCoursePopUp(courses[index] || null);
   };
@@ -325,7 +325,9 @@ export default function CoursesList() {
               position: "fixed",
               top: popUpCoords.y - 20,
               left:
-                popUp % 4 == 3 ? popUpCoords.x - popUpWidth : popUpCoords.x + popUpWidth,
+                popUp % 4 == 3
+                  ? popUpCoords.x - popUpWidth
+                  : popUpCoords.x + popUpWidth,
               width: popUpWidth,
               height: "auto", // equivalent to h-40
               backgroundColor: "white",
@@ -367,7 +369,9 @@ export default function CoursesList() {
               }}
             ></div>
             <div>
-              <p className="text-sm xl:text-base font-semibold">{coursePopUp.title}</p>
+              <p className="text-sm xl:text-base font-semibold">
+                {coursePopUp.title}
+              </p>
               <div className="flex space-x-2 w-full items-center h-8 ">
                 {coursePopUp.badge && (
                   <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded max-w-1/2">
