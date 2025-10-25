@@ -64,12 +64,6 @@ const RightCard = ({ course }) => {
         <div className="flex items-center gap-2">
           <AverageRating averageRating={course?.averageRating} />
         </div>
-        <p className="text-gray-500 text-sm">
-          Được tạo bởi:{" "}
-          <span className="font-semibold text-black hover:underline cursor-pointer">
-            {course?.instructor.firstName} {course?.instructor.lastName}
-          </span>
-        </p>
       </div>
       <hr className="my-4 border-gray-300" />
       <div className="space-y-2">

@@ -1,5 +1,6 @@
 import CoursePlayer from '@/components/student/course-learning/CoursePlayer'
 import Header from '@/components/student/course-learning/Header'
+import { QnASheet } from '@/components/student/qna/QnASheet'
 import SectionsAccordion from '@/components/student/course-learning/SectionsAccordion'
 import { Spinner } from '@/components/ui/spinner'
 import { useGetCourseByIdQuery } from '@/redux/api/coursePublicApiSlice'
@@ -45,6 +46,9 @@ const CourseLearning = () => {
         <div className='max-h-screen'>
             <Header courseTitle={course.title} courseId={course._id} />
             <div className='grid grid-cols-7 h-screen'>
+            <div className='fixed bottom-5 left-5 z-50'>
+                <QnASheet />
+            </div>
                 <div className='col-span-5 overflow-auto h-full'>
                     <CoursePlayer itemId={currentItem.itemId} itemType={currentItem.itemType} />
                 </div>
