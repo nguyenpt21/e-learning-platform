@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Spinner } from '@/components/ui/spinner'
 import CoursePlayer from '@/components/student/course-learning/CoursePlayer'
 import Header from '@/components/student/course-learning/Header'
+import { QnASheet } from '@/components/student/qna/QnASheet'
 import SectionsAccordion from '@/components/student/course-learning/SectionsAccordion'
 import { useGetCourseByIdQuery } from '@/redux/api/coursePublicApiSlice'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
@@ -50,6 +51,9 @@ const CourseLearning = () => {
         <div className="min-h-screen flex flex-col">
             <Header courseTitle={course.title} courseId={course._id} />
             <div className="flex-grow lg:grid lg:grid-cols-7">
+                <div className='fixed bottom-5 left-5 z-50'>
+                    <QnASheet />
+                </div>
                 <div className="lg:col-span-5 h-[calc(100vh-64px)] overflow-auto">
                     <CoursePlayer
                         key={`${currentItem.itemId}-${currentItem.itemType}}`}
