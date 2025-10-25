@@ -5,7 +5,7 @@ const ProgressSchema = new mongoose.Schema({
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
     sectionId: { type: mongoose.Schema.Types.ObjectId, ref: "Section", required: true },
     itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
-    itemType: { type: String, enum: ["Lecture", "Quiz"], required: true },
+    itemType: { type: String, enum: ["Lecture", "Quiz"] },
     // Tiến độ video hoặc bài đọc
     watchedSeconds: { type: Number, default: 0 },
     totalSeconds: { type: Number, default: 0 },

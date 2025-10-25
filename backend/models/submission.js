@@ -5,13 +5,15 @@ const SubmissionSchema = new mongoose.Schema({
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
     answers: [{
         questionId: { type: mongoose.Schema.Types.ObjectId, required: true },
-        selectedOptionIndex: { type: Number, required: true },
+        selectedOptionIndex: { type: Number },
         isTrue: { type: Boolean }
     }],
-    score: { type: Number, required: true },
-    submittedAt: { type: Date, default: Date.now },
-});
+    score: { type: Number, default: 0 },
+    currentQuestion: { type: Number, default: 0 },
+    isFinished: { type: Boolean, default: false },
+}, { timestamps: true });
 
+SubmissionSchema.index({ userId: 1, quizId: 1 }, { unique: true });
 const Submission = mongoose.model("Submission", SubmissionSchema);
 
 export default Submission;
