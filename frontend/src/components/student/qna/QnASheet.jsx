@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import MyPagination from "./MyPagination";
 import QuestionList from "./QuestionList";
 import NewQuestion from "./NewQuestion";
+import QuestionDetail from "./QuestionDetail";
 
 export function QnASheet() {
   const [mode, setMode] = useState("List"); // List/ Write/ Detail
@@ -111,7 +112,35 @@ export function QnASheet() {
   const handleQuestionClick = async (ques) => {
     setMode("Detail");
     setFetchLoading(true);
-    const data = {}; // gọi API lấy chi tiết câu hỏi
+    const data = {
+      _id: "1421",
+      type: "Bài học lý thuyết",
+      author: {
+        _id: "666",
+        username: "HacThienCau",
+        avatar: "https://avatars.githubusercontent.com/u/165537685?v=4",
+      },
+      createdAt: Date.now(),
+      title: "Cách tạo Rich Text Editor (RTE) với React và TipTap",
+      content: "",
+      likes: [],
+      comment: [
+        {
+          user: {
+            _id: "2806",
+            username: "UyenNe",
+            avatar: "",
+          },
+          content: "",
+          createdAt: "",
+          replies:[
+
+          ],
+          isSolution: true,
+        },
+      ],
+      isSolved: true,
+    }; // gọi API lấy chi tiết câu hỏi
     setTimeout(() => {
       setDetail(data);
       setFetchLoading(false);
@@ -146,7 +175,7 @@ export function QnASheet() {
       <SheetContent
         aria-describedby={undefined}
         side="left"
-        className="md:w-[500px] lg:w-[800px] max-h-screen"
+        className="md:w-[500px] lg:w-[820px] max-h-screen"
       >
         <SheetHeader className={"relative"}>
           <Button
@@ -207,7 +236,7 @@ export function QnASheet() {
                 <Spinner className="size-12" color="#098ce9" />
               </div>
             ) : (
-              <div className="flex w-full flex-col px-4 space-y-2"></div>
+             <QuestionDetail detail={detail}/>
             )}
           </div>
         )}

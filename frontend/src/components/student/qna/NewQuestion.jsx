@@ -7,16 +7,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import MyRichTextEditor from "./MyRTE";
 
 const NewQuestion = ({ handleQuestionClick, getBack, setFetchLoading }) => {
   const handleSubmit = async () => {
-    if(title.length === 0 || editor``)
+    if(title.length === 0 || content.length===0){
+        alert("Vui lòng nhập đầy đủ thông tin.")
+        return
+    }
     setFetchLoading(true);
     // gọi API tạo câu hỏi
     const res = {
       // kết quả trả về của 201 Created
     };
+    console.log("Type: ", type,"\nTitle: ", title, "\nContent:\n", content)
     handleQuestionClick(res);
+  };
+
+  const handleCancel = () => {
+    if (title.length !== 0 || content.length !== 0) {
+      const confirmCancel = confirm(
+        "Tiến độ của bạn sẽ bị hủy bỏ. Bạn có chắc chắn muốn hủy?"
+      );
+      if (!confirmCancel) return;
+    }
+  
+    getBack();
   };
   const types = [
     "Bài học lý thuyết",
@@ -26,6 +42,7 @@ const NewQuestion = ({ handleQuestionClick, getBack, setFetchLoading }) => {
   ];
   const [type, setType] = useState(types[0]);
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("")    // code HTML
   return (
     <div className="flex w-full flex-col px-4 space-y-2">
       <p className=" text-lg font-semibold">Đặt câu hỏi mới</p>
@@ -35,7 +52,7 @@ const NewQuestion = ({ handleQuestionClick, getBack, setFetchLoading }) => {
         </SelectTrigger>
         <SelectContent>
           {types.map((t) => {
-            return <SelectItem value={t}>{t}</SelectItem>;
+            return <SelectItem key={t} value={t}>{t}</SelectItem>;
           })}
         </SelectContent>
       </Select>
@@ -45,9 +62,9 @@ const NewQuestion = ({ handleQuestionClick, getBack, setFetchLoading }) => {
         className="px-4 py-2 w-full border border-1 border-gray-200 focus:border-[#098be4] rounded"
         placeholder="Nhập tiêu đề cuộc thảo luận..."
       />
-
+        <MyRichTextEditor value={content} onChange={setContent} />
       <div className="flex self-end space-x-2">
-        <Button variant="outline" onClick={getBack}>
+        <Button variant="outline" onClick={handleCancel}>
           Hủy
         </Button>
         <Button variant="reverse" onClick={handleSubmit}>
