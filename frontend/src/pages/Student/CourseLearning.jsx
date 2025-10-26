@@ -23,6 +23,7 @@ const CourseLearning = () => {
         return sorted[0];
     }, [course, itemsProgress])
     const [currentItem, setCurrentItem] = useState(null)
+    const [currentSectionId, setCurrentSectionId] = useState(null)
     const [isDone, setIsDone] = useState(false);
     const handleDoneChange = (done) => {
         setIsDone(done);
@@ -30,9 +31,20 @@ const CourseLearning = () => {
     useEffect(() => {
         if (latestProgress?.itemId && latestProgress?.itemType) {
             setCurrentItem({ itemId: latestProgress.itemId, itemType: latestProgress.itemType })
-
         }
     }, [latestProgress])
+
+    // Cập nhật currentSectionId khi currentItem thay đổi
+    useEffect(() => {
+        if (currentItem && course?.sections) {
+            const section = course.sections.find(sec =>
+                sec.curriculumItems?.some(item => item._id === currentItem.itemId)
+            )
+            if (section) {
+                setCurrentSectionId(section._id)
+            }
+        }
+    }, [currentItem, course?.sections])
 
     const handleChangeItem = (itemId, itemType) => {
         setCurrentItem({ itemId, itemType });
@@ -49,7 +61,12 @@ const CourseLearning = () => {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <Header courseTitle={course.title} courseId={course._id} />
+            <Header 
+                courseTitle={course.title} 
+                courseId={course._id} 
+                lectureId={currentItem?.itemId}
+                sectionId={currentSectionId}
+            />
             <div className="flex-grow lg:grid lg:grid-cols-7">
                 <div className='fixed bottom-5 left-5 z-50'>
                     <QnASheet />
