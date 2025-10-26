@@ -3,12 +3,22 @@ import { ChevronLeft, NotepadText, CircleQuestionMark, CheckCircle2 } from 'luci
 import { useGetCourseProgressQuery } from '@/redux/api/progressApiSlice';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from 'react-redux';
+import { openNotesPanel } from '@/redux/features/notesSlice';
+import NotesPanel from './NotesPanel';
 
-const Header = ({ courseTitle, courseId }) => {
+const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    
     const handleGoBack = () => {
         navigate(-1); 
     };
+    
+    const handleOpenNotes = () => {
+        dispatch(openNotesPanel());
+    };
+    
     const { data: progress, isLoading: isProgressLoading } = useGetCourseProgressQuery(courseId);
     return (
         <div className="sticky top-0 z-50 flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
@@ -32,7 +42,10 @@ const Header = ({ courseTitle, courseId }) => {
                 <div className="h-8 w-px bg-slate-500/50"></div>
 
                 <div className="flex items-center gap-6 pr-5">
-                    <button className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200">
+                    <button 
+                        onClick={handleOpenNotes}
+                        className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200"
+                    >
                         <NotepadText size={18} />
                         <span className="text-sm font-medium">Ghi chú</span>
                     </button>
@@ -42,6 +55,7 @@ const Header = ({ courseTitle, courseId }) => {
                     </button>
                 </div>
             </div>
+            <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} />
         </div>
     );
 };
