@@ -25,17 +25,16 @@ import QuestionDetail from "./QuestionDetail";
 export function QnASheet() {
   const [mode, setMode] = useState("List"); // List/ Write/ Detail
   const [page, setPage] = useState(1); // trang hiện tại
-  const [detail, setDetail] = useState(null); // câu hỏi hiện tại
-  const [fetchLoading, setFetchLoading] = useState(true);
+  const [quesId, setQuesId] = useState(null); // câu hỏi hiện tại
+  const [loading, setLoading] = useState(true);
 
   const [list, setList] = useState([]);
   const [totalQuestion, setTotalQuestion] = useState(0);
   const [totalPage, setTotalPage] = useState(1);
 
   const fetchPage = async (page) => {
-    setFetchLoading(true);
-    const data = {
-      // gọi API lấy danh sách câu hỏi theo trang
+    setLoading(true);
+    const data = {  // gọi API lấy danh sách câu hỏi theo trang
       totalQuestion: 183,
       totalPage: 12,
       data: [
@@ -96,8 +95,8 @@ export function QnASheet() {
       setList(data.data);
       setTotalPage(data.totalPage);
       setTotalQuestion(data.totalQuestion);
-      setFetchLoading(false);
-    }, 2000);
+      setLoading(false);
+    }, 1000);
   };
 
   const changePage = (page) => {
@@ -111,45 +110,12 @@ export function QnASheet() {
 
   const handleQuestionClick = async (ques) => {
     setMode("Detail");
-    setFetchLoading(true);
-    const data = {
-      _id: "1421",
-      type: "Bài học lý thuyết",
-      author: {
-        _id: "666",
-        username: "HacThienCau",
-        avatar: "https://avatars.githubusercontent.com/u/165537685?v=4",
-      },
-      createdAt: Date.now(),
-      title: "Cách tạo Rich Text Editor (RTE) với React và TipTap",
-      content: "",
-      likes: [],
-      comment: [
-        {
-          user: {
-            _id: "2806",
-            username: "UyenNe",
-            avatar: "",
-          },
-          content: "",
-          createdAt: "",
-          replies:[
-
-          ],
-          isSolution: true,
-        },
-      ],
-      isSolved: true,
-    }; // gọi API lấy chi tiết câu hỏi
-    setTimeout(() => {
-      setDetail(data);
-      setFetchLoading(false);
-    }, 2000);
+    setQuesId(ques._id)
   };
 
   const getBack = () => {
+    if (mode === "Detail") setQuesId(null);
     setMode("List");
-    if (mode === "Detail") setDetail(null);
   };
 
   const handleNewQuestionClick = () => {
@@ -175,7 +141,7 @@ export function QnASheet() {
       <SheetContent
         aria-describedby={undefined}
         side="left"
-        className="md:w-[500px] lg:w-[820px] max-h-screen"
+        className="md:w-[500px] lg:w-[830px] max-h-screen"
       >
         <SheetHeader className={"relative"}>
           <Button
@@ -200,7 +166,7 @@ export function QnASheet() {
               <p className="text-sm font-semibold mb-2">
                 Các câu hỏi thường gặp ({totalQuestion})
               </p>
-              {fetchLoading ? (
+              {loading ? (
                 <div className="flex h-full items-center justify-center z-50">
                   <Spinner className="size-12" color="#098ce9" />
                 </div>
@@ -229,31 +195,14 @@ export function QnASheet() {
             </SheetFooter>
           </div>
         )}
-        {mode === "Detail" && (
-          <div>
-            {fetchLoading ? (
-              <div className="flex h-full items-center justify-center z-50">
-                <Spinner className="size-12" color="#098ce9" />
-              </div>
-            ) : (
-             <QuestionDetail detail={detail}/>
-            )}
-          </div>
-        )}
-        {mode === "Write" && (
-          <div>
-            {fetchLoading ? (
-              <div className="flex h-full items-center justify-center z-50">
-                <Spinner className="size-12" color="#098ce9" />
-              </div>
-            ) : (
+        {mode === "Detail" && 
+             <QuestionDetail quesId={quesId}/>
+        }
+        {mode === "Write" && (          
               <NewQuestion
                 handleQuestionClick={handleQuestionClick}
                 getBack={getBack}
-                setFetchLoading={setFetchLoading}
-              />
-            )}
-          </div>
+              />     
         )}
       </SheetContent>
     </Sheet>

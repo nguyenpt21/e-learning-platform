@@ -117,7 +117,7 @@ const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
       </ToolbarGroup>
       <ToolbarSeparator />
       <ToolbarGroup>
-        <ImageUploadButton text="Add" />
+        <ImageUploadButton/>
       </ToolbarGroup>
       {isMobile && <ToolbarSeparator />}
       <Spacer/>
@@ -148,7 +148,7 @@ const MobileToolbarContent = ({ type, onBack }) => (
   </>
 );
 
-export function SimpleEditor({ value = "", onChange }) {
+export function SimpleEditor({ value = "", onChange, placeholder }) {
   const isMobile = useIsMobile();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = React.useState("main");
@@ -175,7 +175,7 @@ export function SimpleEditor({ value = "", onChange }) {
         },
       }),
       Placeholder.configure({
-        placeholder: 'Nhập chi tiết nội dung của bạn...',
+        placeholder: placeholder,
       }),
       HorizontalRule,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
