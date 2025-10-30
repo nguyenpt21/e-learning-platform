@@ -70,6 +70,8 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
+import Mention from "@tiptap/extension-mention";
+import { useEffect } from "react";
 
 const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
   return (
@@ -148,7 +150,7 @@ const MobileToolbarContent = ({ type, onBack }) => (
   </>
 );
 
-export function SimpleEditor({ value = "", onChange, placeholder }) {
+export function SimpleEditor({ value = "", onChange, placeholder, mention = null }) {
   const isMobile = useIsMobile();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = React.useState("main");
@@ -194,6 +196,12 @@ export function SimpleEditor({ value = "", onChange, placeholder }) {
         upload: handleImageUpload,
         onError: (error) => console.error("Upload failed:", error),
       }),
+      Mention.configure({
+        deleteTriggerWithBackspace: true,
+        HTMLAttributes: {
+          class: "mention bg-[#cee8fb] text-white px-1 rounded",
+        },
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -201,6 +209,22 @@ export function SimpleEditor({ value = "", onChange, placeholder }) {
       onChange?.(html);
     },
   });
+  
+  useEffect(()=>{
+    if (mention && editor){
+      editor
+        .chain()
+        .focus()
+        .insertContent([
+          {
+            type: "mention",
+            attrs: { id: mention._id, label: `${mention.username}` },
+          },
+          { type: "text", text: " " },
+        ])
+        .run()
+    }
+  },[mention, editor])
 
   const rect = useCursorVisibility({
     editor,

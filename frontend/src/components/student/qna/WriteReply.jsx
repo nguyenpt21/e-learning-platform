@@ -3,17 +3,16 @@ import MyRichTextEditor from "./MyRTE";
 import Button from "@/components/Button";
 import { useSelector } from "react-redux";
 
-function WriteComment({ quesId }) {
-  const [isFocused, setIsFocused] = useState(false);
+function WriteReply({ commentId , target, onCancel }) {
   const [content, setContent] = useState("");
   const { userInfo } = useSelector((state) => state.auth);
 
   const handleSubmit = () => {
     if (content.trim() === "") return;
-    console.log("Bình luận:", content);
-    // TODO: gọi API gửi bình luận ở đây
+    console.log("Phản hồi:", content);
+    // TODO: gọi API gửi phản hồi ở đây
     setContent("");
-    setIsFocused(false);
+    onCancel()
   };
 
   return (
@@ -27,35 +26,28 @@ function WriteComment({ quesId }) {
 
       <div className="w-full flex items-center">
         {/* Khi chưa focus → input đơn */}
-        {!isFocused ? (
-          <input
-            type="text"
-            placeholder="Nhập bình luận mới của bạn"
-            onFocus={() => setIsFocused(true)}
-            className="w-full py-2 rounded-md outline-1 outline-[#eef0f2] px-3"
-          />
-        ) : (
+        
           <div>
             <MyRichTextEditor
               value={content}
               onChange={setContent}
               className="w-full h-[200px] text-gray-200"
-              placeholder="Nhập nội dung bình luận của bạn"
-              mention={null}
+              placeholder="Nhập nội dung phản hồi của bạn"
+              mention={target}
             />
             <div className="flex space-x-2 justify-end mt-2">
-              <Button onClick={() => setIsFocused(false)} variant="outline">
+              <Button onClick={onCancel} variant="outline">
                 Hủy
               </Button>
               <Button onClick={handleSubmit} variant="reverse">
-                Bình luận
+                Phản hồi
               </Button>
             </div>
           </div>
-        )}
+  
       </div>
     </div>
   );
 }
 
-export default WriteComment;
+export default WriteReply;

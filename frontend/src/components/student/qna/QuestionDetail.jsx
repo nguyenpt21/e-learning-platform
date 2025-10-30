@@ -34,22 +34,41 @@ function QuestionDetail({ quesId }) {
                 username: "HacThienCau",
                 avatar: "https://avatars.githubusercontent.com/u/165537685?v=4",
               },
-              createdAt: Date.now(),
+              createdAt: new Date(),
               title: "Cách tạo Rich Text Editor (RTE) với React và TipTap",
               content: exContent, // gán nội dung txt vào đây
-              likes: [{ userId: "2806", type: "Love" }],
+              likes: [
+                { userId: "2806", type: "love" },
+                { userId: "322131", type: "like" },
+              ],
               comment: [
                 {
+                  _id: "234144342",
                   user: {
                     _id: "2806",
+                    username: "AccClone",
+                    avatar:
+                      "https://th.bing.com/th/id/OIP.75e48zcpbQtRaf6yu9BadgHaIu?pid=ImgDetMain",
+                  },
+                  content: ` <p><strong>Tiptap là một công cụ tốt!</strong></p><p>Nhưng ngoài ra vẫn còn các Rich Text Editor (RTE) khác như<a target="_blank" rel="noopener noreferrer nofollow" href="https://docs.slatejs.org/libraries/slate-react"> Slate React</a> hay <a target="_blank" rel="noopener noreferrer nofollow" href="https://platejs.org/">Plate</a></p><img src="https://tse1.mm.bing.net/th/id/OIP.y4WqSqkDGtt4HqbNUj4GpQHaD4?rs=1&pid=ImgDetMain&o=7&rm=3" alt="OIP" title="OIP"><p></p>`,
+                  createdAt: new Date(),
+                  likes: [{ userId: "2806", type: "like" }, {userId: "68f49adc5d5c0d9e8661e737", type:"love"}],
+                  replies: [],
+                  isSolution: true,
+                },
+                {
+                  _id: "124414142",
+                  user: {
+                    _id: "280668f49adc5d5c0d9e8661e737",
                     username: "UyenNe",
                     avatar:
                       "https://th.bing.com/th/id/OIP.75e48zcpbQtRaf6yu9BadgHaIu?pid=ImgDetMain",
                   },
-                  content: "",
-                  createdAt: "",
+                  content: "<p>Rất hay!<p>",
+                  createdAt: new Date(),
+                  likes: [{ userId: "68f49adc5d5c0d9e8661e737", type: "haha" }],
                   replies: [],
-                  isSolution: true,
+                  isSolution: false,
                 },
               ],
               isSolved: true,
@@ -127,13 +146,9 @@ function QuestionDetail({ quesId }) {
         className="prose max-w-none"
         dangerouslySetInnerHTML={{ __html: detail?.content }}
       />
-
       <WriteComment quesId={quesId} />
 
-      <div className="w-full">
-        <p className="font-semibold">{detail?.comment.length} bình luận</p>
-        <CommentList comments={detail?.comment}/>
-      </div>
+      <CommentList comments={detail?.comment} />
     </div>
   );
 }
