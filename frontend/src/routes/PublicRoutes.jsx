@@ -12,18 +12,18 @@ const PublicRoutes = () => {
         <Routes>
             <Route
                 element={
-                    <Layout/>
+                    <Layout />
                 }
             >
                 <Route path="/" element={<HomePage />} />
                 <Route path="/courses" element={<CoursesCatalog />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
-                   <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/course/:_id/payment" element={<Payment />} />
 
             </Route>
             <Route path="/course/:_id" element={<CourseDetail />} />
-            <Route path="/course/:_id/paypal-success" element={<PaypalSuccess/>}/>
+            <Route path="/course/:_id/paypal-success" element={<PaypalSuccess />} />
         </Routes>
     );
 };

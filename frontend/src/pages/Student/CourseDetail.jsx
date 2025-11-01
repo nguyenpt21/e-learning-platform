@@ -14,6 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@
 import { MdOutlineOndemandVideo } from "react-icons/md";
 import { PiPuzzlePieceBold } from "react-icons/pi";
 import Footer from "../../components/Footer";
+import PromoVideoPlayer from "@/components/student/course-learning/PromoVideoPlayer";
 
 const CourseDetail = () => {
     const param = useParams();
@@ -92,7 +93,7 @@ const CourseDetail = () => {
         <div className="relative">
             <Header />
             <div
-                className={`fixed left-0 w-full transition-all duration-500 
+                className={`fixed left-0 w-full transition-all duration-500
                     ${showStickyHeader ? "opacity-100 pointer-events-auto"
                         : "opacity-0 pointer-events-none"} 
                     bg-[#002040]/95 backdrop-blur-sm border-b border-gray-700 z-50`}
@@ -218,9 +219,11 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
     return (
         <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
             <div className="w-full h-48 overflow-hidden">
-                {course?.thumbnail?.url ? (
+                {course?.promoVideo?.publicURL ? (
+                    <PromoVideoPlayer videoUrl={course?.promoVideo?.publicURL} poster={course?.promoVideo?.thumbnailURL} />
+                ) : course?.thumbnail?.publicURL ? (
                     <img
-                        src={course?.thumbnail.url || "/logo.png"}
+                        src={course?.thumbnail.publicURL || "/logo.png"}
                         alt={course?.title}
                         className="w-full h-full object-cover border border-gray-200"
                     />

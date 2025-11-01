@@ -110,6 +110,15 @@ const Quiz = ({ item }) => {
         );
     }
 
+    if (questions.length === 0) {
+        return (
+            <div className="px-20 py-12 text-center">
+                <h2 className="text-2xl font-semibold mb-4">{item.title}</h2>
+                <p className="text-gray-600">Bài trắc nghiệm này hiện chưa có câu hỏi nào.</p>
+            </div>
+        );
+    }
+
     if (step === "start") {
         return (
             <div className="px-20 py-12">

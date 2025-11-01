@@ -12,6 +12,9 @@ const getCourseById = async (req, res) => {
         const course = await Course.findById(courseId).populate("sections.sectionId").lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
+        if (!course.isPublished) {
+            return res.status(403).json({ message: "Course is not published" });
+        }
 
         const lectureIds = [];
         const quizIds = [];
