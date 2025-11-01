@@ -141,7 +141,7 @@ export function QnASheet() {
       <SheetContent
         aria-describedby={undefined}
         side="left"
-        className="md:w-[500px] lg:w-[830px] max-h-screen"
+        className="w-2/3 max-h-screen"
       >
         <SheetHeader className={"relative"}>
           <Button
@@ -177,7 +177,7 @@ export function QnASheet() {
                 />
               )}
             </div>
-            <SheetFooter>
+            <SheetFooter className={"absolute bottom-0 flex flex-col w-full justify-center"}>
               <MyPagination
                 page={page}
                 totalPage={totalPage}

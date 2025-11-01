@@ -27,7 +27,7 @@ function WriteReply({ commentId , target, onCancel }) {
       <div className="w-full flex items-center">
         {/* Khi chưa focus → input đơn */}
         
-          <div>
+          <div className="w-full">
             <MyRichTextEditor
               value={content}
               onChange={setContent}
