@@ -35,7 +35,7 @@ function WriteComment({ quesId }) {
             className="w-full py-2 rounded-md outline-1 outline-[#eef0f2] px-3"
           />
         ) : (
-          <div>
+          <div className="w-full">
             <MyRichTextEditor
               value={content}
               onChange={setContent}
