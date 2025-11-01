@@ -10,15 +10,32 @@ import DOMPurify from "dompurify";
 import axios from "axios";
 import LectureResources from "./LectureResources";
 import {
+    useDeleteCurriculumItemMutation,
     useDeleteFileFromS3Mutation,
     useGenerateUploadUrlMutation,
     useUpdateCurriculumItemMutation,
 } from "@/redux/api/sectionApiSlice";
 import ArticleEditor from "./ArticleEditor";
 import { IoClose } from "react-icons/io5";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { estimateReadingTime, formatTimeShort, generateThumbnailFromVideo } from "@/utils";
+import LectureResourceList from "./LectureResourceList";
 
-const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
+const Lecture = ({
+    item,
+    sectionOrder,
+    lectureOrder,
+    sectionId,
+    courseId,
+    dragHandleProps,
+    style,
+}) => {
     const [isHovered, setIsHovered] = useState(false);
     const [lectureTitle, setLectureTitle] = useState(item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -71,11 +88,13 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
 
             const [videoUploadData, thumbnailUploadData] = await Promise.all([
                 generateUploadURL({
+                    courseId,
                     type: "lecture-video",
                     fileName: file.name,
                     contentType: file.type,
                 }).unwrap(),
                 generateUploadURL({
+                    courseId,
                     type: "lecture-thumbnail",
                     fileName: file.name.replace(/\.[^/.]+$/, "_thumbnail.jpg"),
                     contentType: "image/jpeg",
@@ -95,6 +114,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                 signal: controller.signal,
             });
 
+            await deleteFileFromS3({ s3Key: item.content.s3Key });
             await updateLecture({
                 courseId,
                 sectionId,
@@ -127,8 +147,19 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
             setProgress(0);
         }
     };
+
+    const [isDeleteLectureModalOpen, setIsDeleteLectureModalOpen] = useState(false);
+    const [deleteLecture, { isLoading: isDeletingLecture }] = useDeleteCurriculumItemMutation();
+    const handleDeleteLecture = async () => {
+        await deleteLecture({
+            courseId,
+            sectionId,
+            itemId: item._id,
+        }).unwrap();
+        setIsDeleteLectureModalOpen(false);
+    };
     return (
-        <div>
+        <div style={style}>
             {isUploading && (
                 <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-[9999]">
                     <div className="flex flex-col items-center justify-center -translate-y-[50%]">
@@ -156,7 +187,8 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                 </div>
             )}
             <div
-                className={`border border-gray-300 p-3 ${
+                {...dragHandleProps}
+                className={`cursor-grab active:cursor-grabbing border border-gray-300 p-3 ${
                     isCourseInfoOpen ||
                     isAddingResource ||
                     isEditingArticleLecture ||
@@ -190,7 +222,10 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                             >
                                 <LuPencil size={15} className="" />
                             </button>
-                            <button className="p-1 hover:bg-gray-200 rounded">
+                            <button
+                                onClick={() => setIsDeleteLectureModalOpen(true)}
+                                className="p-1 hover:bg-gray-200 rounded"
+                            >
                                 <FaRegTrashAlt size={15} className="" />
                             </button>
                         </div>
@@ -220,6 +255,36 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                                 ></MdOutlineDragIndicator>
                             </div>
                         </div>
+                        <Dialog
+                            open={isDeleteLectureModalOpen}
+                            onOpenChange={setIsDeleteLectureModalOpen}
+                        >
+                            <DialogContent className={"min-w-[500px] gap-1 p-0"}>
+                                <DialogHeader className={"p-4 pb-0"}>
+                                    <DialogTitle className={"mb-0"}>Xác nhận</DialogTitle>
+                                </DialogHeader>
+                                <p className="px-4 mt-4">
+                                    Bạn sắp xóa một bài giảng. Bạn có chắc chắn muốn tiếp tục không?
+                                </p>
+                                <DialogFooter className={"p-4"}>
+                                    <button
+                                        onClick={() => setIsDeleteLectureModalOpen(false)}
+                                        className="px-4 py-1 border border-gray-300 rounded hover:bg-gray-50 "
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        disabled={isDeletingLecture}
+                                        onClick={handleDeleteLecture}
+                                        className={`px-4 py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium ${
+                                            isDeletingLecture ? "opacity-60" : ""
+                                        }`}
+                                    >
+                                        {isDeletingLecture ? "Đang xóa" : "OK"}
+                                    </button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 ) : (
                     <div>
@@ -266,7 +331,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
             </div>
 
             {isCourseInfoOpen && (
-                <div className="border-l border-b border-r border-gray-300 rounded-b p-2 bg-white flex flex-col gap-3">
+                <div className="border-l border-b border-r border-gray-300 rounded-b p-2 bg-white flex flex-col ">
                     {item.content && item.type === "video" && (
                         <div className="flex gap-2">
                             <img
@@ -314,7 +379,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                         </div>
                     )}
                     {isAddingLectureDescription ? (
-                        <div className="border-b pb-2">
+                        <div className="py-2 mt-2">
                             <p>Mô tả bài giảng</p>
                             <div className="rounded-[6px] mt-2 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
                                 <ReactQuillNew
@@ -341,13 +406,17 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                                 </button>
                                 <button
                                     onClick={() => {
+                                        console.log(lectureDescription);
                                         updateLecture({
                                             courseId,
                                             sectionId,
                                             itemId: item._id,
                                             data: {
                                                 itemType: "Lecture",
-                                                description: lectureDescription,
+                                                description: lectureDescription.replace(
+                                                    /<(.|\n)*?>/g,
+                                                    ""
+                                                ),
                                             },
                                         });
                                         setIsAddingLectureDescription(false);
@@ -359,7 +428,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                             </div>
                         </div>
                     ) : item.description && !isAddingLectureDescription ? (
-                        <div className="border-t border-b py-1 border-gray-300">
+                        <div className="border-t py-2 mt-2 border-gray-300">
                             <div
                                 onClick={() => setIsAddingLectureDescription(true)}
                                 className="prose max-w-none border border-transparent hover:border-gray-300 cursor-pointer"
@@ -369,22 +438,35 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                             />
                         </div>
                     ) : (
+                        <></>
+                    )}
+                    {/* Lecture Resource List */}
+                    {item.resources.length > 0 && (
+                        <LectureResourceList
+                            resources={item.resources}
+                            sectionId={sectionId}
+                            lectureId={item._id}
+                        ></LectureResourceList>
+                    )}
+                    <div className="border-t py-2 space-y-3 mt-2">
+                        {!item.description && (
+                            <button
+                                onClick={() => setIsAddingLectureDescription(true)}
+                                className="border cursor-pointer rounded px-3 py-1 text-primary font-semibold flex items-center gap-2 w-fit"
+                            >
+                                <LuPlus size={16}></LuPlus> Mô tả
+                            </button>
+                        )}
                         <button
-                            onClick={() => setIsAddingLectureDescription(true)}
+                            onClick={() => {
+                                setIsAddingResource(true);
+                                setIsCourseInfoOpen(false);
+                            }}
                             className="border cursor-pointer rounded px-3 py-1 text-primary font-semibold flex items-center gap-2 w-fit"
                         >
-                            <LuPlus size={16}></LuPlus> Mô tả
+                            <LuPlus size={16}></LuPlus> Tài nguyên
                         </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            setIsAddingResource(true);
-                            setIsCourseInfoOpen(false);
-                        }}
-                        className="border cursor-pointer rounded px-3 py-1 text-primary font-semibold flex items-center gap-2 w-fit"
-                    >
-                        <LuPlus size={16}></LuPlus> Tài nguyên
-                    </button>
+                    </div>
                 </div>
             )}
             {isEditingArticleLecture && (
@@ -441,6 +523,7 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                                 className="p-1 hover:bg-gray-200 rounded"
                                 onClick={() => {
                                     setIsEditingVideoLecture(false);
+                                    setFile(null);
                                     setIsCourseInfoOpen(!isCourseInfoOpen);
                                 }}
                             >
@@ -484,6 +567,9 @@ const Lecture = ({ item, sectionOrder, lectureOrder, sectionId, courseId }) => {
                         setIsAddingResource(false);
                         setIsCourseInfoOpen(true);
                     }}
+                    sectionId={sectionId}
+                    courseId={courseId}
+                    itemId={item._id}
                 ></LectureResources>
             )}
         </div>

@@ -18,8 +18,11 @@ const LectureSchema = new mongoose.Schema({
     // order: { type: Number, required: true },
     resources: {
         type: [{
-            fileUrl: { type: String },
-            title: { type: String },
+            type: { type: String },
+            s3Key: { type: String },
+            publicURL: { type: String },
+            fileName: { type: String },
+            urlTitle: { type: String },
             url: { type: String },
         }],
         default: []

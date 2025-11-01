@@ -89,6 +89,38 @@ export const sectionApiSlice = apiSlice.injectEndpoints({
                 { type: "CurriculumItem", id: sectionId },
             ],
         }),
+        deleteResourceFromLecture: builder.mutation({
+            query: ({ sectionId, lectureId, resourceId }) => ({
+                url: `${COURSE_URL}/lectures/${lectureId}/resources/${resourceId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: (result, error, { sectionId }) => [
+                { type: "CurriculumItem", id: sectionId },
+            ],
+        }),
+        deleteCurriculumItem: builder.mutation({
+            query: ({ courseId, sectionId, itemId }) => ({
+                url: `${COURSE_URL}/${courseId}/sections/${sectionId}/curriculum/${itemId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: (result, error, { sectionId }) => [
+                { type: "CurriculumItem", id: sectionId },
+            ],
+        }),
+        updateSection: builder.mutation({
+            query: ({ courseId, sectionId, data }) => ({
+                url: `${COURSE_URL}/${courseId}/sections/${sectionId}`,
+                method: "PUT",
+                body: data,
+            }),
+        }),
+        deleteSection: builder.mutation({
+            query: ({ courseId, sectionId }) => ({
+                url: `${COURSE_URL}/${courseId}/sections/${sectionId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Section"],
+        }),
     }),
 });
 
@@ -102,5 +134,9 @@ export const {
     useAddQuizToSectionMutation,
     useUpdateCurriculumItemMutation,
     useUpdateQuestionInQuizMutation,
-    useDeleteQuestionFromQuizMutation
+    useDeleteQuestionFromQuizMutation,
+    useDeleteResourceFromLectureMutation,
+    useDeleteCurriculumItemMutation,
+    useUpdateSectionMutation,
+    useDeleteSectionMutation
 } = sectionApiSlice;

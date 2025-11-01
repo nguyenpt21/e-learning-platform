@@ -65,12 +65,12 @@ const QuizQuestionModal = ({
 
     useEffect(() => {
         if (activeEditor && quillRef.current) {
-            // Use setTimeout to ensure ReactQuill is fully rendered
+            
             setTimeout(() => {
                 const editor = quillRef.current.getEditor();
                 if (editor) {
                     editor.focus();
-                    // Move cursor to end of content
+                    
                     const length = editor.getLength();
                     editor.setSelection(length, 0);
                 }

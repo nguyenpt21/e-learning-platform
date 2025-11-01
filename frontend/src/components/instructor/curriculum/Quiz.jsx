@@ -4,11 +4,21 @@ import { LuPlus, LuPencil } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import ReactQuillNew from "react-quill-new";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import "react-quill-new/dist/quill.snow.css";
 import QuizQuestionModal from "./QuizQuestionModal";
-import { useUpdateCurriculumItemMutation } from "@/redux/api/sectionApiSlice";
+import {
+    useDeleteCurriculumItemMutation,
+    useUpdateCurriculumItemMutation,
+} from "@/redux/api/sectionApiSlice";
 import Question from "./Question";
-const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId }) => {
+const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandleProps, style }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [quizTitle, setQuizTitle] = useState(item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -19,10 +29,22 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId }) => {
 
     const [addQuestion, { isLoading: isAddingQuestion }] = useUpdateCurriculumItemMutation();
     const [updateTitle, { isLoading }] = useUpdateCurriculumItemMutation();
+
+    const [isDeleteQuizModalOpen, setIsDeleteQuizModalOpen] = useState(false);
+    const [deleteQuiz, { isLoading: isDeletingQuiz }] = useDeleteCurriculumItemMutation();
+    const handleDeleteQuiz = async () => {
+        await deleteQuiz({
+            courseId,
+            sectionId,
+            itemId: item._id,
+        }).unwrap();
+        setIsDeleteQuizModalOpen(false);
+    };
     return (
-        <div>
+        <div style={style}>
             <div
-                className={`border border-gray-300 p-3 ${
+                {...dragHandleProps}
+                className={`cursor-grab active:cursor-grabbing border border-gray-300 p-3 ${
                     isQuizQuestionOpen ? "rounded-t" : "rounded"
                 } bg-white`}
             >
@@ -50,7 +72,10 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId }) => {
                             >
                                 <LuPencil size={15} className="" />
                             </button>
-                            <button className="p-1 hover:bg-gray-200 rounded">
+                            <button
+                                onClick={() => setIsDeleteQuizModalOpen(true)}
+                                className="p-1 hover:bg-gray-200 rounded"
+                            >
                                 <FaRegTrashAlt size={15} className="" />
                             </button>
                         </div>
@@ -74,6 +99,36 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId }) => {
                                 ></MdOutlineDragIndicator>
                             </div>
                         </div>
+                        <Dialog
+                            open={isDeleteQuizModalOpen}
+                            onOpenChange={setIsDeleteQuizModalOpen}
+                        >
+                            <DialogContent className={"min-w-[500px] gap-1 p-0"}>
+                                <DialogHeader className={"p-4 pb-0"}>
+                                    <DialogTitle className={"mb-0"}>Xác nhận</DialogTitle>
+                                </DialogHeader>
+                                <p className="px-4 mt-4">
+                                    Bạn sắp xóa một quiz. Bạn có chắc chắn muốn tiếp tục không?
+                                </p>
+                                <DialogFooter className={"p-4"}>
+                                    <button
+                                        onClick={() => setIsDeleteQuizModalOpen(false)}
+                                        className="px-4 py-1 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        disabled={isDeletingQuiz}
+                                        onClick={handleDeleteQuiz}
+                                        className={`px-4 cursor-pointer py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium ${
+                                            isDeletingQuiz ? "opacity-60" : ""
+                                        }`}
+                                    >
+                                        {isDeletingQuiz ? "Đang xóa" : "OK"}
+                                    </button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 ) : (
                     <div>

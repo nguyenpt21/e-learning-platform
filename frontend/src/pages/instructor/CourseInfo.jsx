@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactQuillNew from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {
@@ -8,14 +8,23 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-const course = {
-    title: "Demo",
-    category: "IT & Phần mềm",
-};
+import axios from "axios";
+import { toast } from "react-toastify";
+import {
+    useDeleteFileFromS3Mutation,
+    useGenerateUploadUrlMutation,
+} from "@/redux/api/sectionApiSlice";
+import { generateThumbnailFromVideo } from "@/utils";
+import { useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
+import { Link } from "react-router-dom";
+
+// const course = {
+//     title: "Demo",
+//     category: "IT & Phần mềm",
+// };
 
 const LANGUAGE_OPTIONS = [
-    { value: "English (US)", label: "Tiếng Anh (US)" },
-    { value: "English (UK)", label: "Tiếng Anh (Uk)" },
+    { value: "English", label: "Tiếng Anh" },
     { value: "Vietnamese", label: "Tiếng Việt" },
 ];
 
@@ -128,24 +137,38 @@ const CATEGORY_OPTIONS = {
     },
 };
 
-const CourseInfo = () => {
+const CourseInfo = ({ course }) => {
     const [formData, setFormData] = useState({
         title: course.title || "",
         subtitle: course.subtitle || "",
         description: course.description || "",
-        category: course.category,
-        subcategory: course.subcategory,
-        price: course.price,
-        language: course.language,
-        level: course.level,
-
+        category: course.category || "",
+        price: course.price || "",
+        language: course.language || "",
+        level: course.level || "",
     });
 
+    const [courseImage, setCourseImage] = useState(course.thumbnail?.publicURL);
+    const [existedPromoVideo, setExistedPromoVideo] = useState(course.promoVideo?.publicURL);
+
+    const [courseImageFile, setCourseImageFile] = useState(null);
+    const [promoVideo, setPromoVideo] = useState(null);
+
+    const [errors, setErrors] = useState({});
+
+    const [isChanged, setIsChanged] = useState(false);
+
     const handleChange = (field, value) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
+        if (course) {
+            setFormData((prev) => ({
+                ...prev,
+                [field]: value,
+            }));
+        }
+        console.log("field change", field);
+        if (!isChanged) {
+            setIsChanged(true);
+        }
     };
 
     const handleQuillChange = (content, delta, source, editor) => {
@@ -153,59 +176,261 @@ const CourseInfo = () => {
             ...prev,
             description: content,
         }));
-    };
 
-    const [courseImage, setCourseImage] = useState(null);
-    const [promoVideo, setPromoVideo] = useState(null);
-    const [videoThumbnail, setVideoThumbnail] = useState(null);
+        console.log("quill change");
+        if (content.replace(/<(.|\n)*?>/g, "") !== "") {
+            if (!isChanged) {
+                setIsChanged(true);
+            }
+        }
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setCourseImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setCourseImage(reader.result);
             };
             reader.readAsDataURL(file);
         }
+        if (!isChanged) {
+            setIsChanged(true);
+        }
     };
 
     const handleVideoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            setPromoVideo(url);
-
-            // Tạo thumbnail từ video
-            const video = document.createElement("video");
-            video.src = url;
-            video.currentTime = 1; // Lấy frame tại giây thứ 1
-            video.addEventListener("loadeddata", () => {
-                const canvas = document.createElement("canvas");
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                setVideoThumbnail(canvas.toDataURL());
-            });
+        const selectedFile = e.target.files[0];
+        if (!selectedFile) return;
+        setPromoVideo(selectedFile);
+        if (!isChanged) {
+            setIsChanged(true);
         }
     };
 
     const imageInputRef = useRef(null);
     const videoInputRef = useRef(null);
 
-    const handleSubmit = () => {};
+    const [progress, setProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const controllerRef = useRef(null);
+
+    const [generateUploadURL] = useGenerateUploadUrlMutation();
+    const [deleteFileFromS3] = useDeleteFileFromS3Mutation();
+    const [updateCourse, { isLoading: isUpdatingCourse }] = useUpdateCourseMutation();
+
+    const handleSave = async () => {
+        const newErrors = {};
+
+        if (!formData.title.trim()) {
+            newErrors.title = "Vui lòng nhập tiêu đề khóa học";
+        }
+        if (!formData.category.trim()) {
+            newErrors.category = "Vui lòng chọn danh mục khóa học";
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
+            toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc!");
+            return;
+        }
+
+        console.log("form data updated", formData);
+        let videoUploadData = null;
+        let thumbnailUploadData = null;
+        let imageUploadData = null;
+
+        try {
+            if (promoVideo || courseImageFile) {
+                setIsUploading(true);
+                const controller = new AbortController();
+                controllerRef.current = controller;
+
+                let uploadedBytes = 0;
+                let totalBytes = 0;
+
+                if (promoVideo) totalBytes += promoVideo.size;
+                if (courseImageFile) totalBytes += courseImageFile.size;
+
+                let thumbnailBlob;
+
+                if (promoVideo) {
+                    thumbnailBlob = await generateThumbnailFromVideo(promoVideo, 1.0);
+
+                    totalBytes += thumbnailBlob.size;
+
+                    [videoUploadData, thumbnailUploadData] = await Promise.all([
+                        generateUploadURL({
+                            courseId: course._id,
+                            type: "course-promo-video",
+                            fileName: promoVideo.name,
+                            contentType: promoVideo.type,
+                        }).unwrap(),
+                        generateUploadURL({
+                            courseId: course._id,
+                            type: "course-promo-thumbnail",
+                            fileName: promoVideo.name.replace(/\.[^/.]+$/, "_thumbnail.jpg"),
+                            contentType: "image/jpeg",
+                        }).unwrap(),
+                    ]);
+
+                    await axios.put(videoUploadData.uploadURL, promoVideo, {
+                        headers: { "Content-Type": promoVideo.type },
+                        onUploadProgress: (e) => {
+                            const loaded = e.loaded;
+                            const currentTotal = uploadedBytes + loaded;
+                            setProgress(Math.round((currentTotal / totalBytes) * 100));
+                        },
+                        signal: controller.signal,
+                    });
+
+                    uploadedBytes += promoVideo.size;
+
+                    // --- Upload thumbnail ---
+                    await axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
+                        headers: { "Content-Type": "image/jpeg" },
+                        onUploadProgress: (e) => {
+                            const loaded = e.loaded;
+                            const currentTotal = uploadedBytes + loaded;
+                            setProgress(Math.round((currentTotal / totalBytes) * 100));
+                        },
+                        signal: controller.signal,
+                    });
+
+                    uploadedBytes += thumbnailBlob.size;
+                }
+
+                if (courseImageFile) {
+                    imageUploadData = await generateUploadURL({
+                        courseId: course._id,
+                        type: "course-thumbnail",
+                        fileName: courseImageFile.name,
+                        contentType: courseImageFile.type,
+                    }).unwrap();
+
+                    await axios.put(imageUploadData.uploadURL, courseImageFile, {
+                        headers: { "Content-Type": courseImageFile.type },
+                        onUploadProgress: (e) => {
+                            const loaded = e.loaded;
+                            const currentTotal = uploadedBytes + loaded;
+                            setProgress(Math.round((currentTotal / totalBytes) * 100));
+                        },
+                        signal: controller.signal,
+                    });
+
+                    uploadedBytes += courseImageFile.size;
+                }
+
+                setProgress(100);
+            }
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                return;
+            } else {
+                console.error("Lỗi upload:", error);
+                alert("Lỗi upload: " + error.message);
+            }
+        } finally {
+            setIsUploading(false);
+            setProgress(0);
+        }
+
+        if (courseImageFile && course.thumbnail?.s3Key) {
+            await deleteFileFromS3({ s3Key: course.thumbnail.s3Key });
+        }
+
+        if (promoVideo && course.promoVideo?.s3Key) {
+            await deleteFileFromS3({ s3Key: course.promoVideo.s3Key });
+            await deleteFileFromS3({ s3Key: course.promoVideo.thumbnailS3Key });
+        }
+
+        await updateCourse({
+            courseId: course._id,
+            data: {
+                ...formData,
+                ...(promoVideo && {
+                    promoVideo: {
+                        publicURL: videoUploadData.publicURL,
+                        s3Key: videoUploadData.s3Key,
+                        thumbnailURL: thumbnailUploadData.publicURL,
+                        thumbnailS3Key: thumbnailUploadData.s3Key,
+                    },
+                }),
+                ...(courseImageFile && {
+                    thumbnail: {
+                        publicURL: imageUploadData.publicURL,
+                        s3Key: imageUploadData.s3Key,
+                    },
+                }),
+            },
+        }).unwrap();
+
+        toast.success("Lưu khóa học thành công!");
+        setPromoVideo(null);
+        setIsChanged(false);
+        setExistedPromoVideo(videoUploadData.publicURL);
+    };
 
     return (
-        <div>
-            <div className="fixed w-full h-[50px] top-0 left-0"></div>
+        <div className="">
+            {isUploading && (
+                <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-[9999]">
+                    <div className="flex flex-col items-center justify-center -translate-y-[50%]">
+                        <div className="text-white mb-2">Đang tải video và ảnh lên...</div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-[500px] bg-gray-300 rounded-full h-2">
+                                <div
+                                    className="bg-blue-500 h-2 rounded-full"
+                                    style={{ width: `${progress}%` }}
+                                ></div>
+                            </div>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (controllerRef.current) {
+                                        controllerRef.current.abort();
+                                    }
+                                }}
+                                className="text-gray-300 cursor-pointer p-1 pointer-events-auto"
+                            >
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                <div className="container flex items-center justify-between">
+                    <Link
+                        to="/instructor/courses"
+                        className="text-white font-semibold px-2 py-1 rounded hover:bg-gray-600"
+                    >
+                        Quay lại
+                    </Link>
+                    <div className="items-center flex gap-3">
+                        <button
+                            onClick={handleSave}
+                            disabled={!isChanged}
+                            className={`px-[18px] font-semibold py-1 rounded cursor-pointer disabled:cursor-not-allowed ${
+                                isChanged ? "bg-white text-gray-800" : "bg-gray-600 text-white"
+                            }`}
+                        >
+                            Lưu
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div>
                 <h3 className="text-lg p-5 border-b border-b-grayText/20">Thông tin khóa học</h3>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-5 p-5">
+            <form className="space-y-5 p-5">
                 {/* Course title */}
                 <div className="space-y-2">
-                    <label htmlFor="title">Tiêu đề khóa học</label>
+                    <label htmlFor="title" className="font-semibold">
+                        Tiêu đề khóa học
+                    </label>
                     <div className="relative mt-1">
                         <input
                             id="title"
@@ -214,17 +439,17 @@ const CourseInfo = () => {
                             onChange={(e) => handleChange("title", e.target.value)}
                             maxLength={52}
                             placeholder="Nhập tiêu đề khóa học"
-                            className="border px-3 py-2 border-gray-300 rounded w-full focus:border-primary"
+                            className={`border px-3 py-2 border-gray-300 rounded w-full focus:border-primary`}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                            {60 - formData.title.length}
-                        </span>
                     </div>
+                    {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
                 </div>
 
                 {/* Course subtitle */}
                 <div className="">
-                    <label htmlFor="subtitle">Tiêu đề phụ khóa học</label>
+                    <label htmlFor="subtitle" className="font-semibold">
+                        Tiêu đề phụ khóa học
+                    </label>
                     <div className="relative mt-1">
                         <input
                             id="subtitle"
@@ -235,13 +460,10 @@ const CourseInfo = () => {
                             placeholder="Nhập tiêu đề phụ khóa học"
                             className="border px-3 py-2 border-gray-300 rounded w-full focus:border-primary"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                            {120 - formData.subtitle.length}
-                        </span>
                     </div>
                 </div>
                 <div>
-                    <p>Mô tả bài giảng</p>
+                    <p className="font-semibold">Mô tả bài giảng</p>
                     <div className="rounded-[6px] mt-1 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
                         <ReactQuillNew
                             className="article-lecture-editor description-lecture-editor"
@@ -267,17 +489,20 @@ const CourseInfo = () => {
                             <label>Ngôn ngữ</label>
                             <Select
                                 value={formData.language}
-                                onValueChange={(value) => handleChange("language", value)}
+                                onValueChange={(value) => {
+                                    handleChange("language", value);
+                                    console.log("language", value);
+                                }}
                             >
                                 <SelectTrigger className="w-full px-3 py-2 min-h-[41px] text-[16px] rounded  border-gray-300">
                                     <SelectValue
                                         placeholder="Chọn ngôn ngữ"
-                                        value={course.language}
+                                        value={formData.language}
                                     />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {LANGUAGE_OPTIONS.map((lang, index) => (
-                                        <SelectItem key={index} value={lang.value}>
+                                        <SelectItem key={index} value={lang.label}>
                                             {lang.label}
                                         </SelectItem>
                                     ))}
@@ -296,7 +521,7 @@ const CourseInfo = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {LEVEL_OPTIONS.map((level, index) => (
-                                        <SelectItem key={index} value={level.value}>
+                                        <SelectItem key={index} value={level.label}>
                                             {level.label}
                                         </SelectItem>
                                     ))}
@@ -326,29 +551,9 @@ const CourseInfo = () => {
                                         )}
                                     </SelectContent>
                                 </Select>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="">Danh mục con</label>
-                                <Select
-                                    
-                                    className="text-[16px]"
-                                    value={formData.subcategory}
-                                    onValueChange={(value) => handleChange("subcategory", value)}
-                                >
-                                    <SelectTrigger className="w-full px-3 py-2 min-h-[41px] text-[16px] rounded leading-normal border-gray-300">
-                                        <SelectValue placeholder="--Chọn danh mục con--" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {formData.category &&
-                                            Object.values(CATEGORY_OPTIONS)
-                                                .find((cat) => cat.label === formData.category)
-                                                .subcategories.map((sub) => (
-                                                    <SelectItem key={sub.value} value={sub.label}>
-                                                        {sub.label}
-                                                    </SelectItem>
-                                                ))}
-                                    </SelectContent>
-                                </Select>
+                                {errors.category && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -422,6 +627,12 @@ const CourseInfo = () => {
                                         Lưu các thay đổi để hoàn tất việc tải lên tệp của bạn.
                                     </p>
                                 </div>
+                            ) : existedPromoVideo ? (
+                                <video
+                                    src={existedPromoVideo}
+                                    controls
+                                    className="w-full h-full rounded"
+                                />
                             ) : (
                                 <div className="text-center">
                                     <div className="flex justify-center gap-4 mb-4">
@@ -466,10 +677,10 @@ const CourseInfo = () => {
 
                             <label className="flex gap-3 cursor-pointer">
                                 <div className="flex-1 px-4 py-2 border border-gray-300 rounded bg-gray-50">
-                                    {promoVideo ? "Đã chọn file" : "Chưa có file được chọn"}
+                                    {existedPromoVideo ? "Đã chọn file" : "Chưa có file được chọn"}
                                 </div>
                                 <div className="px-6 flex items-center justify-center bg-primary text-white rounded hover:bg-primary/80 cursor-pointer whitespace-nowrap">
-                                    {!promoVideo ? "Tải file lên" : "Đổi"}
+                                    {!existedPromoVideo ? "Tải file lên" : "Đổi"}
                                     <input
                                         type="file"
                                         accept="video/*"

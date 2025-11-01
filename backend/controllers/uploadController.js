@@ -7,10 +7,47 @@ const s3 = new aws.S3({
     signatureVersion: "v4",
 });
 
+const deleteS3File = async (s3Key) => {
+    if (!s3Key) return;
+
+    try {
+        const params = {
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key: s3Key,
+        };
+        await s3.deleteObject(params).promise();
+        console.log(`Deleted S3 file: ${s3Key}`);
+    } catch (error) {
+        console.error(`Error deleting S3 file ${s3Key}:`, error);
+    }
+};
+
+const deleteMultipleS3Files = async (s3Keys) => {
+    const validKeys = s3Keys.filter((key) => key && key.trim() !== "");
+    if (validKeys.length === 0) return;
+
+    try {
+        const objects = validKeys.map((key) => ({ Key: key }));
+        const params = {
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Delete: { Objects: objects },
+        };
+        await s3.deleteObjects(params).promise();
+        console.log(`Deleted ${validKeys.length} S3 files`);
+    } catch (error) {
+        console.error("Error deleting multiple S3 files:", error);
+    }
+};
+
 const generateUploadURL = async (req, res) => {
     try {
-        const { type, fileName, fileType } = req.body;
-        const Key = `${type}/${Date.now()}-${fileName}`;
+        const { courseId, type, fileName, fileType } = req.body;
+        let Key;
+        Key = `${type}/${Date.now()}-${fileName}`;
+
+        if (courseId) {
+            Key = courseId.toString() + "/" + Key;
+        }
 
         const uploadURL = await s3.getSignedUrlPromise("putObject", {
             Bucket: process.env.AWS_S3_BUCKET_NAME,
@@ -32,16 +69,7 @@ const deleteFileFromS3 = async (req, res) => {
     try {
         const { s3Key } = req.body;
 
-        if (!s3Key) {
-            return res.status(400).json({ message: "fileKey is required" });
-        }
-
-        const params = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: s3Key,
-        };
-
-        await s3.deleteObject(params).promise();
+        await deleteS3File(s3Key);
 
         res.status(200).json({
             message: "File deleted successfully",
@@ -56,4 +84,4 @@ const deleteFileFromS3 = async (req, res) => {
     }
 };
 
-export { generateUploadURL, deleteFileFromS3 };
+export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3 };

@@ -1,8 +1,8 @@
-import { Outlet, useParams, NavLink, useLocation, Link } from "react-router-dom";
+import { Outlet, useLocation, Link, useParams } from "react-router-dom";
 import { FaRegCheckCircle } from "react-icons/fa";
 const CourseManageLayout = () => {
     const location = useLocation();
-
+    const { courseId } = useParams();
     const MENU_ITEMS = [
         {
             title: "Đối tượng học viên",
@@ -48,6 +48,9 @@ const CourseManageLayout = () => {
                             );
                         })}
                     </nav>
+                    <button className="mt-2 w-full py-2 font-semibold cursor-pointer text-center rounded bg-primary text-white">
+                        Phát hành khóa học
+                    </button>
                 </div>
                 <div className="flex-1 shadow-common min-h-[500px] rounded-md">
                     <Outlet />

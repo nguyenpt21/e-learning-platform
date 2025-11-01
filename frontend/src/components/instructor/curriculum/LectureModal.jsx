@@ -87,11 +87,13 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
 
             const [videoUploadData, thumbnailUploadData] = await Promise.all([
                 generateUploadURL({
+                    courseId,
                     type: "lecture-video",
                     fileName: file.name,
                     contentType: file.type,
                 }).unwrap(),
                 generateUploadURL({
+                    courseId,
                     type: "lecture-thumbnail",
                     fileName: file.name.replace(/\.[^/.]+$/, "_thumbnail.jpg"),
                     contentType: "image/jpeg",
@@ -214,7 +216,7 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                     className="min-w-[700px] max-h-[550px] overflow-auto p-0 gap-0"
                     onPointerDownOutside={(e) => e.preventDefault()}
                 >
-                    <DialogHeader className={"px-5 pt-2 border-b border-gray-300"}>
+                    <DialogHeader className={"px-5 py-4 border-b border-gray-300"}>
                         <DialogTitle>Thêm bài giảng mới</DialogTitle>
                     </DialogHeader>
 
