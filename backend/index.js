@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import courseRoute from "./routes/courseRoute.js"
 import progressRoute from "./routes/progressRoute.js"
+import videoNoteRoute from "./routes/videoNoteRoute.js"
 import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
 import paymentRoute from "./routes/paymentRoute.js"
 
@@ -44,6 +45,7 @@ app.get('/', (req, res) => {
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use('/api/courses', courseRoute);
+app.use('/api/video-notes', videoNoteRoute);
 app.post("/api/generateUploadURL", generateUploadURL)
 app.use('/api/progress', progressRoute);
 app.delete("/api/deleteFile", deleteFileFromS3);

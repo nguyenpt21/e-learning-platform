@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import './styles/_variables.scss';
+@import './styles/_keyframe-animations.scss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -32,6 +34,34 @@
         border: none;
         outline: none;
     }
+}
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-left {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-left {
+    animation: slide-left 0.3s ease-out;
 }
 
 @theme inline {

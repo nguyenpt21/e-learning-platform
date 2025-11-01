@@ -24,8 +24,6 @@ const CourseDetail = () => {
     const [reachedFooter, setReachedFooter] = useState(false);
     const footerRef = useRef(null);
 
-    console.log(course)
-
     const calculateCourseStats = (courseData) => {
         if (!courseData?.sections) return { courseDuration: 0, totalLectures: 0, totalResources: 0, sections: [] };
         let courseDuration = 0;
