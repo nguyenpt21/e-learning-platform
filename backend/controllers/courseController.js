@@ -9,9 +9,7 @@ import Quiz from "../models/quiz.js";
 const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Course.findById(courseId)
-            .populate("sections.sectionId")
-            .lean();
+        const course = await Course.findById(courseId).populate("sections.sectionId").lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
 
@@ -28,25 +26,45 @@ const getCourseById = async (req, res) => {
             Quiz.find({ _id: { $in: quizIds } }).lean(),
         ]);
 
-        const lectureMap = Object.fromEntries(lectures.map(l => [l._id.toString(), l]));
-        const quizMap = Object.fromEntries(quizzes.map(q => [q._id.toString(), q]));
+        const lectureMap = Object.fromEntries(lectures.map((l) => [l._id.toString(), l]));
+        const quizMap = Object.fromEntries(quizzes.map((q) => [q._id.toString(), q]));
 
-        const sections = course.sections.filter(s => s.sectionId)
+        const sections = course.sections
+            .filter((s) => s.sectionId)
             .map(({ sectionId, order }) => ({
                 ...sectionId,
                 order,
-                curriculumItems: sectionId.curriculumItems?.map(({ itemType, itemId }) => {
-                        const itemData = itemType === "Lecture"
-                                ? lectureMap[itemId.toString()]
-                                : quizMap[itemId.toString()];
-                        if (!itemData) return null;
-                        return {
-                            itemType, ...itemData,
-                        };
-                    }).filter(Boolean) || [],
+                curriculumItems:
+                    sectionId.curriculumItems
+                        ?.map(({ itemType, itemId }) => {
+                            const itemData =
+                                itemType === "Lecture"
+                                    ? lectureMap[itemId.toString()]
+                                    : quizMap[itemId.toString()];
+                            if (!itemData) return null;
+                            return {
+                                itemType,
+                                ...itemData,
+                            };
+                        })
+                        .filter(Boolean) || [],
             }));
 
         res.status(200).json({ ...course, sections });
+    } catch (error) {
+        console.error("getCourseById error:", error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+const getCourseInfo = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Course.findById(courseId);
+
+        if (!course) return res.status(404).json({ message: "Course not found" });
+
+        res.status(200).json(course);
     } catch (error) {
         console.error("getCourseById error:", error);
         res.status(500).json({ message: "Server Error" });
@@ -58,16 +76,16 @@ const createCourse = async (req, res) => {
         // const instructorId = req.user._id;
         const { title, category } = req.body;
 
-        
         const course = await Course.create({
-            title, category
+            title,
+            category,
         });
         res.status(201).json(course);
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: "Server Error" })
+        res.status(500).json({ message: "Server Error" });
     }
-}
+};
 
 const updateCourse = async (req, res) => {
     try {
@@ -77,9 +95,21 @@ const updateCourse = async (req, res) => {
             return res.status(404).json({ message: "Course not found" });
         }
         const fields = [
-            "learningOutcomes", "requirements", "intendedLearners",
-            "title", "subtitle", "description", "language", "level",
-            "category", "subcategory", "price", "isPublished"
+            "learningOutcomes",
+            "requirements",
+            "intendedLearners",
+            "title",
+            "subtitle",
+            "description",
+            "language",
+            "level",
+            "category",
+            "subcategory",
+            "price",
+            "isPublished",
+            "thumbnail",
+            "promoVideo",
+            "sections"
         ];
         const updateData = {};
         fields.forEach((key) => {
@@ -87,18 +117,7 @@ const updateCourse = async (req, res) => {
                 updateData[key] = req.body[key];
             }
         });
-        if (req.body.thumbnailBase64) {
-            if (course.thumbnail && course.thumbnail.public_id) {
-                await cloudinary.uploader.destroy(course.thumbnail.public_id);
-            }
-            const result = await cloudinary.uploader.upload(req.body.thumbnailBase64, {
-                folder: "course_thumbnails",
-            });
-            updateData.thumbnail = {
-                url: result.secure_url,
-                public_id: result.public_id,
-            };
-        }
+
         if (updateData.price !== undefined) {
             updateData.isFree = updateData.price > 0 ? false : true;
         }
@@ -115,8 +134,7 @@ const updateCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Course.findById(courseId)
-            .populate("sections");
+        const course = await Course.findById(courseId).populate("sections");
         if (!course) return res.status(404).json({ message: "Course not found" });
         for (const section of course.sections) {
             for (const item of section.curriculumItems) {
@@ -138,7 +156,6 @@ const deleteCourse = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
-
 
 const getCourses = async (req, res) => {
     try {
@@ -192,9 +209,17 @@ const getAllCourses = async (req, res) => {
     try {
         const {
             courseDuration,
-            level, category, subcategory,
-            language, isFree, minPrice, maxPrice,
-            avarageRating, sort, page, limit
+            level,
+            category,
+            subcategory,
+            language,
+            isFree,
+            minPrice,
+            maxPrice,
+            avarageRating,
+            sort,
+            page,
+            limit,
         } = req.query;
 
         const pageNumber = Number(page) || 1;
@@ -204,20 +229,22 @@ const getAllCourses = async (req, res) => {
         let filter = { isPublished: true };
         if (courseDuration) {
             const durations = courseDuration.split(",");
-            const durationFilters = durations.map(d => {
-                switch (d.trim()) {
-                    case "0-3":
-                        return { courseDuration: { $gte: 0, $lte: 3 } };
-                    case "3-6":
-                        return { courseDuration: { $gte: 3, $lte: 6 } };
-                    case "6-17":
-                        return { courseDuration: { $gte: 6, $lte: 17 } };
-                    case "17-more":
-                        return { courseDuration: { $gte: 17 } };
-                    default:
-                        return null;
-                }
-            }).filter(Boolean);
+            const durationFilters = durations
+                .map((d) => {
+                    switch (d.trim()) {
+                        case "0-3":
+                            return { courseDuration: { $gte: 0, $lte: 3 } };
+                        case "3-6":
+                            return { courseDuration: { $gte: 3, $lte: 6 } };
+                        case "6-17":
+                            return { courseDuration: { $gte: 6, $lte: 17 } };
+                        case "17-more":
+                            return { courseDuration: { $gte: 17 } };
+                        default:
+                            return null;
+                    }
+                })
+                .filter(Boolean);
             if (durationFilters.length > 0) {
                 filter.$or = durationFilters;
             }
@@ -277,10 +304,7 @@ const getAllCourses = async (req, res) => {
                     sortOption = {};
             }
         }
-        const courses = await Course.find(filter)
-            .sort(sortOption)
-            .skip(skip)
-            .limit(pageSize);
+        const courses = await Course.find(filter).sort(sortOption).skip(skip).limit(pageSize);
 
         const totalCourses = await Course.countDocuments(filter);
 
@@ -289,14 +313,13 @@ const getAllCourses = async (req, res) => {
             totalPages: Math.ceil(totalCourses / pageSize),
             currentPage: pageNumber,
             pageSize,
-            data: courses
-        })
-
+            data: courses,
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Server Error" });
     }
-}
+};
 
 const getSearchCourseSuggestion = async (req, res) => {
     try {
@@ -318,13 +341,14 @@ const getSearchCourseSuggestion = async (req, res) => {
         const courses = matchedCourses.map((c) => ({
             _id: c._id,
             title: c.title,
-            instructor: `${c.instructor?.firstName || ""} ${c.instructor?.lastName || ""}`.trim() || "Unknown Instructor",
+            instructor:
+                `${c.instructor?.firstName || ""} ${c.instructor?.lastName || ""}`.trim() ||
+                "Unknown Instructor",
             thumbnail: c.thumbnail?.url || null,
             category: c.category || null,
             subcategory: c.subcategory || null,
         }));
         res.status(200).json(courses);
-
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server Error" });
@@ -336,9 +360,17 @@ const getSearchCourseResults = async (req, res) => {
         const {
             q,
             courseDuration,
-            level, category, subcategory,
-            language, isFree, minPrice, maxPrice,
-            averageRating, sort, page, limit
+            level,
+            category,
+            subcategory,
+            language,
+            isFree,
+            minPrice,
+            maxPrice,
+            averageRating,
+            sort,
+            page,
+            limit,
         } = req.query;
 
         const pageNumber = Number(page) || 1;
@@ -358,15 +390,22 @@ const getSearchCourseResults = async (req, res) => {
 
         if (courseDuration) {
             const durations = courseDuration.split(",");
-            const durationFilters = durations.map(d => {
-                switch (d.trim()) {
-                    case "0-3": return { courseDuration: { $gte: 0, $lte: 3 } };
-                    case "3-6": return { courseDuration: { $gte: 3, $lte: 6 } };
-                    case "6-17": return { courseDuration: { $gte: 6, $lte: 17 } };
-                    case "17-more": return { courseDuration: { $gte: 17 } };
-                    default: return null;
-                }
-            }).filter(Boolean);
+            const durationFilters = durations
+                .map((d) => {
+                    switch (d.trim()) {
+                        case "0-3":
+                            return { courseDuration: { $gte: 0, $lte: 3 } };
+                        case "3-6":
+                            return { courseDuration: { $gte: 3, $lte: 6 } };
+                        case "6-17":
+                            return { courseDuration: { $gte: 6, $lte: 17 } };
+                        case "17-more":
+                            return { courseDuration: { $gte: 17 } };
+                        default:
+                            return null;
+                    }
+                })
+                .filter(Boolean);
             if (durationFilters.length > 0) {
                 filter.$or = durationFilters;
             }
@@ -392,14 +431,29 @@ const getSearchCourseResults = async (req, res) => {
         let sortOption = {};
         if (sort) {
             switch (sort) {
-                case "newest": sortOption = { createdAt: -1 }; break;
-                case "oldest": sortOption = { createdAt: 1 }; break;
-                case "priceLowToHigh": sortOption = { price: 1 }; break;
-                case "priceHighToLow": sortOption = { price: -1 }; break;
-                case "ratingHighToLow": sortOption = { averageRating: -1 }; break;
-                case "A-Z": sortOption = { title: 1 }; break;
-                case "Z-A": sortOption = { title: -1 }; break;
-                default: sortOption = {};
+                case "newest":
+                    sortOption = { createdAt: -1 };
+                    break;
+                case "oldest":
+                    sortOption = { createdAt: 1 };
+                    break;
+                case "priceLowToHigh":
+                    sortOption = { price: 1 };
+                    break;
+                case "priceHighToLow":
+                    sortOption = { price: -1 };
+                    break;
+                case "ratingHighToLow":
+                    sortOption = { averageRating: -1 };
+                    break;
+                case "A-Z":
+                    sortOption = { title: 1 };
+                    break;
+                case "Z-A":
+                    sortOption = { title: -1 };
+                    break;
+                default:
+                    sortOption = {};
             }
         }
 
@@ -431,5 +485,6 @@ export {
     getAllCourses,
     createCourse,
     updateCourse,
-    deleteCourse
+    deleteCourse,
+    getCourseInfo,
 };

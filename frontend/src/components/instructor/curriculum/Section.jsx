@@ -1,37 +1,31 @@
-const items = [
-    {
-        itemType: "Lecture",
-        order: 1,
-        itemContent: {
-            title: "Giới thiệu",
-            description:
-                '<p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">1. Xuất trình voucher trên điện thoại cho nhân viên kiểm tra. Điều chỉnh độ sáng nếu cần.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">2. Xuất trình giấy tờ tùy thân bản gốc và hợp lệ để xác minh.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">3. Chỉ chấp nhận voucher hợp lệ. Biên lai hoặc bằng chứng thanh toán không được sử dụng để vào cổng.</span>',
-        },
-    },
-    {
-        itemType: "Quiz",
-        order: 2,
-        itemContent: {
-            title: "Ôn tập bài 1",
-            description:
-                '<p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">1. Xuất trình voucher trên điện thoại cho nhân viên kiểm tra. Điều chỉnh độ sáng nếu cần.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">2. Xuất trình giấy tờ tùy thân bản gốc và hợp lệ để xác minh.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(3, 18, 26);">3. Chỉ chấp nhận voucher hợp lệ. Biên lai hoặc bằng chứng thanh toán không được sử dụng để vào cổng.</span>',
-        },
-    },
-];
-
 import { FaRegFileAlt } from "react-icons/fa";
 import { LuPencil, LuPlus } from "react-icons/lu";
 import { FaRegTrashAlt } from "react-icons/fa";
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import Lecture from "./Lecture";
 import { IoClose } from "react-icons/io5";
 import LectureModal from "./LectureModal";
 import QuizModal from "./QuizModal";
 import Quiz from "./Quiz";
-import { useGetAllCurriculumItemsBySectionQuery } from "@/redux/api/sectionApiSlice";
+import {
+    useDeleteSectionMutation,
+    useGetAllCurriculumItemsBySectionQuery,
+    useUpdateSectionMutation,
+} from "@/redux/api/sectionApiSlice";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { toast } from "react-toastify";
+import SortableItem from "./SortableItem";
 
-const Section = ({ section, courseId }) => {
+const Section = ({ section, courseId, dragHandleProps, style }) => {
     const [sectionForm, setSectionForm] = useState({
         title: section.title || "",
         objective: section.objective || "",
@@ -50,15 +44,110 @@ const Section = ({ section, courseId }) => {
         sectionId: section._id,
     });
 
+    const [updateSection] = useUpdateSectionMutation();
+
+    const [items, setItems] = useState([]);
+
+    useEffect(() => {
+        if (curriculumItems) {
+            setItems(curriculumItems);
+        }
+    }, [curriculumItems]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = items.findIndex((item) => item.itemContent._id.toString() === active.id);
+        const newIndex = items.findIndex((item) => item.itemContent._id.toString() === over.id);
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+
+        // Cập nhật order từ 1
+        const itemsWithNewOrder = newItems.map((item, index) => ({
+            itemContent: item.itemContent,
+            itemType: item.itemType,
+            order: index + 1,
+        }));
+
+        setItems(itemsWithNewOrder);
+
+        try {
+            await updateSection({
+                courseId,
+                sectionId: section._id,
+                data: {
+                    curriculumItems: itemsWithNewOrder.map((item) => ({
+                        order: item.order,
+                        itemId: item.itemContent._id,
+                        itemType: item.itemType,
+                    })),
+                },
+            }).unwrap();
+        } catch (error) {
+            console.error("Failed to update order:", error);
+
+            if (curriculumItems) {
+                setItems(curriculumItems);
+            }
+        }
+    };
+
+    const handleUpdateTitleAndObjective = async () => {
+        if (sectionForm.title === "") {
+            toast.error("Phải nhập tên chương");
+            setSectionForm({ ...sectionForm, title: section.title });
+            return;
+        }
+        try {
+            await updateSection({
+                courseId,
+                sectionId: section._id,
+                data: {
+                    title: sectionForm.title,
+                    objective: sectionForm.objective,
+                },
+            }).unwrap();
+        } catch (error) {
+            toast.error("Lỗi khi cập nhật");
+            console.error("Lỗi khi cập nhật: ", error);
+        }
+
+        setMode("view");
+    };
+
+    const [deleteSectionModalOpen, setDeleteSectionModalOpen] = useState(false);
+    const [deleteSection, { isLoading: isDeleteingSection }] = useDeleteSectionMutation();
+
+    const handleDeleteSection = async () => {
+        setDeleteSectionModalOpen(false);
+        try {
+            await deleteSection({ courseId, sectionId: section._id }).unwrap();
+        } catch (error) {
+            toast.error("Lỗi khi xóa chương");
+            console.error("Lỗi khi xóa chương: ", error);
+        }
+    };
     if (isLoading) {
         return <></>;
     }
 
     return (
-        <div className="border rounded-md bg-primary/2 px-2 pb-4 border-gray-200 ">
+        <div style={style} className="border rounded-md bg-primary/2 pb-4 border-gray-200 ">
             {mode === "view" && (
                 <div
-                    className="flex py-5 items-center"
+                    {...dragHandleProps}
+                    className={`cursor-grab active:cursor-grabbing px-2 flex py-5 rounded-md items-center ${
+                        isDeleteingSection ? "bg-red-500" : ""
+                    }`}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                 >
@@ -83,7 +172,10 @@ const Section = ({ section, courseId }) => {
                         >
                             <LuPencil size={16} className="text-gray-600" />
                         </button>
-                        <button className="p-1 hover:bg-gray-200 rounded">
+                        <button
+                            onClick={() => setDeleteSectionModalOpen(true)}
+                            className="p-1 hover:bg-gray-200 rounded"
+                        >
                             <FaRegTrashAlt size={16} className="text-gray-600" />
                         </button>
                     </div>
@@ -97,7 +189,7 @@ const Section = ({ section, courseId }) => {
             )}
 
             {mode === "edit" && (
-                <div className="p-3 mt-2 bg-white border border-gray-300 rounded space-y-3">
+                <div className="p-3 mt-2 px-2 bg-white border border-gray-300 rounded space-y-3">
                     <div className="flex gap-2 items-baseline">
                         <p className="font-semibold block mb-1">Chương {section.order}:</p>
                         <div className="flex-1 space-y-3">
@@ -134,31 +226,61 @@ const Section = ({ section, courseId }) => {
                             onClick={() => {
                                 setMode("view");
                             }}
-                            className="text-black font-medium"
+                            className="text-black font-medium cursor-pointer"
                         >
                             Hủy
                         </button>
                         <button
-                            onClick={() => {
-                                setMode("view");
-                            }}
-                            className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
+                            onClick={handleUpdateTitleAndObjective}
+                            className="cursor-pointer bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
                         >
                             Lưu
                         </button>
                     </div>
                 </div>
             )}
-
-            <div className="mt-2 pl-10 pr-3 space-y-4">
-                {curriculumItems.map((item, index) => {
-                    if (item.itemType === "Lecture") {
-                        return <Lecture key={index} item={item.itemContent} sectionOrder={section.order} lectureOrder={item.order} sectionId={section._id} courseId={courseId}></Lecture>;
-                    } else {
-                        return <Quiz key={index} item={item.itemContent} sectionOrder={section.order} quizOrder={item.order} sectionId={section._id} courseId={courseId}></Quiz>;
-                    }
-                })}
-
+            <div className="mt-2 pl-12 pr-5 space-y-4">
+                {items.length > 0 && (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={items.map((item) => item.itemContent._id.toString())}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-4">
+                                {items.map((item, index) => (
+                                    <SortableItem
+                                        key={item.itemContent._id.toString()}
+                                        id={item.itemContent._id.toString()}
+                                    >
+                                        {item.itemType === "Lecture" ? (
+                                            <Lecture
+                                                key={index}
+                                                item={item.itemContent}
+                                                sectionOrder={section.order}
+                                                lectureOrder={item.order}
+                                                sectionId={section._id}
+                                                courseId={courseId}
+                                            ></Lecture>
+                                        ) : (
+                                            <Quiz
+                                                key={index}
+                                                item={item.itemContent}
+                                                sectionOrder={section.order}
+                                                quizOrder={item.order}
+                                                sectionId={section._id}
+                                                courseId={courseId}
+                                            ></Quiz>
+                                        )}
+                                    </SortableItem>
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
+                )}
                 {isOpenItemType ? (
                     <div className="flex gap-3 mt-4 text-[14px]">
                         <button
@@ -214,6 +336,30 @@ const Section = ({ section, courseId }) => {
                     ></QuizModal>
                 </div>
             </div>
+            <Dialog open={deleteSectionModalOpen} onOpenChange={setDeleteSectionModalOpen}>
+                <DialogContent className={"min-w-[500px] gap-1 p-0"}>
+                    <DialogHeader className={"p-4 pb-0"}>
+                        <DialogTitle className={"mb-0"}>Xác nhận</DialogTitle>
+                    </DialogHeader>
+                    <p className="px-4 mt-4">
+                        Bạn sắp xóa một chương. Bạn có chắc chắn muốn tiếp tục không?
+                    </p>
+                    <DialogFooter className={"p-4"}>
+                        <button
+                            onClick={() => setDeleteSectionModalOpen(false)}
+                            className="px-4 py-1 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            onClick={handleDeleteSection}
+                            className="px-4 py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium cursor-pointer"
+                        >
+                            OK
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

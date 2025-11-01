@@ -6,6 +6,7 @@ import {
     createCourse,
     updateCourse,
     deleteCourse,
+    getCourseInfo
 } from "../controllers/courseController.js";
 
 import {
@@ -36,7 +37,7 @@ router.route("/:courseId")
     .put(updateCourse)
     .delete(deleteCourse);
 router.get("/manage", getCourses);
-
+router.get("/info", getCourseInfo)
 
 // section
 router.route("/:courseId/sections")
@@ -63,7 +64,7 @@ router.route("/:courseId/sections/:sectionId/quizzes")
     .post(addQuizToSection)
 // resources
 router.delete(
-    "/lectures/:lectureId/resources/:resourceIndex",
+    "/lectures/:lectureId/resources/:resourceId",
     deleteResourceFromLecture
 );
 

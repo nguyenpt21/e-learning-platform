@@ -3,6 +3,7 @@ import Course from "../models/course.js";
 import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Section from "../models/section.js";
+import { deleteMultipleS3Files } from "./uploadController.js";
 
 const getAllSectionsByCourse = async (req, res) => {
     try {
@@ -109,18 +110,23 @@ const addSectionToCourse = async (req, res) => {
 const updateSection = async (req, res) => {
     try {
         const { courseId, sectionId } = req.params;
-        const { title, order } = req.body;
+        const { title, objective, curriculumItems } = req.body;
         const course = await Course.findById(courseId);
         if (!course) return res.status(404).json({ message: "Course not found" });
-        if (!course.sections.includes(sectionId))
+
+        const sectionInCourse = course.sections.find((se) => se.sectionId.toString() === sectionId);
+        if (!sectionInCourse)
             return res.status(404).json({ message: "Section not found in course" });
-        const updatedSection = await Section.findByIdAndUpdate(
-            sectionId,
-            { title, order },
-            { new: true }
-        );
-        if (!updatedSection) return res.status(404).json({ message: "Section not found" });
-        res.status(200).json(updatedSection);
+
+        const section = await Section.findById(sectionId);
+
+        if (!section) return res.status(404).json({ message: "Section not found" });
+        if (title !== undefined) section.title = title;
+        if (objective !== undefined) section.objective = objective;
+        if (curriculumItems) section.curriculumItems = curriculumItems;
+
+        await section.save();
+        res.status(200).json(section);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error" });
@@ -132,22 +138,53 @@ const deleteSection = async (req, res) => {
         const { courseId, sectionId } = req.params;
         const course = await Course.findById(courseId);
         if (!course) return res.status(404).json({ message: "Course not found" });
-        const sectionIndex = course.sections.indexOf(sectionId);
-        if (sectionIndex === -1)
+
+        const sectionInCourse = course.sections.find((se) => se.sectionId.toString() === sectionId);
+        if (!sectionInCourse)
             return res.status(404).json({ message: "Section not found in course" });
+
         const section = await Section.findById(sectionId);
         if (!section) return res.status(404).json({ message: "Section not found" });
         // xoá cirriculums
         for (const item of section.curriculumItems) {
             if (item.itemType === "Lecture") {
+                const lecture = await Lecture.findById(item.itemId);
+                if (!lecture) return;
+
+                const s3KeysToDelete = [];
+
+                if (lecture.content?.s3Key) {
+                    s3KeysToDelete.push(lecture.content.s3Key);
+                }
+
+                if (lecture.content?.thumbnailS3Key) {
+                    s3KeysToDelete.push(lecture.content.thumbnailS3Key);
+                }
+
+                if (lecture.resources && lecture.resources.length > 0) {
+                    lecture.resources.forEach((resource) => {
+                        if (resource.s3Key) {
+                            s3KeysToDelete.push(resource.s3Key);
+                        }
+                    });
+                }
+
+                if (s3KeysToDelete.length > 0) {
+                    await deleteMultipleS3Files(s3KeysToDelete);
+                }
+
                 await Lecture.findByIdAndDelete(item.itemId);
             } else if (item.itemType === "Quiz") {
                 await Quiz.findByIdAndDelete(item.itemId);
             }
         }
-        //xoá section
+
         await Section.findByIdAndDelete(sectionId);
-        course.sections.splice(sectionIndex, 1);
+
+        const index = course.sections.findIndex((se) => se.sectionId.toString() === sectionId);
+        if (index !== -1) {
+            course.sections.splice(index, 1);
+        }
         await course.save();
         res.status(200).json({ message: "Section deleted successfully" });
     } catch (error) {
@@ -188,7 +225,7 @@ const addLectureToSection = async (req, res) => {
                     duration,
                     thumbnailS3Key,
                     thumbnailURL,
-                    fileName
+                    fileName,
                 },
             });
         } else if (type === "article") {
@@ -270,10 +307,8 @@ const updateCurriculumItem = async (req, res) => {
             type,
             content,
             resource, // for Lecture
-            question, // for Quiz
         } = req.body;
 
-        console.log(req.body);
         // const course = await Course.findById(courseId);
         // if (!course) return res.status(404).json({ message: "Course not found" });
 
@@ -298,8 +333,7 @@ const updateCurriculumItem = async (req, res) => {
         if (itemType === "Lecture") {
             item = await Lecture.findById(itemId);
             item.title = title || item.title;
-            item.description = description || item.description;
-            // item.order = order !== undefined ? order : item.order;
+            item.description = description;
             item.type = type || item.type;
             item.content = content || item.content;
             if (resource) {
@@ -310,7 +344,6 @@ const updateCurriculumItem = async (req, res) => {
             item = await Quiz.findById(itemId);
             item.title = title || item.title;
             item.description = description || item.description;
-            // item.order = order !== undefined ? order : item.order;
             if (question) {
                 item.questions.push(question);
             }
@@ -328,24 +361,74 @@ const deleteCurriculumItem = async (req, res) => {
         const { courseId, sectionId, itemId } = req.params;
         const course = await Course.findById(courseId);
         if (!course) return res.status(404).json({ message: "Course not found" });
-        if (!course.sections.includes(sectionId))
+
+        const sectionInCourse = course.sections.find((se) => se.sectionId.toString() === sectionId);
+        if (!sectionInCourse)
             return res.status(404).json({ message: "Section not found in course" });
+
         const section = await Section.findById(sectionId);
         if (!section) return res.status(404).json({ message: "Section not found" });
-        const curriculumItem = section.curriculumItems.find(
-            (ci) => ci.itemId.toString() === itemId
+
+        const itemToDelete = section.curriculumItems.find(
+            (item) => item.itemId.toString() === itemId
         );
-        if (!curriculumItem) return res.status(404).json({ message: "Curriculum item not found" });
-        if (curriculumItem.itemType === "Lecture") {
+
+        if (!itemToDelete) {
+            return res.status(404).json({
+                message: "Curriculum item not found in section",
+            });
+        }
+
+        const deletedOrder = itemToDelete.order;
+
+        if (itemToDelete.itemType === "Lecture") {
+            const lecture = await Lecture.findById(itemId);
+            if (!lecture) return;
+
+            const s3KeysToDelete = [];
+
+            if (lecture.content?.s3Key) {
+                s3KeysToDelete.push(lecture.content.s3Key);
+            }
+
+            if (lecture.content?.thumbnailS3Key) {
+                s3KeysToDelete.push(lecture.content.thumbnailS3Key);
+            }
+
+            if (lecture.resources && lecture.resources.length > 0) {
+                lecture.resources.forEach((resource) => {
+                    if (resource.s3Key) {
+                        s3KeysToDelete.push(resource.s3Key);
+                    }
+                });
+            }
+
+            if (s3KeysToDelete.length > 0) {
+                await deleteMultipleS3Files(s3KeysToDelete);
+            }
+
             await Lecture.findByIdAndDelete(itemId);
-        } else if (curriculumItem.itemType === "Quiz") {
+        } else if (itemToDelete.itemType === "Quiz") {
             await Quiz.findByIdAndDelete(itemId);
         }
+
         section.curriculumItems = section.curriculumItems.filter(
-            (ci) => ci.itemId.toString() !== itemId.toString()
+            (item) => item.itemId.toString() !== itemId
         );
+
+        section.curriculumItems.forEach((item) => {
+            if (item.order > deletedOrder) {
+                item.order = item.order - 1;
+            }
+        });
+
+        section.curriculumItems.sort((a, b) => a.order - b.order);
         await section.save();
-        res.status(200).json({ message: "Curriculum item deleted successfully" });
+
+        res.json({
+            success: true,
+            message: "Curriculum item deleted successfully",
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error" });
@@ -354,10 +437,14 @@ const deleteCurriculumItem = async (req, res) => {
 
 const deleteResourceFromLecture = async (req, res) => {
     try {
-        const { lectureId, resourceIndex } = req.params;
+        const { lectureId, resourceId } = req.params;
         const lecture = await Lecture.findById(lectureId);
         if (!lecture) return res.status(404).json({ message: "Lecture not found" });
-        lecture.resources.splice(resourceIndex, 1);
+
+        const resource = lecture.resources.id(resourceId);
+        if (!resource) return res.status(404).json({ message: "Resource not found" });
+
+        resource.deleteOne();
         await lecture.save();
         res.status(200).json({ message: "Resource deleted successfully" });
     } catch (error) {
@@ -370,7 +457,6 @@ const updateQuestionInQuiz = async (req, res) => {
     try {
         const { quizId, questionId } = req.params;
         const { questionText, options } = req.body;
-        console.log(req.body);
 
         const quiz = await Quiz.findById(quizId);
         if (!quiz) {

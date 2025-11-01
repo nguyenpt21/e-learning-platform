@@ -29,7 +29,7 @@ const Question = ({ question, sectionId, quizId, index }) => {
             sectionId,
             quizId,
             questionId: question._id,
-        });
+        }).unwrap();
         setIsDeleteModalOpen(false);
     };
 
@@ -77,11 +77,11 @@ const Question = ({ question, sectionId, quizId, index }) => {
                 questionId={question._id}
             ></QuizQuestionModal>
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className={"min-w-[600px] gap-1 p-0"}>
+                <DialogContent className={"min-w-[500px] gap-1 p-0"}>
                     <DialogHeader className={"p-4 pb-0"}>
                         <DialogTitle className={"mb-0"}>Xác nhận</DialogTitle>
                     </DialogHeader>
-                    <p className="px-4">
+                    <p className="px-4 mt-4">
                         Bạn sắp xóa một câu hỏi. Bạn có chắc chắn muốn tiếp tục không?
                     </p>
                     <DialogFooter className={"p-4"}>

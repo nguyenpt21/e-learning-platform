@@ -48,7 +48,7 @@ const QuizModal = ({ open, onOpenChange, courseId, sectionId }) => {
                     onPointerDownOutside={(e) => e.preventDefault()}
                     className="min-w-[700px] max-h-[500px] overflow-auto p-0 gap-0"
                 >
-                    <DialogHeader className={"px-5 pt-2 border-b border-gray-300"}>
+                    <DialogHeader className={"px-5 py-4 border-b border-gray-300"}>
                         <DialogTitle>Thêm bài giảng mới</DialogTitle>
                     </DialogHeader>
 

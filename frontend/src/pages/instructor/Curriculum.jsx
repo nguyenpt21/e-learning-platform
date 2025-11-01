@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Section from "../../components/instructor/curriculum/Section";
 import { IoClose } from "react-icons/io5";
 import { LuPlus } from "react-icons/lu";
-import { useParams } from "react-router-dom";
-import { useGetAllSectionsByCourseQuery } from "@/redux/api/sectionApiSlice";
+import { Link, useParams } from "react-router-dom";
+import {
+    useAddSectionToCourseMutation,
+    useGetAllSectionsByCourseQuery,
+} from "@/redux/api/sectionApiSlice";
+import { toast } from "react-toastify";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
+import SortableItem from "@/components/instructor/curriculum/SortableItem";
+
 const Curriculum = () => {
     const { courseId } = useParams();
-    const { data: sections, isLoading } = useGetAllSectionsByCourseQuery(courseId);
+    const { data: sectionsData, isLoading } = useGetAllSectionsByCourseQuery(courseId);
 
     const [sectionForm, setSectionForm] = useState({
         title: "",
@@ -15,21 +24,118 @@ const Curriculum = () => {
     });
 
     const [isAddingSection, setIsAddingSection] = useState(false);
+    const [addSection] = useAddSectionToCourseMutation();
+
+    const handleAddSection = async () => {
+        if (sectionForm.title === "") {
+            toast.error("Phải nhập tên chương");
+            return;
+        }
+
+        try {
+            await addSection({ courseId, sectionData: sectionForm });
+            setIsAddingSection(false);
+        } catch (error) {
+            console.error("ỗi khi thêm chương:", error);
+            toast.error("Lỗi khi thêm chương");
+        }
+    };
+
+    const [sections, setSections] = useState([]);
+
+    useEffect(() => {
+        if (sectionsData) {
+            setSections(sectionsData);
+        }
+    }, [sectionsData]);
+
+    const [updateSectionOrder] = useUpdateCourseMutation();
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (!over || !active) {
+            return;
+        }
+
+        const oldIndex = sections.findIndex((section) => section._id.toString() === active.id);
+        const newIndex = sections.findIndex((section) => section._id.toString() === over.id);
+
+        const newSections = arrayMove(sections, oldIndex, newIndex);
+        const sectionsWithNewOrder = newSections.map((section, index) => ({
+            ...section,
+            order: index + 1,
+        }));
+        setSections(sectionsWithNewOrder);
+
+        try {
+            await updateSectionOrder({
+                courseId,
+                data: {
+                    sections: sectionsWithNewOrder.map((item) => ({
+                        sectionId: item._id,
+                        order: item.order,
+                    })),
+                },
+            }).unwrap();
+        } catch (error) {
+            console.error("Failed to update order:", error);
+            if (sectionsData) {
+                setSections(sectionsData);
+            }
+        }
+    };
 
     if (isLoading) return <></>;
 
     return (
         <div>
-            <div className="fixed w-full h-[50px] top-0 left-0"></div>
+            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                <div className="container flex items-center justify-between">
+                    <Link
+                        to="/instructor/courses"
+                        className="text-white font-semibold px-2 py-1 rounded hover:bg-gray-600"
+                    >
+                        Quay lại
+                    </Link>
+                </div>
+            </div>
             <div>
                 <h3 className="text-lg p-5 border-b border-b-grayText/20">Chương trình học</h3>
                 <div className="p-5">
-                    <div className="flex flex-col gap-4">
-                        {" "}
-                        {sections.map((section, index) => (
-                            <Section index={index} section={section} courseId={courseId}></Section>
-                        ))}
-                    </div>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={sections.map((section) => section._id.toString())}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="flex flex-col gap-4">
+                                {sections.map((section, index) => (
+                                    <SortableItem
+                                        key={section._id.toString()}
+                                        id={section._id.toString()}
+                                    >
+                                        <Section
+                                            index={index}
+                                            section={section}
+                                            courseId={courseId}
+                                        ></Section>
+                                    </SortableItem>
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
+
                     <div className="mt-3">
                         {isAddingSection ? (
                             <div className="">
@@ -82,9 +188,7 @@ const Curriculum = () => {
                                             Hủy
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                setIsAddingSection(false);
-                                            }}
+                                            onClick={handleAddSection}
                                             className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
                                         >
                                             Lưu

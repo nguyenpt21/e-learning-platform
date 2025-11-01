@@ -9,6 +9,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import { FaRegTrashCan } from "react-icons/fa6";
+import { Link, useNavigate } from "react-router-dom";
+import { useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
+import { toast } from "react-toastify";
 
 const SortableItem = ({ id, value, placeholder, onChange, onDelete, canDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -71,7 +74,7 @@ const SortableItem = ({ id, value, placeholder, onChange, onDelete, canDelete })
     );
 };
 
-const EditableList = ({ minItems = 1, placeholders, items, setItems }) => {
+const EditableList = ({ minItems = 1, placeholders, items, setItems, setIsChanged, isChanged }) => {
     const sensors = useSensors(useSensor(PointerSensor));
 
     const handleDragEnd = (event) => {
@@ -84,10 +87,16 @@ const EditableList = ({ minItems = 1, placeholders, items, setItems }) => {
     };
     const handleChange = (id, value) => {
         setItems((prev) => prev.map((item) => (item.id === id ? { ...item, value } : item)));
+        if (!isChanged) {
+            setIsChanged(true);
+        }
     };
 
     const handleDelete = (id) => {
         setItems((prev) => prev.filter((item) => item.id !== id));
+        if (!isChanged) {
+            setIsChanged(true);
+        }
     };
 
     const filledCount = items.filter((i) => i.value.trim() !== "").length;
@@ -118,82 +127,135 @@ const EditableList = ({ minItems = 1, placeholders, items, setItems }) => {
     );
 };
 
-const CourseGoal = () => {
-    const [outcomeLearning, setOutcomeLearning] = useState([
-        { id: "1", value: "" },
-        { id: "2", value: "" },
-        { id: "3", value: "" },
-        { id: "4", value: "" },
-    ]);
+const CourseGoal = ({ course }) => {
+    const [learningOutcomes, setLearningOutcomes] = useState(
+        course.learningOutcomes?.length > 0
+            ? course.learningOutcomes.map((outcome, index) => ({ id: index, value: outcome }))
+            : [
+                  { id: "1", value: "" },
+                  { id: "2", value: "" },
+                  { id: "3", value: "" },
+                  { id: "4", value: "" },
+              ]
+    );
 
-    const outcomeLearningPlaceholders = [
+    const learningOutcomesPlaceholders = [
         "Ví dụ: Xác định yêu cầu bài toán",
         "Ví dụ: Nắm được quy trình trong một dự án",
         "Ví dụ: Tìm hiểu case study thực tế",
         "Ví dụ: Mô phỏng lại dư án",
     ];
 
-    const [requirements, setRequirements] = useState([{ id: "1", value: "" }]);
+    const [requirements, setRequirements] = useState(
+        course.requirements?.length > 0
+            ? course.requirements.map((requirement, index) => ({ id: index, value: requirement }))
+            : [{ id: "1", value: "" }]
+    );
 
     const requirementsPlaceholders = [
         "Ví dụ: Không cần kinh nghiệm, bạn sẽ được học mọi thứ cần thiết",
     ];
 
-    const [intendedLearners, setIntendedLearners] = useState([{ id: "1", value: "" }]);
+    const [intendedLearners, setIntendedLearners] = useState(
+        course.intendedLearners?.length > 0
+            ? course.intendedLearners.map((intendedLearner, index) => ({ id: index, value: intendedLearner }))
+            : [{ id: "1", value: "" }]
+    );
 
     const intendedLearnersPlaceholders = [
         "Ví dụ: Những người có nhu cầu tìm hiểu về khoa học dữ liệu",
     ];
 
+    const [isChanged, setIsChanged] = useState(false);
+
+    const [updateCourse] = useUpdateCourseMutation();
+
+    const handleSave = async () => {
+        if (learningOutcomes.filter((i) => i.value.trim() !== "").length < 4) {
+            toast.error("Vui lòng nhập ít nhất 4 mục tiêu học tập");
+            return;
+        }
+
+        await updateCourse({
+            courseId: course._id,
+            data: {
+                learningOutcomes: learningOutcomes.map((outcome) => outcome.value),
+                ...(requirements.filter((i) => i.value.trim() !== "").length > 0 && {
+                    requirements: requirements.map((requirement) => requirement.value),
+                }),
+                ...(intendedLearners.filter((i) => i.value.trim() !== "").length > 0 && {
+                    intendedLearners: intendedLearners.map(
+                        (intendedLearner) => intendedLearner.value
+                    ),
+                }),
+            },
+        });
+
+        toast.success("Cập nhập thông tin khóa học thành công");
+    };
+
     return (
         <div>
-            <div className="fixed w-full h-[50px] top-0 left-0"></div>
+            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                <div className="container flex items-center justify-between">
+                    <Link to="/instructor/courses" className="text-white font-semibold px-2 py-1 rounded hover:bg-gray-600">
+                        Quay lại
+                    </Link>
+                    <div className="items-center flex gap-3">
+                        <button
+                            disabled={!isChanged}
+                            onClick={handleSave}
+                            className={`px-[18px] font-semibold py-1 rounded cursor-pointer disabled:cursor-not-allowed ${
+                                isChanged ? "bg-white text-gray-800" : "bg-gray-600 text-white"
+                            }`}
+                        >
+                            Lưu
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div>
                 <h3 className="text-lg p-5 border-b border-b-grayText/20">Đối tượng học viên</h3>
                 <div className="p-5 flex flex-col gap-5">
                     <div>
-                        <p className="font-medium">Học viên sẽ học gì trong khóa học của bạn?</p>
-                        <p className="mt-4 w-[80%]">
-                            Bạn phải nhập ít nhất 4 mục tiêu học tập hoặc kết quả mà người học có
-                            thể mong đợi đạt được sau khi hoàn thành khóa học của bạn.
-                        </p>
+                        <p className="font-medium">Học viên sẽ học được gì trong khóa học?</p>
+                        <p className="mt-4 w-[80%]">Nhập ít nhất 4 mục tiêu học tập.</p>
                         <div className="mt-2 flex flex-col gap-2 items-start">
                             <EditableList
                                 minItems={4}
-                                placeholders={outcomeLearningPlaceholders}
-                                items={outcomeLearning}
-                                setItems={setOutcomeLearning}
+                                placeholders={learningOutcomesPlaceholders}
+                                items={learningOutcomes}
+                                setItems={setLearningOutcomes}
+                                setIsChanged={setIsChanged}
+                                isChanged={isChanged}
                             ></EditableList>
                         </div>
                     </div>
                     <div>
                         <p className="font-medium">
-                            Các yêu cầu hoặc điều kiện tiên quyết để tham gia khóa học của bạn là
-                            gì?
+                            Các yêu cầu hoặc điều kiện tiên quyết để tham gia khóa học này là gì?
                         </p>
-                        <p className="mt-4 w-[80%]">
-                            Liệt kê các kỹ năng, kinh nghiệm, công cụ hoặc thiết bị cần thiết trước
-                            khi tham gia khóa học của bạn.
-                        </p>
+
                         <div className="mt-2 flex flex-col gap-2 items-start">
                             <EditableList
                                 placeholders={requirementsPlaceholders}
                                 items={requirements}
                                 setItems={setRequirements}
+                                setIsChanged={setIsChanged}
+                                isChanged={isChanged}
                             ></EditableList>
                         </div>
                     </div>
                     <div>
                         <p className="font-medium">Khóa học này giành cho ai?</p>
-                        <p className="mt-4 w-[80%]">
-                            Viết một mô tả rõ ràng về những người học dự định cho khóa học của bạn,
-                            những người sẽ thấy nội dung khóa học của bạn có giá trị.
-                        </p>
+
                         <div className="mt-2 flex flex-col gap-2 items-start">
                             <EditableList
                                 placeholders={intendedLearnersPlaceholders}
                                 items={intendedLearners}
                                 setItems={setIntendedLearners}
+                                setIsChanged={setIsChanged}
+                                isChanged={isChanged}
                             ></EditableList>
                         </div>
                     </div>
