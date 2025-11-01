@@ -50,7 +50,7 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
             const player = new Plyr(video, {
                 controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'fullscreen'],
                 settings: ['quality', 'speed', 'captions'],
-                quality: qualityOptions || undefined
+                // quality: qualityOptions || undefined
             });
             playerRef.current = player;
 
@@ -71,10 +71,12 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
             hlsRef.current = hls;
             hls.loadSource(videoUrl);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, initPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.addEventListener("loadedmetadata", initPlayer, { once: true });
+            });
         } else {
             video.src = videoUrl;
-            initPlayer();
+            video.addEventListener("loadedmetadata", initPlayer, { once: true });
         }
         return () => {
             if (playerRef.current) {
@@ -121,7 +123,11 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
 
     return (
         <div className="w-auto h-[35vh] lg:h-[44vh] md:h-[38vh] flex items-center justify-center">
-            <video ref={videoRef} className="object-contain w-full h-full" playsInline />
+            <video
+                ref={videoRef}
+                className="object-contain w-full h-full"
+                playsInline
+            />
         </div>
     );
 });
