@@ -2,15 +2,20 @@ import React, { useState } from "react";
 import MyRichTextEditor from "./MyRTE";
 import Button from "@/components/Button";
 import { useSelector } from "react-redux";
+import { useCreateReplyMutation } from "@/redux/api/qnaSlice";
 
-function WriteReply({ commentId , target, onCancel }) {
+function WriteReply({ quesId, commentId , target, onCancel }) {
   const [content, setContent] = useState("");
   const { userInfo } = useSelector((state) => state.auth);
+  const [createReply, isLoading] = useCreateReplyMutation()
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     if (content.trim() === "") return;
-    console.log("Phản hồi:", content);
-    // TODO: gọi API gửi phản hồi ở đây
+    try {
+      await createReply({ qnaId: quesId, commentId, body: { content } });
+    } catch (error) {
+      console.error("Lỗi khi tạo phản hồi:", error);
+    }
     setContent("");
     onCancel()
   };
@@ -19,7 +24,7 @@ function WriteReply({ commentId , target, onCancel }) {
     <div className="flex items-start gap-2 rounded-lg my-4">
       {/* Ảnh đại diện người dùng */}
       <img
-        src={userInfo?.profilePicture?.url !== "" ? userInfo?.profilePicture?.url : null}
+        src={userInfo?.profilePicture?.url || "/placeholder.svg"}
         alt="User's avatar"
         className="w-8 h-8 rounded-full border-1 border-[#098be4] rounded-full"
       />
@@ -36,10 +41,10 @@ function WriteReply({ commentId , target, onCancel }) {
               mention={target}
             />
             <div className="flex space-x-2 justify-end mt-2">
-              <Button onClick={onCancel} variant="outline">
+              <Button onClick={onCancel} disabled={!isLoading} variant="outline">
                 Hủy
               </Button>
-              <Button onClick={handleSubmit} variant="reverse">
+              <Button onClick={handleSubmit} disabled={!isLoading} variant="reverse">
                 Phản hồi
               </Button>
             </div>

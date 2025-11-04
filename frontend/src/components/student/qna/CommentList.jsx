@@ -5,9 +5,12 @@ import ReactButton from "./ReactButton";
 import Button from "@/components/Button";
 import TopReaction from "./TopReaction";
 import WriteReply from "./WriteReply";
+import ReplyList from "./ReplyList";
+import { useUpdateReactionCommentMutation } from "@/redux/api/qnaSlice";
 
-const CommentCard = ({ comment }) => {
+const CommentCard = ({ quesId, comment }) => {
   const { userInfo } = useSelector((state) => state.auth);
+  const [updateReactionComment] = useUpdateReactionCommentMutation()
 
   function timeAgo(date) {
     const now = new Date();
@@ -28,14 +31,18 @@ const CommentCard = ({ comment }) => {
     return "vừa xong";
   }
 
-  const [reaction, setReaction] = useState(
+  const reaction =
     comment?.likes.find((react) => react?.userId == userInfo._id)
       ? comment?.likes.find((react) => react?.userId == userInfo._id).type
-      : null
-  ); //reaction hiện tại của người dùng
-  const handleReaction = (newReaction) => {
-    // gọi API react comment
-    setReaction((reaction) => (reaction !== newReaction ? newReaction : null));
+      : null //reaction hiện tại của người dùng
+
+  const handleReaction = async(newReaction) => {
+    try {
+      const body = { type: newReaction }
+      await updateReactionComment({ qnaId: quesId, commentId: comment._id, body })
+    } catch (error) {
+      console.log("Lỗi khi react bình luận: ", error)
+    }
   };
 
   const [replyBox, setReplyBox] = useState(false)
@@ -46,7 +53,7 @@ const CommentCard = ({ comment }) => {
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
           <img
-            src={comment?.user.avatar}
+            src={comment?.user.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
           <p className="font-semibold">{comment?.user.username}</p>
@@ -60,12 +67,12 @@ const CommentCard = ({ comment }) => {
         )}
       </div>
       <div
-        className="prose max-w-none"
+        className="prose max-w-none tiptap"
         dangerouslySetInnerHTML={{ __html: comment?.content }}
       />
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
-          <ReactButton reaction={reaction} handleReaction={handleReaction} />
+          <ReactButton reaction={reaction} handler={handleReaction} />
           <Button
             variant="default"
             className="flex gap-2 items-center text-gray-500"
@@ -81,12 +88,13 @@ const CommentCard = ({ comment }) => {
         {/*Số lượng reaction & top 3*/}
         <TopReaction likes={comment.likes} />
       </div>
-      {replyBox && <WriteReply commentId={comment._id} target={replyTarget} onCancel={()=>setReplyBox(false)}/>}
+      {comment.replies.length > 0 && <ReplyList quesId={quesId} commentId={comment._id} setReplyBox={setReplyBox} setTarget={setTarget} replies={comment.replies}/>}
+      {replyBox && <WriteReply quesId={quesId} commentId={comment._id} target={replyTarget} onCancel={()=>setReplyBox(false)}/>}
     </div>
   );
 };
 
-function CommentList({ comments }) {
+function CommentList({ quesId, comments }) {
   const totalComments = comments?.reduce(
     (total, comment) => total + 1 + (comment.replies?.length || 0),
     0
@@ -95,16 +103,16 @@ function CommentList({ comments }) {
   return (
     <div className="w-full space-y-2 py-2">
       <span className="font-semibold">
-        {totalComments > 0 &&
+        {totalComments > 0 ?
           (totalComments > 1000000
             ? totalComments / 1000000 + " triệu" //Nếu tổng lượt react >1tr thì hiển thị kiểu 1 triệu, 2 triệu,...
             : totalComments > 1000
             ? totalComments / 1000 + " ngàn"
             : totalComments + //Nếu tổng lượt react >1000 thì hiển thị kiểu 1 ngàn, 2 ngàn,...
-              " bình luận")}
+              " bình luận") : "Chưa có bình luận nào"}
       </span>
       {comments?.map((cmt, index) => {
-        return <CommentCard key={index} comment={cmt} />;
+        return <CommentCard key={index} quesId={quesId} comment={cmt} />;
       })}
     </div>
   );

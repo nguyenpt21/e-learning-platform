@@ -27,7 +27,7 @@ export const createQNA = async (req, res) => {
 export const getQnAById = async (req, res) => {
     try {
         const { qnaId } = req.params;
-        const qna = await QnA.findById(qnaId).populate('author', 'username avatar').populate('comment.user', 'username avatar').populate('comment.replies.user', 'username avatar');
+        const qna = await QnA.findById(qnaId).populate('author', 'username profilePicture').populate('comments.user', 'username profilePicture').populate('comments.replies.user', 'username profilePicture');
         if (!qna) {
             return res.status(404).json({ message: "QnA not found" });
         }
@@ -58,3 +58,129 @@ export const getQnAByPage = async (req, res) => {
     }
 }
 
+
+export const createComment = async (req,res)=>{
+    try {
+        const {qnaId} = req.params;
+        const {content} = req.body;
+        // Xử lý Base64 → upload lên S3 → thay link
+        const processedContent = await uploadBase64ImagesInContent(content);
+
+        const userId = req.user._id;
+        const qna = await QnA.findById(qnaId);
+        if (!qna){
+            return res.status(404).json({message: "QnA not found"});
+        }
+        qna.comments.push({
+            user: userId,
+            content: processedContent,
+        });
+        await qna.save();
+        res.status(201).json({message: "Comment added successfully"});
+    } catch (error) {
+        console.error("Error creating comment:", error);
+    }
+}
+
+export const createReply = async(req,res)=>{
+    try {
+        const {qnaId , commentId} = req.params;
+        const {content} = req.body;
+
+        const processedContent = await uploadBase64ImagesInContent(content);
+
+        const userId = req.user._id;
+        const qna = await QnA.findById(qnaId);
+        if (!qna){
+            return res.status(404).json({message: "QnA not found"});
+        }
+        const comment = qna.comments.id(commentId);
+        if (!comment){
+            return res.status(404).json({message: "Comment not found"});
+        }
+        comment.replies.push({
+            user: userId,
+            content: processedContent,
+        });
+        await qna.save();
+        res.status(201).json({message: "Reply added successfully"});
+    } catch (error) {
+        console.log("Error creating reply:", error)
+    }
+}
+
+export const updateReactionComment = async(req,res)=>{
+    try {
+        const {type} = req.body
+        const {qnaId, commentId} = req.params
+        const userId = req.user._id;
+        const qna =  await QnA.findById(qnaId);
+        if (!qna){
+            return res.status(404).json({message: "QnA not found"});
+        }
+        const comment = qna.comments.id(commentId);
+        if (!comment){
+            return res.status(404).json({message: "Comment not found"});
+        }
+        // Kiểm tra nếu user đã react
+        const existingReactionIndex = comment.likes.findIndex(
+            (like) => like.userId.toString() === userId.toString()
+        );
+        if (existingReactionIndex !== -1) {
+            // Nếu cùng loại reaction, bỏ reaction (unreact)
+            if (comment.likes[existingReactionIndex].type === type) {
+                comment.likes.splice(existingReactionIndex, 1);
+            } else {
+                // Cập nhật loại reaction
+                comment.likes[existingReactionIndex].type = type;
+            }
+        } else {
+            // Thêm reaction mới
+            comment.likes.push({ userId, type });
+        }
+        await qna.save();
+        res.status(200).json({message: "Reaction updated successfully"});
+    } catch (error) {
+        console.log("Error updating reaction on comment:", error)
+    }
+}
+
+export const updateReactionReply = async(req,res)=>{
+    try {
+        const {type} = req.body
+        const {qnaId, commentId, replyId} = req.params
+        const userId = req.user._id;
+        const qna =  await QnA.findById(qnaId);
+        if (!qna){
+            return res.status(404).json({message: "QnA not found"});
+        }
+        const comment = qna.comments.id(commentId);
+        if (!comment){
+            return res.status(404).json({message: "Comment not found"});
+        }
+        const reply = comment.replies.id(replyId);
+        if (!reply){
+            return res.status(404).json({message: "Reply not found"});
+        }
+        // Kiểm tra nếu user đã react
+        const existingReactionIndex = reply.likes.findIndex(
+            (like) => like.userId.toString() === userId.toString()
+        );
+        if (existingReactionIndex !== -1) {
+            // Nếu cùng loại reaction, bỏ reaction (unreact)
+            if (reply.likes[existingReactionIndex].type === type) {
+                reply.likes.splice(existingReactionIndex, 1);
+            } else {
+                // Cập nhật loại reaction
+                reply.likes[existingReactionIndex].type = type;
+            }
+        } else {
+            // Thêm reaction mới
+            reply.likes.push({ userId, type });
+        }
+        await qna.save();
+        res.status(200).json({message: "Reaction updated successfully"});
+    } catch (error) {
+        console.log("Error updating reaction on reply:", error)
+    }
+}

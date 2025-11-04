@@ -6,10 +6,18 @@ import {
 } from "@/components/ui/tooltip";
 import { ThumbsUp } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
-const ReactButton = ({ reaction, handleReaction }) => {
+const ReactButton = ({ reaction, handler }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleReaction = (newReaction) => {
+    handler(newReaction);
+    setIsOpen(false);
+  }
+
   return (
-    <Tooltip>
+    <Tooltip open={isOpen} onOpenChange={setIsOpen}>
       <TooltipTrigger asChild>
         <Button
           variant="default"
@@ -90,7 +98,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="like"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
           <motion.button
@@ -105,7 +113,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="love"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
           <motion.button
@@ -120,7 +128,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="haha"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
           <motion.button
@@ -135,7 +143,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="wow"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
           <motion.button
@@ -150,7 +158,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="sad"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
           <motion.button
@@ -165,7 +173,7 @@ const ReactButton = ({ reaction, handleReaction }) => {
               alt="angry"
               width={30}
               height={30}
-              unoptimized
+              unoptimized="true"
             />
           </motion.button>
         </div>

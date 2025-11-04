@@ -3,24 +3,16 @@ import { CircleCheck, CircleQuestionMark } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import WriteComment from "./WriteComment";
 import CommentList from "./CommentList";
-import { useGetQnAByIdMutation } from "@/redux/api/qnaSlice";
+import { useGetQnAByIdQuery } from "@/redux/api/qnaSlice";
 
 function QuestionDetail({ quesId }) {
   const [detail, setDetail] = useState(null);
-  const [getQnAById, {isLoading : isLoadingGetQnAById}] = useGetQnAByIdMutation()
+  const { data , isLoading : isLoadingGetQnAById} = useGetQnAByIdQuery(quesId)
 
   useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const qna = await getQnAById(quesId).unwrap();
-        setDetail(qna);
-      } catch (error) {
-        console.error(error);
-      } 
-    };
-
-    fetchDetail();
-  }, [quesId]);
+    if (!data) return;
+    setDetail(data)
+  }, [data]);
 
   function timeAgo(date) {
     const now = new Date();
@@ -59,7 +51,7 @@ function QuestionDetail({ quesId }) {
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <div className="flex space-x-2 items-center">
           <img
-            src={detail?.author.avatar}
+            src={detail?.author.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
           <p className="font-semibold">{detail?.author.username}</p>
@@ -79,12 +71,12 @@ function QuestionDetail({ quesId }) {
       </div>
       {/* Hiển thị nội dung HTML từ file txt */}
       <div
-        className="prose max-w-none [&_a]:text-[#098be4] [&_a:hover]:text-blue-900 [&_a]:underline" // cái link nó ko có màu nên phải thêm tailwind vô
+        className="prose max-w-none tiptap" // cái link nó ko có màu nên phải thêm tailwind vô
         dangerouslySetInnerHTML={{ __html: detail?.content }}
       />
       <WriteComment quesId={quesId} />
 
-      <CommentList comments={detail?.comment} />
+      <CommentList quesId={quesId} comments={detail?.comments} />
     </div>
   );
 }
