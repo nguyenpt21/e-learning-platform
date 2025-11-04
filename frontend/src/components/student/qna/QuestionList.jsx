@@ -3,7 +3,7 @@ import { CircleCheck, CircleQuestionMark } from "lucide-react";
 
 function QuestionList({ list, handleQuestionClick }) {
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2 overflow-y-auto max-h-[500px]">
       {list?.map((ques) => {
         return (
           <div
@@ -13,7 +13,7 @@ function QuestionList({ list, handleQuestionClick }) {
               handleQuestionClick(ques);
             }}
           >
-            {ques.isSolved ? (
+            {!ques.isSolved ? (
               <CircleQuestionMark className="text-gray-500" />
             ) : (
               <CircleCheck className="text-green-500" />

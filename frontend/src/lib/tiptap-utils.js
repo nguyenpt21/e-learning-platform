@@ -252,33 +252,36 @@ export function isNodeTypeSelected(editor, types = []) {
 }
 
 /**
- * Handles image upload with progress tracking and abort capability
- * @param file The file to upload
- * @param onProgress Optional callback for tracking upload progress
- * @param abortSignal Optional AbortSignal for cancelling the upload
- * @returns Promise resolving to the URL of the uploaded image
+ * Handles image upload as base64 with progress tracking and abort capability
+ * @param {File} file - The file to upload
+ * @param {(data: { progress: number }) => void} onProgress - Optional callback for tracking upload progress
+ * @param {AbortSignal} abortSignal - Optional AbortSignal for cancelling the upload
+ * @returns {Promise<string>} Promise resolving to the Base64 URL of the uploaded image
  */
 export const handleImageUpload = async (file, onProgress, abortSignal) => {
-  // Validate file
-  if (!file) {
-    throw new Error("No file provided")
-  }
+  if (!file) throw new Error("No file provided")
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB, tùy chỉnh nếu cần
   if (file.size > MAX_FILE_SIZE) {
     throw new Error(`File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`)
   }
 
-  // For demo/testing: Simulate upload progress. In production, replace the following code
-  // with your own upload implementation.
+  // Mô phỏng tiến trình upload
   for (let progress = 0; progress <= 100; progress += 10) {
-    if (abortSignal?.aborted) {
-      throw new Error("Upload cancelled")
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (abortSignal?.aborted) throw new Error("Upload cancelled")
+    await new Promise((r) => setTimeout(r, 100))
     onProgress?.({ progress })
   }
 
-  return "/images/tiptap-ui-placeholder-image.jpg"
+  // Đọc file thành base64
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = (err) => reject(err)
+    reader.readAsDataURL(file)
+  })
+
+  return base64 // Trả về chuỗi base64 để tiptap hiển thị ảnh
 }
 
 const ATTR_WHITESPACE =

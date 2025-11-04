@@ -9,21 +9,21 @@ import {
 import { useState } from "react";
 import MyRichTextEditor from "./MyRTE";
 import { Spinner } from "@/components/ui/spinner";
+import { useCreateQnAMutation } from "@/redux/api/qnaSlice";
 
 const NewQuestion = ({ handleQuestionClick, getBack }) => {
-  const [loading, setLoading] = useState(false);
+  const [createQnA, {isLoading : isLoadingCreateQnA}] = useCreateQnAMutation();
   const handleSubmit = async () => {
     if(title.length === 0 || content.length===0){
         alert("Vui lòng nhập đầy đủ thông tin.")
         return
     }
-    setLoading(true);
-    const res = { // gọi API tạo câu hỏi
-      // kết quả trả về của 201 Created
-    };
-    setLoading(false)
-    console.log("Type: ", type,"\nTitle: ", title, "\nContent:\n", content)
-    handleQuestionClick(res);
+    try {
+      const createdQnA = await createQnA({ type, title, content }).unwrap();
+      handleQuestionClick(createdQnA._id);
+    } catch (error) {
+      console.log("Lỗi tạo qna:", error);
+    }
   };
 
   const handleCancel = () => {
@@ -46,7 +46,7 @@ const NewQuestion = ({ handleQuestionClick, getBack }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("")    // code HTML
 
-  if (loading)
+  if (isLoadingCreateQnA)
     return (
       <div className="flex h-full items-center justify-center z-50">
         <Spinner className="size-12" color="#098ce9" />
