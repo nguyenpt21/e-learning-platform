@@ -1,4 +1,5 @@
 import aws from "aws-sdk";
+import { v4 as uuidv4 } from "uuid";
 
 const s3 = new aws.S3({
     region: process.env.AWS_REGION,
@@ -84,4 +85,56 @@ const deleteFileFromS3 = async (req, res) => {
     }
 };
 
-export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3 };
+/**
+ * Upload base64 images inside HTML content to S3 and replace src with S3 URLs
+ * @param {string} htmlContent - the HTML string from TipTap
+ * @returns {Promise<string>} processed HTML with replaced image URLs
+ */
+
+const uploadBase64ImagesInContent = async (htmlContent) => {
+  if (!htmlContent) return htmlContent;
+
+  const regex = /<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/g;
+  let match;
+  let updatedContent = htmlContent;
+  const uploads = [];
+
+  while ((match = regex.exec(htmlContent)) !== null) {
+    // ✅ Copy dữ liệu để tránh bị ghi đè
+    const fullTag = match[0];
+    const mimeType = match[1];
+    const base64Data = match[2];
+
+    const buffer = Buffer.from(base64Data, "base64");
+    const extension = mimeType.split("/")[1];
+    const fileKey = `editor/${Date.now()}-${uuidv4()}.${extension}`;
+
+    uploads.push(
+      s3
+        .upload({
+          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Key: fileKey,
+          Body: buffer,
+          ContentEncoding: "base64",
+          ContentType: `image/${extension}`,
+        })
+        .promise()
+        .then((res) => ({
+          original: fullTag, // ✅ dùng bản copy an toàn
+          url: res.Location,
+        }))
+    );
+  }
+
+  const results = await Promise.all(uploads);
+
+  results.forEach(({ original, url }) => {
+    const newImgTag = original.replace(/src="[^"]+"/, `src="${url}"`);
+    updatedContent = updatedContent.replace(original, newImgTag);
+  });
+
+  return updatedContent;
+};
+
+
+export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3, uploadBase64ImagesInContent };

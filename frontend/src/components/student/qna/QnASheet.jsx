@@ -21,82 +21,26 @@ import MyPagination from "./MyPagination";
 import QuestionList from "./QuestionList";
 import NewQuestion from "./NewQuestion";
 import QuestionDetail from "./QuestionDetail";
+import { useGetQnAByPageMutation } from "@/redux/api/qnaSlice";
 
 export function QnASheet() {
   const [mode, setMode] = useState("List"); // List/ Write/ Detail
   const [page, setPage] = useState(1); // trang hiện tại
   const [quesId, setQuesId] = useState(null); // câu hỏi hiện tại
-  const [loading, setLoading] = useState(true);
 
   const [list, setList] = useState([]);
   const [totalQuestion, setTotalQuestion] = useState(0);
   const [totalPage, setTotalPage] = useState(1);
-
+  const [ getQnAByPage, {isLoading: isLoadingGetQnAByPage}] = useGetQnAByPageMutation();
   const fetchPage = async (page) => {
-    setLoading(true);
-    const data = {  // gọi API lấy danh sách câu hỏi theo trang
-      totalQuestion: 183,
-      totalPage: 12,
-      data: [
-        // 7 câu hỏi mỗi trang
-        {
-          _id: "1",
-          type: "Bài học lý thuyết",
-          title: "Tip phỏng vấn",
-          description: "",
-          isSolved: false,
-        },
-        {
-          _id: "2",
-          type: "Bài học lý thuyết",
-          title: "Flex css bị lệch",
-          description: "",
-          isSolved: true,
-        },
-        {
-          _id: "3",
-          type: "Bài học thử thách",
-          title: "Xủ lý vùng Safe-area trên Mobile",
-          description: "",
-          isSolved: true,
-        },
-        {
-          _id: "4",
-          type: "Bài học lý thuyết",
-          title: "Cấp quyền dự án",
-          description: "",
-          isSolved: false,
-        },
-        {
-          _id: "5",
-          type: "Bài học lý thuyết",
-          title: "Tip phỏng vấn",
-          description: "",
-          isSolved: false,
-        },
-        {
-          _id: "6",
-          type: "Bài học lý thuyết",
-          title: "Flex css bị lệch",
-          description: "",
-          isSolved: true,
-        },
-        {
-          _id: "7",
-          type: "Bài học thử thách",
-          title: "Xủ lý vùng Safe-area trên Mobile",
-          userId: "68f49adc5d5c0d9e8661e735",
-          description: "",
-          isSolved: true,
-        },
-      ],
-    };
-    setTimeout(() => {
+    try {
+      const data = await getQnAByPage(page).unwrap();
       setList(data.data);
-      setTotalPage(data.totalPage);
-      setTotalQuestion(data.totalQuestion);
-      setLoading(false);
-    }, 1000);
+      setTotalPage(data.totalPages);
+      setTotalQuestion(data.totalQuestions);
+    } catch (error) {
+      console.log(`Xaỷ ra lỗi khi lấy danh sách qna trang ${page}: `, error)
+    }
   };
 
   const changePage = (page) => {
@@ -166,7 +110,7 @@ export function QnASheet() {
               <p className="text-sm font-semibold mb-2">
                 Các câu hỏi thường gặp ({totalQuestion})
               </p>
-              {loading ? (
+              {isLoadingGetQnAByPage ? (
                 <div className="flex h-full items-center justify-center z-50">
                   <Spinner className="size-12" color="#098ce9" />
                 </div>

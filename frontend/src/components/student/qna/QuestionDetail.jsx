@@ -3,88 +3,24 @@ import { CircleCheck, CircleQuestionMark } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import WriteComment from "./WriteComment";
 import CommentList from "./CommentList";
+import { useGetQnAByIdMutation } from "@/redux/api/qnaSlice";
 
 function QuestionDetail({ quesId }) {
   const [detail, setDetail] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [exContent, setExContent] = useState("");
+  const [getQnAById, {isLoading : isLoadingGetQnAById}] = useGetQnAByIdMutation()
 
-  // Dùng tạm content mẫu (lưu trong thư mục public)
   useEffect(() => {
-    fetch("/ContentExample.txt")
-      .then((res) => res.text())
-      .then((text) => setExContent(text))
-      .catch((err) => console.error("Error loading content:", err));
-  }, []);
-
-  // Gọi fetchDetail sau khi exContent đã có
-  useEffect(() => {
-    if (!exContent) return; // tránh gọi khi chưa load xong txt
-
     const fetchDetail = async () => {
       try {
-        setLoading(true);
-        const data = await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              _id: "1421",
-              type: "Bài học lý thuyết",
-              author: {
-                _id: "666",
-                username: "HacThienCau",
-                avatar: "https://avatars.githubusercontent.com/u/165537685?v=4",
-              },
-              createdAt: new Date(),
-              title: "Cách tạo Rich Text Editor (RTE) với React và TipTap",
-              content: exContent, // gán nội dung txt vào đây
-              likes: [
-                { userId: "2806", type: "love" },
-                { userId: "322131", type: "like" },
-              ],
-              comment: [
-                {
-                  _id: "234144342",
-                  user: {
-                    _id: "2806",
-                    username: "AccClone",
-                    avatar:
-                      "https://th.bing.com/th/id/OIP.75e48zcpbQtRaf6yu9BadgHaIu?pid=ImgDetMain",
-                  },
-                  content: ` <p><strong>Tiptap là một công cụ tốt!</strong></p><p>Nhưng ngoài ra vẫn còn các Rich Text Editor (RTE) khác như<a target="_blank" rel="noopener noreferrer nofollow" href="https://docs.slatejs.org/libraries/slate-react"> Slate React</a> hay <a target="_blank" rel="noopener noreferrer nofollow" href="https://platejs.org/">Plate</a></p><img src="https://tse1.mm.bing.net/th/id/OIP.y4WqSqkDGtt4HqbNUj4GpQHaD4?rs=1&pid=ImgDetMain&o=7&rm=3" alt="OIP" title="OIP"><p></p>`,
-                  createdAt: new Date(),
-                  likes: [{ userId: "2806", type: "like" }, {userId: "68f49adc5d5c0d9e8661e737", type:"love"}],
-                  replies: [],
-                  isSolution: true,
-                },
-                {
-                  _id: "124414142",
-                  user: {
-                    _id: "280668f49adc5d5c0d9e8661e737",
-                    username: "UyenNe",
-                    avatar:
-                      "https://th.bing.com/th/id/OIP.75e48zcpbQtRaf6yu9BadgHaIu?pid=ImgDetMain",
-                  },
-                  content: "<p>Rất hay!<p>",
-                  createdAt: new Date(),
-                  likes: [{ userId: "68f49adc5d5c0d9e8661e737", type: "haha" }],
-                  replies: [],
-                  isSolution: false,
-                },
-              ],
-              isSolved: true,
-            });
-          }, 1000);
-        });
-        setDetail(data);
+        const qna = await getQnAById(quesId).unwrap();
+        setDetail(qna);
       } catch (error) {
         console.error(error);
-      } finally {
-        setLoading(false);
-      }
+      } 
     };
 
     fetchDetail();
-  }, [quesId, exContent]);
+  }, [quesId]);
 
   function timeAgo(date) {
     const now = new Date();
@@ -105,7 +41,7 @@ function QuestionDetail({ quesId }) {
     return "vừa xong";
   }
 
-  if (loading)
+  if (isLoadingGetQnAById)
     return (
       <div className="flex h-full items-center justify-center z-50">
         <Spinner className="size-12" color="#098ce9" />
@@ -143,7 +79,7 @@ function QuestionDetail({ quesId }) {
       </div>
       {/* Hiển thị nội dung HTML từ file txt */}
       <div
-        className="prose max-w-none"
+        className="prose max-w-none [&_a]:text-[#098be4] [&_a:hover]:text-blue-900 [&_a]:underline" // cái link nó ko có màu nên phải thêm tailwind vô
         dangerouslySetInnerHTML={{ __html: detail?.content }}
       />
       <WriteComment quesId={quesId} />

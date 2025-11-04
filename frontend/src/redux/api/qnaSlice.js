@@ -3,16 +3,30 @@ import { apiSlice } from "../api/apiSlice";
 
 export const questionApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        getQuestionList: builder.mutation({
-            query: (page) => ({
-              url: `${QNA_URL}/?page=${page}&limit=7`,
-              method: "GET",
+        createQnA: builder.mutation({
+            query: (body) => ({
+              url: `${QNA_URL}/createQnA`,
+              method: "POST",
               body,
+            }),
+          }),
+        getQnAById: builder.mutation({
+            query: (id) => ({
+              url: `${QNA_URL}/${id}`,
+              method: "GET",
+            }),
+          }),
+        getQnAByPage: builder.mutation({
+            query: (page) => ({
+              url: `${QNA_URL}?page=${page}`,
+              method: "GET",
             }),
           }),
     }),
 });
 
 export const {
-useGetQuestionListMutation,
+    useCreateQnAMutation,
+    useGetQnAByIdMutation,
+    useGetQnAByPageMutation,
 } = questionApiSlice
