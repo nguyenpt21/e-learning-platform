@@ -10,8 +10,9 @@ import ReactButton from "./ReactButton";
 import { useSelector } from "react-redux";
 import Button from "@/components/Button";
 import { useUpdateReactionReplyMutation } from "@/redux/api/qnaSlice";
+import OptionOnReply from "./OptionOnReply";
 
-const ReplyItem = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
+const ReplyCard = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
   const { userInfo } = useSelector((state) => state.auth);
   const [updateReactionReply] = useUpdateReactionReplyMutation();
 
@@ -56,12 +57,13 @@ const ReplyItem = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
           <img
-            src={reply?.user.profilePicture.url|| "/placeholder.svg"}
+            src={reply?.user.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
           <p className="font-semibold">{reply?.user.username}</p>
           <p className="text-sm text-gray-700">{timeAgo(reply?.createdAt)}</p>
         </div>
+        {userInfo._id === reply?.user._id && <OptionOnReply replyInfo={{reply, quesId, commentId}}/>}
       </div>
       <div
         className="prose max-w-none tiptap"
@@ -106,7 +108,7 @@ function ReplyList({ quesId, commentId, setReplyBox, setTarget, replies }) {
       <CollapsibleContent>
         {replies.map((reply) => {
           return (
-            <ReplyItem
+            <ReplyCard
               key={reply._id}
               reply={reply}
               quesId={quesId}

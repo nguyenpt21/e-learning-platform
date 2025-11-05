@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import WriteComment from "./WriteComment";
 import CommentList from "./CommentList";
 import { useGetQnAByIdQuery } from "@/redux/api/qnaSlice";
+import Button from "@/components/Button";
+import QnATypeBadge from "./QnATypeBadge";
 
 function QuestionDetail({ quesId }) {
   const [detail, setDetail] = useState(null);
@@ -42,11 +44,9 @@ function QuestionDetail({ quesId }) {
 
   return (
     <div className="flex w-full flex-col px-4 space-y-2 overflow-y-auto mb-10">
-      <div className="w-full flex items-center gap-2 p-2">
-        <p className="text-lg font-semibold">{detail?.title}</p>
-        <div className="text-sm text-white py-1 px-2 rounded bg-[#098be4]">
-          {detail?.type}
-        </div>
+      <div className="w-full flex justify-between items-center gap-2 p-2">
+        <p className="text-lg font-semibold">{detail?.title}&nbsp;&nbsp;<QnATypeBadge type={detail?.type}/></p>
+        <Button variant="icon"></Button>
       </div>
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <div className="flex space-x-2 items-center">
@@ -76,7 +76,7 @@ function QuestionDetail({ quesId }) {
       />
       <WriteComment quesId={quesId} />
 
-      <CommentList quesId={quesId} comments={detail?.comments} />
+      <CommentList ques={detail} comments={detail?.comments} />
     </div>
   );
 }

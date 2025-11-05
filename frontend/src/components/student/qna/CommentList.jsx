@@ -7,10 +7,12 @@ import TopReaction from "./TopReaction";
 import WriteReply from "./WriteReply";
 import ReplyList from "./ReplyList";
 import { useUpdateReactionCommentMutation } from "@/redux/api/qnaSlice";
+import OptionOnComment from "./OptionOnComment";
+import SolveQnAButton from "./SolveQnAButton";
 
-const CommentCard = ({ quesId, comment }) => {
+const CommentCard = ({ ques, comment }) => {
   const { userInfo } = useSelector((state) => state.auth);
-  const [updateReactionComment] = useUpdateReactionCommentMutation()
+  const [updateReactionComment] = useUpdateReactionCommentMutation();
 
   function timeAgo(date) {
     const now = new Date();
@@ -31,22 +33,25 @@ const CommentCard = ({ quesId, comment }) => {
     return "vừa xong";
   }
 
-  const reaction =
-    comment?.likes.find((react) => react?.userId == userInfo._id)
-      ? comment?.likes.find((react) => react?.userId == userInfo._id).type
-      : null //reaction hiện tại của người dùng
+  const reaction = comment?.likes.find((react) => react?.userId == userInfo._id)
+    ? comment?.likes.find((react) => react?.userId == userInfo._id).type
+    : null; //reaction hiện tại của người dùng
 
-  const handleReaction = async(newReaction) => {
+  const handleReaction = async (newReaction) => {
     try {
-      const body = { type: newReaction }
-      await updateReactionComment({ qnaId: quesId, commentId: comment._id, body })
+      const body = { type: newReaction };
+      await updateReactionComment({
+        qnaId: ques._id,
+        commentId: comment._id,
+        body,
+      });
     } catch (error) {
-      console.log("Lỗi khi react bình luận: ", error)
+      console.log("Lỗi khi react bình luận: ", error);
     }
   };
 
-  const [replyBox, setReplyBox] = useState(false)
-  const [replyTarget, setTarget] = useState(null)
+  const [replyBox, setReplyBox] = useState(false);
+  const [replyTarget, setTarget] = useState(null);
 
   return (
     <div className="w-full rounded-lg p-2 space-y-2">
@@ -59,12 +64,20 @@ const CommentCard = ({ quesId, comment }) => {
           <p className="font-semibold">{comment?.user.username}</p>
           <p className="text-sm text-gray-700">{timeAgo(comment?.createdAt)}</p>
         </div>
-        {comment?.isSolution && (
-          <div className="flex items-center text-green-500 gap-2 text-sm">
-            <CircleCheck />
-            Câu trả lời tốt nhất
-          </div>
-        )}
+        <div className="flex space-x-2 items-center">
+          {comment?.isSolution && (
+            <div className="flex items-center text-green-500 gap-2 text-sm">
+              <CircleCheck />
+              Câu trả lời tốt nhất
+            </div>
+          )}
+          {userInfo._id === ques.author._id && !ques.isSolved && (
+            <SolveQnAButton quesId={ques._id} commentId={comment._id} />
+          )}
+          {userInfo._id === comment?.user._id && (
+            <OptionOnComment commentInfo={{ quesId: ques._id, comment }} />
+          )}
+        </div>
       </div>
       <div
         className="prose max-w-none tiptap"
@@ -76,9 +89,9 @@ const CommentCard = ({ quesId, comment }) => {
           <Button
             variant="default"
             className="flex gap-2 items-center text-gray-500"
-            onClick={()=>{
-              setReplyBox(!replyBox)
-              setTarget(comment?.user)
+            onClick={() => {
+              setReplyBox(!replyBox);
+              setTarget(comment?.user);
             }}
           >
             <MessageCircle style={{ width: "20px", height: "20px" }} />
@@ -88,13 +101,28 @@ const CommentCard = ({ quesId, comment }) => {
         {/*Số lượng reaction & top 3*/}
         <TopReaction likes={comment.likes} />
       </div>
-      {comment.replies.length > 0 && <ReplyList quesId={quesId} commentId={comment._id} setReplyBox={setReplyBox} setTarget={setTarget} replies={comment.replies}/>}
-      {replyBox && <WriteReply quesId={quesId} commentId={comment._id} target={replyTarget} onCancel={()=>setReplyBox(false)}/>}
+      {comment.replies.length > 0 && (
+        <ReplyList
+          quesId={ques._id}
+          commentId={comment._id}
+          setReplyBox={setReplyBox}
+          setTarget={setTarget}
+          replies={comment.replies}
+        />
+      )}
+      {replyBox && (
+        <WriteReply
+          quesId={ques._id}
+          commentId={comment._id}
+          target={replyTarget}
+          onCancel={() => setReplyBox(false)}
+        />
+      )}
     </div>
   );
 };
 
-function CommentList({ quesId, comments }) {
+function CommentList({ ques, comments }) {
   const totalComments = comments?.reduce(
     (total, comment) => total + 1 + (comment.replies?.length || 0),
     0
@@ -103,16 +131,17 @@ function CommentList({ quesId, comments }) {
   return (
     <div className="w-full space-y-2 py-2">
       <span className="font-semibold">
-        {totalComments > 0 ?
-          (totalComments > 1000000
+        {totalComments > 0
+          ? totalComments > 1000000
             ? totalComments / 1000000 + " triệu" //Nếu tổng lượt react >1tr thì hiển thị kiểu 1 triệu, 2 triệu,...
             : totalComments > 1000
             ? totalComments / 1000 + " ngàn"
             : totalComments + //Nếu tổng lượt react >1000 thì hiển thị kiểu 1 ngàn, 2 ngàn,...
-              " bình luận") : "Chưa có bình luận nào"}
+              " bình luận"
+          : "Chưa có bình luận nào"}
       </span>
       {comments?.map((cmt, index) => {
-        return <CommentCard key={index} quesId={quesId} comment={cmt} />;
+        return <CommentCard key={index} ques={ques} comment={cmt} />;
       })}
     </div>
   );

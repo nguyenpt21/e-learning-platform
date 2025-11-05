@@ -20,6 +20,7 @@ export const questionApiSlice = apiSlice.injectEndpoints({
       query: (page = 1) => ({
         url: `${QNA_URL}?page=${page}`,
       }),
+      providesTags: (result, error, id) => [{ type: "QnA", id: "LIST" }],
     }),
     createComment: builder.mutation({
       query: ({ qnaId, body }) => ({
@@ -31,11 +32,49 @@ export const questionApiSlice = apiSlice.injectEndpoints({
         { type: "QnA", id: qnaId },
       ],
     }),
+    updateComment: builder.mutation({
+      query: ({ qnaId, commentId,  body }) => ({
+        url: `${QNA_URL}/${qnaId}/comment/${commentId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+      ],
+    }),
+    deleteComment: builder.mutation({
+      query: ({ qnaId, commentId }) => ({
+        url: `${QNA_URL}/${qnaId}/comment/${commentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+      ],
+    }),
     createReply: builder.mutation({
       query: ({ qnaId, commentId, body }) => ({
         url: `${QNA_URL}/${qnaId}/comment/${commentId}/reply`,
         method: "POST",
         body,
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+      ],
+    }),
+    updateReply: builder.mutation({
+      query: ({ qnaId, commentId, replyId, body }) => ({
+        url: `${QNA_URL}/${qnaId}/comment/${commentId}/reply/${replyId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+      ],
+    }),
+    deleteReply: builder.mutation({
+      query: ({ qnaId, commentId, replyId }) => ({
+        url: `${QNA_URL}/${qnaId}/comment/${commentId}/reply/${replyId}`,
+        method: "DELETE",
       }),
       invalidatesTags: (result, error, { qnaId }) => [
         { type: "QnA", id: qnaId },
@@ -60,6 +99,17 @@ export const questionApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { qnaId }) => [
         { type: "QnA", id: qnaId },
       ],
+    }),
+    solveTheQnA: builder.mutation({
+      query: ({ qnaId, body }) => ({
+        url: `${QNA_URL}/${qnaId}/solve`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: "LIST" },
+      ],
     })
   }),
 });
@@ -69,7 +119,12 @@ export const {
   useGetQnAByIdQuery,
   useGetQnAByPageQuery,
   useCreateCommentMutation,
+  useUpdateCommentMutation,
+  useDeleteCommentMutation,
   useCreateReplyMutation,
+  useUpdateReplyMutation,
+  useDeleteReplyMutation,
   useUpdateReactionCommentMutation,
-  useUpdateReactionReplyMutation
+  useUpdateReactionReplyMutation,
+  useSolveTheQnAMutation
 } = questionApiSlice;
