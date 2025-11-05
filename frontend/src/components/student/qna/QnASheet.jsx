@@ -21,7 +21,7 @@ import MyPagination from "./MyPagination";
 import QuestionList from "./QuestionList";
 import NewQuestion from "./NewQuestion";
 import QuestionDetail from "./QuestionDetail";
-import { useGetQnAByPageMutation } from "@/redux/api/qnaSlice";
+import { useGetQnAByPageQuery } from "@/redux/api/qnaSlice";
 
 export function QnASheet() {
   const [mode, setMode] = useState("List"); // List/ Write/ Detail
@@ -31,26 +31,19 @@ export function QnASheet() {
   const [list, setList] = useState([]);
   const [totalQuestion, setTotalQuestion] = useState(0);
   const [totalPage, setTotalPage] = useState(1);
-  const [ getQnAByPage, {isLoading: isLoadingGetQnAByPage}] = useGetQnAByPageMutation();
-  const fetchPage = async (page) => {
-    try {
-      const data = await getQnAByPage(page).unwrap();
+  const { data , isLoading: isLoadingGetQnAByPage} = useGetQnAByPageQuery(page);
+
+  useEffect(() => {
+    if (data) {
       setList(data.data);
       setTotalPage(data.totalPages);
       setTotalQuestion(data.totalQuestions);
-    } catch (error) {
-      console.log(`Xaỷ ra lỗi khi lấy danh sách qna trang ${page}: `, error)
     }
-  };
+  }, [data]);
 
   const changePage = (page) => {
     setPage(page);
-    fetchPage(page);
   };
-
-  useEffect(() => {
-    fetchPage(1);
-  }, []);
 
   const handleQuestionClick = async (ques) => {
     setMode("Detail");

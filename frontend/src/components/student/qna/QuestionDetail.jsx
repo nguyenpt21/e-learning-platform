@@ -3,24 +3,18 @@ import { CircleCheck, CircleQuestionMark } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import WriteComment from "./WriteComment";
 import CommentList from "./CommentList";
-import { useGetQnAByIdMutation } from "@/redux/api/qnaSlice";
+import { useGetQnAByIdQuery } from "@/redux/api/qnaSlice";
+import Button from "@/components/Button";
+import QnATypeBadge from "./QnATypeBadge";
 
 function QuestionDetail({ quesId }) {
   const [detail, setDetail] = useState(null);
-  const [getQnAById, {isLoading : isLoadingGetQnAById}] = useGetQnAByIdMutation()
+  const { data , isLoading : isLoadingGetQnAById} = useGetQnAByIdQuery(quesId)
 
   useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const qna = await getQnAById(quesId).unwrap();
-        setDetail(qna);
-      } catch (error) {
-        console.error(error);
-      } 
-    };
-
-    fetchDetail();
-  }, [quesId]);
+    if (!data) return;
+    setDetail(data)
+  }, [data]);
 
   function timeAgo(date) {
     const now = new Date();
@@ -50,16 +44,14 @@ function QuestionDetail({ quesId }) {
 
   return (
     <div className="flex w-full flex-col px-4 space-y-2 overflow-y-auto mb-10">
-      <div className="w-full flex items-center gap-2 p-2">
-        <p className="text-lg font-semibold">{detail?.title}</p>
-        <div className="text-sm text-white py-1 px-2 rounded bg-[#098be4]">
-          {detail?.type}
-        </div>
+      <div className="w-full flex justify-between items-center gap-2 p-2">
+        <p className="text-lg font-semibold">{detail?.title}&nbsp;&nbsp;<QnATypeBadge type={detail?.type}/></p>
+        <Button variant="icon"></Button>
       </div>
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <div className="flex space-x-2 items-center">
           <img
-            src={detail?.author.avatar}
+            src={detail?.author.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
           <p className="font-semibold">{detail?.author.username}</p>
@@ -79,12 +71,12 @@ function QuestionDetail({ quesId }) {
       </div>
       {/* Hiển thị nội dung HTML từ file txt */}
       <div
-        className="prose max-w-none [&_a]:text-[#098be4] [&_a:hover]:text-blue-900 [&_a]:underline" // cái link nó ko có màu nên phải thêm tailwind vô
+        className="prose max-w-none tiptap" // cái link nó ko có màu nên phải thêm tailwind vô
         dangerouslySetInnerHTML={{ __html: detail?.content }}
       />
       <WriteComment quesId={quesId} />
 
-      <CommentList comments={detail?.comment} />
+      <CommentList ques={detail} comments={detail?.comments} />
     </div>
   );
 }

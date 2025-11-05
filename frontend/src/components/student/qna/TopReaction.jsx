@@ -28,8 +28,8 @@ function TopReaction({likes}) {
             <img
               src={`/reaction/${reaction}.png`}
               alt={`${reaction}`}
-              width={18}
-              height={18}
+              width={20}
+              height={16}
               key={reaction}
             />
           ))}

@@ -1,5 +1,6 @@
 import React from "react";
 import { CircleCheck, CircleQuestionMark } from "lucide-react";
+import QnATypeBadge from "./QnATypeBadge";
 
 function QuestionList({ list, handleQuestionClick }) {
   return (
@@ -19,9 +20,7 @@ function QuestionList({ list, handleQuestionClick }) {
               <CircleCheck className="text-green-500" />
             )}
             <p className="max-w-1/2 truncate">{ques.title}</p>
-            <div className="text-sm text-white py-1 px-2 rounded bg-[#098be4]">
-              {ques.type}
-            </div>
+            <QnATypeBadge type={ques.type} />
           </div>
         );
       })}

@@ -266,3 +266,28 @@
 .plyr .plyr__controls {
     transition: opacity 0.3s ease;
 }
+
+.mention {
+    background-color: #e7f3ff;
+    color: #098be4;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  /* hover hiệu ứng */
+  .mention:hover {
+    background-color: #d0e8ff;
+  }
+
+  .tiptap a {
+    color: #098be4; /* Màu xanh dương */
+    text-decoration: underline;
+  }
+  
+  .tiptap a:hover {
+    color: #1d4ed8; /* Xanh đậm khi hover */
+    text-decoration: none;
+  }

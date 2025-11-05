@@ -210,21 +210,29 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
     },
   });
   
-  useEffect(()=>{
-    if (mention && editor){
-      editor
-        .chain()
-        .focus()
-        .insertContent([
-          {
-            type: "mention",
-            attrs: { id: mention._id, label: `${mention.username}` },
-          },
-          { type: "text", text: " " },
-        ])
-        .run()
-    }
-  },[mention, editor])
+  useEffect(() => {
+    if (!mention || !editor) return;
+    // Xóa toàn bộ mention cũ trước
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: 0, to: editor.state.doc.content.size })
+      .deleteSelection()
+      .run();
+
+    // Thêm mention mới
+    editor
+      .chain()
+      .focus()
+      .insertContent([
+        {
+          type: "mention",
+          attrs: { id: mention._id, label: `${mention.username}` },
+        },
+        { type: "text", text: " " },
+      ])
+      .run();
+  }, [mention, editor]);
 
   const rect = useCursorVisibility({
     editor,
