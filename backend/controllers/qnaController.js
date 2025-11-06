@@ -24,6 +24,53 @@ export const createQNA = async (req, res) => {
   }
 };
 
+export const updateQnA = async (req, res) => {
+  try {
+    const {qnaId} =  req.params;
+    const { type, title, content } = req.body;
+    const userId = req.user._id;
+    const qna = await QnA.findById(qnaId);
+    if (!qna){
+      return res.status(404).json({ message: "QnA not found" });
+    }
+    if (qna.author.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to update this QnA" });
+    }
+    const processedContent = await uploadBase64ImagesInContent(content);
+    qna.type = type;
+    qna.title = title;
+    qna.content = processedContent;
+    await qna.save();
+    res.status(200).json({ message: "QnA updated successfully" });
+  } catch (error) {
+    console.log("Error updating QnA:", error);
+    res.status(500).json({ message: "Failed to update QnA" });
+  }
+}
+
+export const deleteQnA = async (req, res) => {
+  try {
+    const {qnaId} =  req.params;
+    const userId = req.user._id;
+    const qna = await QnA.findById(qnaId)
+    if (!qna){
+      return res.status(404).json({ message: "QnA not found" });
+    }
+    if (qna.author._id.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to delete this QnA" });
+    }
+    await qna.deleteOne();
+    res.status(200).json({ message: "QnA deleted successfully" });
+  } catch (error) {
+    console.log("Error deleting QnA:", error);
+    res.status(500).json({ message: "Failed to delete QnA" });
+  }
+}
+
 export const getQnAById = async (req, res) => {
   try {
     const { qnaId } = req.params;

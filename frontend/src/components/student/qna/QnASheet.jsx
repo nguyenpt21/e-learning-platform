@@ -133,7 +133,7 @@ export function QnASheet() {
           </div>
         )}
         {mode === "Detail" && 
-             <QuestionDetail quesId={quesId}/>
+             <QuestionDetail quesId={quesId} getBack={getBack}/>
         }
         {mode === "Write" && (          
               <NewQuestion

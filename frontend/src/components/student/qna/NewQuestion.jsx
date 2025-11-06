@@ -20,7 +20,7 @@ const NewQuestion = ({ handleQuestionClick, getBack }) => {
     }
     try {
       const createdQnA = await createQnA({ type, title, content }).unwrap();
-      handleQuestionClick(createdQnA._id);
+      handleQuestionClick(createdQnA);
     } catch (error) {
       console.log("Lỗi tạo qna:", error);
     }

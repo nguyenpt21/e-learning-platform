@@ -9,6 +9,30 @@ export const questionApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: (result, error) => [
+        { type: "QnA", id: "LIST" },
+      ],
+    }),
+    updateQnA: builder.mutation({
+      query: ({ qnaId, body }) => ({
+        url: `${QNA_URL}/${qnaId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: "LIST" },
+      ],
+    }),
+    deleteQnA : builder.mutation({
+      query: ({ qnaId }) => ({
+        url: `${QNA_URL}/${qnaId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { qnaId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: "LIST" },
+      ],
     }),
     getQnAById: builder.query({
       query: (id) => ({
@@ -116,6 +140,8 @@ export const questionApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useCreateQnAMutation,
+  useUpdateQnAMutation,
+  useDeleteQnAMutation,
   useGetQnAByIdQuery,
   useGetQnAByPageQuery,
   useCreateCommentMutation,

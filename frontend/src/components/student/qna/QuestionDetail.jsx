@@ -6,8 +6,11 @@ import CommentList from "./CommentList";
 import { useGetQnAByIdQuery } from "@/redux/api/qnaSlice";
 import Button from "@/components/Button";
 import QnATypeBadge from "./QnATypeBadge";
+import { useSelector } from "react-redux";
+import OptionOnQnA from "./OptionOnQnA";
 
-function QuestionDetail({ quesId }) {
+function QuestionDetail({ quesId, getBack }) {
+  const {userInfo} = useSelector((state) => state.auth);
   const [detail, setDetail] = useState(null);
   const { data , isLoading : isLoadingGetQnAById} = useGetQnAByIdQuery(quesId)
 
@@ -46,7 +49,7 @@ function QuestionDetail({ quesId }) {
     <div className="flex w-full flex-col px-4 space-y-2 overflow-y-auto mb-10">
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <p className="text-lg font-semibold">{detail?.title}&nbsp;&nbsp;<QnATypeBadge type={detail?.type}/></p>
-        <Button variant="icon"></Button>
+        {userInfo._id === detail?.author._id && <OptionOnQnA ques={detail} getBack={getBack}/>}
       </div>
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <div className="flex space-x-2 items-center">

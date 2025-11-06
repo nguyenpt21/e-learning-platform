@@ -19,7 +19,7 @@ function QuestionList({ list, handleQuestionClick }) {
             ) : (
               <CircleCheck className="text-green-500" />
             )}
-            <p className="max-w-1/2 truncate">{ques.title}</p>
+            <p className="max-w-2/3 truncate">{ques.title}</p>
             <QnATypeBadge type={ques.type} />
           </div>
         );

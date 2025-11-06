@@ -1,11 +1,13 @@
 import express from "express";
 import { protectRoute } from "../middleware/authMiddleware.js"
-import { createComment, createQNA, createReply, deleteComment, deleteReply, getQnAById, getQnAByPage, solveTheQnA, updateComment, updateReactionComment, updateReactionReply, updateReply } from "../controllers/qnaController.js";
+import { createComment, createQNA, createReply, deleteComment, deleteQnA, deleteReply, getQnAById, getQnAByPage, solveTheQnA, updateComment, updateQnA, updateReactionComment, updateReactionReply, updateReply } from "../controllers/qnaController.js";
 const router = express.Router();
 
 router.post("/createQnA", protectRoute, createQNA)
 router.get("/", protectRoute, getQnAByPage)
 router.get("/:qnaId", protectRoute, getQnAById)
+router.put("/:qnaId", protectRoute, updateQnA)
+router.delete("/:qnaId", protectRoute, deleteQnA)
 
 router.put("/:qnaId/solve", protectRoute, solveTheQnA)
 

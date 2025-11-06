@@ -8,7 +8,7 @@ function WriteComment({ quesId }) {
   const [isFocused, setIsFocused] = useState(false);
   const [content, setContent] = useState("");
   const { userInfo } = useSelector((state) => state.auth);
-  const [createComment, isLoading] = useCreateCommentMutation();
+  const [createComment, {isLoading}] = useCreateCommentMutation();
 
   const handleSubmit = async() => {
     if (content.trim() === "") return;
