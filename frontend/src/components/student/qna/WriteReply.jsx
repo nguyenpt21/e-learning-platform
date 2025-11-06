@@ -7,7 +7,7 @@ import { useCreateReplyMutation } from "@/redux/api/qnaSlice";
 function WriteReply({ quesId, commentId , target, onCancel }) {
   const [content, setContent] = useState("");
   const { userInfo } = useSelector((state) => state.auth);
-  const [createReply, isLoading] = useCreateReplyMutation()
+  const [createReply, {isLoading}] = useCreateReplyMutation();
 
   const handleSubmit = async() => {
     if (content.trim() === "") return;
