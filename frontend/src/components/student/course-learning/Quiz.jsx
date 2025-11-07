@@ -18,14 +18,59 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CheckCircle2, XCircle, RefreshCw, Circle } from "lucide-react";
+import { useUpdateQuizProgressMutation } from "@/redux/api/progressApiSlice";
 
-const Quiz = ({ item }) => {
+const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
     const { userInfo } = useSelector((state) => state.auth);
     const questions = item.questions || [];
-    const [step, setStep] = useState("start");
+    const [step, setStep] = useState("loading");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState([]);
     const [errorMessage, setErrorMessage] = useState("");
+
+    const [updateQuizProgress] = useUpdateQuizProgressMutation();
+
+    useEffect(() => {
+        if (isProgressLoading) return;
+        if (itemProgress?.submissionId) {
+            const submission = itemProgress.submissionId;
+            setAnswers(submission.answers || []);
+            if (submission.isFinished) {
+                setStep("finish");
+            }
+            else if (submission.currentQuestion == 0 || !submission.currentQuestion) {
+                setStep("start");
+            }
+            else {
+                setStep("quiz");
+                setCurrentIndex(submission.currentQuestion || 0);
+            }
+        } else {
+            setStep("start");
+        }
+    }, [itemProgress, isProgressLoading]);
+
+    useEffect(() => {
+        const startSubmission = async () => {
+            try {
+                await updateQuizProgress({
+                    userId: userInfo._id,
+                    courseId: item.courseId,
+                    sectionId: item.sectionId,
+                    quizId: item._id,
+                    answers: [],
+                    currentQuestion: 0,
+                    isFinished: false,
+                }).unwrap();
+            } catch (err) {
+                console.error("Lỗi khi khởi tạo tiến trình quiz:", err);
+            }
+        };
+
+        if (userInfo?._id && item?._id) {
+            startSubmission();
+        }
+    }, []);
 
     const startQuiz = () => {
         setStep("quiz");
@@ -53,7 +98,7 @@ const Quiz = ({ item }) => {
         setErrorMessage("");
     };
 
-    const goNext = () => {
+    const goNext = async () => {
         const q = questions[currentIndex];
         const found = answers.find((a) => a.questionId === q._id);
         if (!found) {
@@ -62,13 +107,20 @@ const Quiz = ({ item }) => {
         }
         const submissionProcessData = {
             userId: userInfo._id,
+            courseId: item.courseId,
+            sectionId: item.sectionId,
             quizId: item._id,
             answers,
             currentQuestion: answers.length,
             isFinished: false,
         };
-
-        console.log("Lưu tiến trình:", submissionProcessData);
+        // console.log("Lưu tiến trình:", submissionProcessData);
+        try {
+            const res = await updateQuizProgress(submissionProcessData).unwrap();
+            // console.log("Tiến trình lưu thành công:", res);
+        } catch (error) {
+            console.error("Lỗi khi lưu tiến trình làm bài quiz:", error);
+        }
 
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -77,13 +129,22 @@ const Quiz = ({ item }) => {
             const percentage = Math.round((answers.filter((a) => a.isTrue).length / questions.length) * 100);
             const submissionData = {
                 userId: userInfo._id,
+                courseId: item.courseId,
+                sectionId: item.sectionId,
                 quizId: item._id,
                 answers,
                 score: percentage,
                 currentQuestion: answers.length,
                 isFinished: true,
             };
-            console.log("Nộp bài:", submissionData);
+            // console.log("Nộp bài:", submissionData);
+            try {
+                const res = await updateQuizProgress(submissionData).unwrap();
+                setIsDone(true);
+                // console.log("Nộp bài thành công:", res);
+            } catch (error) {
+                console.error("Lỗi khi nộp bài quiz:", error);
+            }
             setStep("finish");
         }
     };
@@ -95,7 +156,7 @@ const Quiz = ({ item }) => {
         }
     };
 
-    if (!item || !item.questions) {
+    if (step === "loading" || !item || !item.questions || !itemProgress || isProgressLoading) {
         return (
             <div className="px-20 py-12 space-y-6">
                 <Skeleton className="h-8 w-2/3" />
