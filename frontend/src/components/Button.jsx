@@ -1,22 +1,30 @@
 // Button.jsx
 export default function Button({ children, variant = "default", className = "", ...props }) {
     let baseStyle =
-      "px-4 py-2 rounded font-medium transition duration-200 cursor-pointer";
+      "rounded font-medium transition duration-200 cursor-pointer";
   
     let styles = "";
   
     switch (variant) {
       case "default":
         styles =
-          "bg-white text-black hover:text-[#098be4] hover:bg-[#cee8fb]";
+          "px-4 py-2 bg-white text-black hover:text-[#098be4] hover:bg-[#cee8fb]";
         break;
       case "outline":
         styles =
-          "bg-white text-[#098be4] border border-[#098be4] hover:text-[#098be4] hover:bg-[#cee8fb]";
+          "px-4 py-2 bg-white text-[#098be4] border border-[#098be4] hover:text-[#098be4] hover:bg-[#cee8fb]";
         break;
       case "reverse":
         styles =
-          "bg-[#098be4] text-white hover:bg-[#cee8fb] hover:text-[#098be4]";
+          "px-4 py-2 bg-[#098be4] text-white hover:bg-[#cee8fb] hover:text-[#098be4]";
+        break;
+      case "icon":
+        styles =
+          "bg-white text-black hover:text-[#098be4] hover:bg-[#cee8fb] p-2";
+        break;
+      case "destructive":
+        styles = 
+          "px-4 py-2 bg-red-500 text-white hover:bg-red-900";
         break;
       default:
         styles =

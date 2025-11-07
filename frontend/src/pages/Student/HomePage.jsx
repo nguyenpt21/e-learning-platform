@@ -3,7 +3,7 @@ import FeatureSection from "../../components/FeatureSection";
 import HeroSection from "../../components/HeroSection";
 import Testimonials from "../../components/Testimonials";
 import { useEffect, useState } from "react";
-import useInView from "../../hooks/useInView";
+import useInView from "../../hooks/tiptap/useInView";
 
 export default function HomePage() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
