@@ -1,4 +1,5 @@
 import CourseLearning from "@/pages/Student/CourseLearning";
+import ProfilePage from "@/pages/student/ProfilePage";
 import ProtectedRoutes from "@/routes/ProtectedRoutes";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -10,6 +11,7 @@ const StudentRoutes = () => {
                 element={<ProtectedRoutes allowedRoles={["user"]} />}
             >
                 <Route path="/learning/:_id" element={<CourseLearning/>} />
+                <Route path="/profile" element={<ProfilePage />} />
             </Route>
         </Routes>
     );

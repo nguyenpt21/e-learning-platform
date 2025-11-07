@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope, FaUserPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -20,6 +20,19 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+    useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        email: "",
+        password: "",
+        confirmPassword: "",
+        firstName: "",
+        lastName: "",
+      });
+      setShowPassword(false);
+    }
+  }, [isOpen]);
 
   const handleChange = (e) => {
     setFormData({
@@ -78,8 +91,11 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
         ...rest,
         role: "user",
       };
-      await signup(payload).unwrap();
-      toast.success("Đăng ký thành công! Chào mừng bạn đến với cộng đồng học tập!", { position: "bottom-right" });
+      const response = await signup(payload).unwrap();
+      toast.success(
+        response.message || "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.", 
+        { position: "bottom-right", autoClose: 5000 }
+      );
       onClose();
       onSwitchToSignIn();
     } catch (error) {

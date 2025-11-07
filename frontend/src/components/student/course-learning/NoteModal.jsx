@@ -104,7 +104,7 @@ const NoteModal = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 ">
       {/* Modal */}
-      <div className=" bg-white  w-full max-w-[1090px] rounded-t-2xl shadow-lg border border-gray-200 animate-slide-up">
+      <div className=" bg-white  w-full  rounded-t-2xl shadow-lg border border-gray-200 animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-3">
           <div className="flex items-center gap-3">
@@ -151,7 +151,7 @@ const NoteModal = () => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full p-4 min-h-[80px] resize-none focus:outline-none"
+              className="w-full p-4 min-h-20 resize-none focus:outline-none"
             />
           </div>
 
