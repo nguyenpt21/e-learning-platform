@@ -129,7 +129,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     dispatch(
       openAddNoteModal({
         timestamp: currentTime,
-        itemId: itemId, 
+        itemId: itemId,
         courseId: item?.courseId,
       })
     );
@@ -297,7 +297,12 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
         ) : (
           <div className="flex flex-col">
             <div className="w-full border-b-2 border-b-gray-200 h-[45vh] md:h-[50vh] lg:h-[calc(58vh+3px)] overflow-y-auto">
-              <Quiz item={item} />
+              <Quiz
+                item={item}
+                setIsDone={setIsDone}
+                itemProgress={itemProgress}
+                isProgressLoading={isProgressLoading}
+              />
             </div>
             <div className="mx-12 mt-8 md:mx-12 md:mt-12 lg:mx-20 lg:mt-12">
               <div className="text-2xl lg:text-3xl font-semibold mb-1">
@@ -313,7 +318,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             </div>
           </div>
         )}
-        <NoteModal />
+        {/* <NoteModal /> */}
       </div>
 
       <footer className="w-full text-sm text-center py-5 flex items-center justify-center">
