@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 function App() {
     const { userInfo } = useSelector((state) => state.auth)
-    console.log("User in app: ", userInfo)
+
 
     return (
         <>

@@ -9,7 +9,11 @@ import progressRoute from "./routes/progressRoute.js"
 import videoNoteRoute from "./routes/videoNoteRoute.js"
 import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
 import paymentRoute from "./routes/paymentRoute.js"
+
+import profileRoute from "./routes/profileRoute.js"
+
 import qnaRoute from "./routes/qnaRoute.js"
+
 
 dotenv.config();
 
@@ -53,7 +57,11 @@ app.post("/api/generateUploadURL", generateUploadURL)
 app.use('/api/progress', progressRoute);
 app.delete("/api/deleteFile", deleteFileFromS3);
 app.use('/api/checkout', paymentRoute)
+
+app.use('/api/profile', profileRoute)
+
 app.use('/api/qna', qnaRoute)
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);

@@ -3,18 +3,20 @@ import { X } from "lucide-react";
 
 const Modal = ({ isOpen, onClose, children, title, size = "md" }) => {
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+  const handleEscape = (e) => {
+    if (e.key === "Escape") onClose();
+  };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
+  if (isOpen) {
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden"; // khóa scroll
+  }
 
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  return () => {
+    document.removeEventListener("keydown", handleEscape);
+    document.body.style.overflow = ""; // mở scroll khi modal đóng/unmount
+  };
+}, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -26,13 +28,10 @@ const Modal = ({ isOpen, onClose, children, title, size = "md" }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 transition-all duration-300 ">
-      {/* Không có overlay đen, chỉ blur nền */}
-      
-      {/* Modal content */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 transition-all duration-300">
       <div
         className={`relative bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} 
-        overflow-hidden transform transition-all duration-300 scale-80 animate-in fade-in-0 zoom-in-95 `}
+        overflow-hidden transform transition-all duration-300 scale-80 animate-in fade-in-0 zoom-in-95`}
       >
         {/* Header */}
         <div className="bg-[#27B5FC] rounded-t-2xl p-5 text-white flex items-center justify-between">
