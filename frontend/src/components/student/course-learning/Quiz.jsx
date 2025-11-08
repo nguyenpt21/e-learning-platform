@@ -45,7 +45,8 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                 setStep("quiz");
                 setCurrentIndex(submission.currentQuestion || 0);
             }
-        } else {
+        }
+        else {
             setStep("start");
         }
     }, [itemProgress, isProgressLoading]);
@@ -53,15 +54,24 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
     useEffect(() => {
         const startSubmission = async () => {
             try {
-                await updateQuizProgress({
-                    userId: userInfo._id,
-                    courseId: item.courseId,
-                    sectionId: item.sectionId,
-                    quizId: item._id,
-                    answers: [],
-                    currentQuestion: 0,
-                    isFinished: false,
-                }).unwrap();
+                if (userInfo?._id && item?._id && step === "start") {
+                    await updateQuizProgress({
+                        userId: userInfo._id,
+                        courseId: item.courseId,
+                        sectionId: item.sectionId,
+                        quizId: item._id,
+                        answers: [],
+                        currentQuestion: 0,
+                        isFinished: false,
+                    }).unwrap();
+                } else if (step !== "start") {
+                    await updateQuizProgress({
+                        userId: userInfo._id,
+                        courseId: item.courseId,
+                        sectionId: item.sectionId,
+                        quizId: item._id,
+                    }).unwrap();
+                }
             } catch (err) {
                 console.error("Lỗi khi khởi tạo tiến trình quiz:", err);
             }

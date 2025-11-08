@@ -13,7 +13,7 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
     const playerRef = useRef(null);
     const hlsRef = useRef(null);
     const hasSetStartTime = useRef(false);
-    const lastTimeRef = useRef(0);
+    const hasSeekedOnce = useRef(false);
     const [isPlaying, setIsPlaying] = useState(false);
 
     const isYouTube = useMemo(() =>
@@ -65,6 +65,10 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
             player.on('pause', () => { setIsPlaying(false); onPlayStateChange?.(false); });
             player.on('ended', () => { setIsPlaying(false); onPlayStateChange?.(false); });
             player.on('seeked', () => {
+                if (!hasSeekedOnce.current) {
+                    hasSeekedOnce.current = true;
+                    return;
+                }
                 if (!player.playing) {
                     player.play();
                 }

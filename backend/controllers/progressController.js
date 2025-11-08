@@ -158,7 +158,7 @@ export const updateQuizProgress = async (req, res) => {
             answers, currentQuestion, isFinished, score 
         } = req.body;
 
-        if (!courseId || !sectionId || !quizId || !answers || currentQuestion == null || isFinished == null) {
+        if (!courseId || !sectionId || !quizId) {
             return res.status(400).json({ message: "Missing required fields" });
         }
         const submission = await Submission.findOneAndUpdate(

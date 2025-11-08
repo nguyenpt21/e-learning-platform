@@ -215,8 +215,6 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     return () => {
       clearInterval(interval);
       handleSaveProgress();
-      currentVideo?.pause?.();
-      currentVideo?.stop?.();
     };
   }, [item?._id, itemProgress, updateProgress, videoRef]);
 
@@ -257,7 +255,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
               <div className="w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
                   <VideoPlayer
-                    key={item._id}
+                    key={item._id + "_" + itemProgress?.watchedSeconds}
                     ref={videoRef}
                     videoUrl={item.content.publicURL}
                     onPlayStateChange={setIsPlaying}
