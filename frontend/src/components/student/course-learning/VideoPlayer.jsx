@@ -64,6 +64,11 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
             player.on('play', () => { setIsPlaying(true); onPlayStateChange?.(true); });
             player.on('pause', () => { setIsPlaying(false); onPlayStateChange?.(false); });
             player.on('ended', () => { setIsPlaying(false); onPlayStateChange?.(false); });
+            player.on('seeked', () => {
+                if (!player.playing) {
+                    player.play();
+                }
+            });
         };
 
         if (videoUrl.endsWith('.m3u8') && Hls.isSupported()) {
@@ -90,19 +95,19 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
         };
     }, [videoUrl, isYouTube, startTime, onPlayStateChange]);
 
-    useEffect(() => {
-        if (!playerRef.current) return;
-        const interval = setInterval(() => {
-            const currentTime = playerRef.current.currentTime || 0;
-            const lastTime = lastTimeRef.current;
-            const isSeek = Math.abs(currentTime - lastTime) > 0.5;
-            if (!isPlaying && isSeek) {
-                playerRef.current.play();
-            }
-            lastTimeRef.current = currentTime;
-        }, 200);
-        return () => clearInterval(interval);
-    }, [isPlaying]);
+    // useEffect(() => {
+    //     if (!playerRef.current) return;
+    //     const interval = setInterval(() => {
+    //         const currentTime = playerRef.current.currentTime || 0;
+    //         const lastTime = lastTimeRef.current;
+    //         const isSeek = Math.abs(currentTime - lastTime) > 0.5;
+    //         if (!isPlaying && isSeek) {
+    //             playerRef.current.play();
+    //         }
+    //         lastTimeRef.current = currentTime;
+    //     }, 200);
+    //     return () => clearInterval(interval);
+    // }, [isPlaying]);
 
     if (isYouTube) {
         const videoId = videoUrl.split("v=")[1]?.split("&")[0] || videoUrl.split("/").pop();
@@ -122,12 +127,14 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
     }
 
     return (
-        <div className="w-auto h-[35vh] lg:h-[44vh] md:h-[38vh] flex items-center justify-center">
-            <video
-                ref={videoRef}
-                className="object-contain w-full h-full"
-                playsInline
-            />
+        <div className="w-full bg-black h-[45vh] md:h-[50vh] lg:h-[60vh] flex justify-center items-center">
+            <div className="aspect-video w-auto max-h-full">
+                <video
+                    ref={videoRef}
+                    className="w-full h-full object-contain"
+                    playsInline
+                />
+            </div>
         </div>
     );
 });

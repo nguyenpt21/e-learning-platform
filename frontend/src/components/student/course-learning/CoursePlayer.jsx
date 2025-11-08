@@ -215,6 +215,8 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     return () => {
       clearInterval(interval);
       handleSaveProgress();
+      currentVideo?.pause?.();
+      currentVideo?.stop?.();
     };
   }, [item?._id, itemProgress, updateProgress, videoRef]);
 
@@ -252,10 +254,10 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             />
           ) : (
             <div className="flex flex-col">
-              <div className="w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(58vh-3px)]">
+              <div className="w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
                   <VideoPlayer
-                    key={item._id + "_" + itemProgress?.watchedSeconds}
+                    key={item._id}
                     ref={videoRef}
                     videoUrl={item.content.publicURL}
                     onPlayStateChange={setIsPlaying}
@@ -296,7 +298,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
           )
         ) : (
           <div className="flex flex-col">
-            <div className="w-full border-b-2 border-b-gray-200 h-[45vh] md:h-[50vh] lg:h-[calc(58vh+3px)] overflow-y-auto">
+            <div className="w-full border-b-2 border-b-gray-200 h-[45vh] md:h-[50vh] lg:h-[calc(60vh+3px)] overflow-y-auto">
               <Quiz
                 item={item}
                 setIsDone={setIsDone}
