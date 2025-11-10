@@ -13,6 +13,9 @@ const UserSchema = new mongoose.Schema({
     major: { type: String, default: "" },
     biography : { type: String, default: "" },
     role: { type: String, enum: ["user", "instructor"], default: "user" },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: "" },
+    emailVerificationTokenExpires: { type: Date },
 }, { timestamps: true });
 
 const User = mongoose.model("User", UserSchema);

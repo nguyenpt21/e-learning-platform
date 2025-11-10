@@ -24,7 +24,7 @@ import {
 
 import { Star } from "lucide-react";
 import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
-import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { useBreakpoint } from "@/hooks/tiptap/useBreakpoint";
 
 
 const courses = [

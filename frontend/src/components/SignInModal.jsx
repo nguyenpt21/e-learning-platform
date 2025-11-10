@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../redux/features/authSlice";
-import { useLoginMutation } from "../redux/api/authSlice";
+import { useLoginMutation, useResendVerificationEmailMutation } from "../redux/api/authSlice";
 
 import Modal from "./Modal";
 
@@ -14,10 +14,37 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [login, { isLoading } ] = useLoginMutation();
+  const [resendVerificationEmail, { isLoading: isResending }] = useResendVerificationEmailMutation();
   const [errors, setErrors] = useState({});
+  const [showResendEmail, setShowResendEmail] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+  
+    useEffect(() => {
+    if (!isOpen) {
+      setEmail("");
+      setPassword("");
+      setErrors({});
+      setShowResendEmail(false);
+      setShowPassword(false);
+    }
+  }, [isOpen]);
+
+  const handleResendEmail = async () => {
+    try {
+      await resendVerificationEmail({ email }).unwrap();
+      toast.success("Email xác nhận đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.", {
+        position: "bottom-right",
+      });
+      setShowResendEmail(false);
+    } catch (resendError) {
+      toast.error(
+        resendError?.data?.message || "Không thể gửi email. Vui lòng thử lại sau.",
+        { position: "bottom-right" }
+      );
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -49,7 +76,17 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
       console.error("Login error:", error);
       const status = error?.status;
       const errorMessage = error?.data?.message;
+      const errorCode = error?.data?.code;
+      
       switch (status) {
+        case 403:
+          if (errorCode === "EMAIL_NOT_VERIFIED") {
+            setShowResendEmail(true);
+            toast.error(errorMessage, { position: "bottom-right", autoClose: 5000 });
+          } else {
+            toast.error(errorMessage || "Bạn không có quyền truy cập", { position: "bottom-right" });
+          }
+          break;
         case 400:
         case 401:
           toast.error("Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại!", { position: "bottom-right" });
@@ -177,6 +214,30 @@ const SignInModal = ({ isOpen, onClose, onSwitchToSignUp }) => {
               Quên mật khẩu?
             </Link>
           </div>
+
+          {/* Resend verification email */}
+          {showResendEmail && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <p className="text-sm text-yellow-800 mb-3">
+                Email của bạn chưa được xác nhận. Vui lòng kiểm tra email và xác nhận tài khoản trước khi đăng nhập.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendEmail}
+                disabled={isResending}
+                className="w-full py-2 px-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              >
+                {isResending ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Đang gửi...
+                  </div>
+                ) : (
+                  "Gửi lại email xác nhận"
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Submit button */}
           <button

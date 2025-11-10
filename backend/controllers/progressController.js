@@ -3,6 +3,7 @@ import CourseProgress from "../models/course-progress.js";
 import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Course from "../models/course.js"
+import Submission from "../models/submission.js";
 
 export const getCourseProgress = async (req, res) => {
     try {
@@ -35,6 +36,7 @@ export const getItemProgress = async (req, res) => {
         const progress = await Progress.findOne({
             userId, courseId, sectionId, itemId,
         });
+
         if (!progress) {
             return res.json({
                 watchedSeconds: 0,
@@ -42,6 +44,12 @@ export const getItemProgress = async (req, res) => {
                 progressPercent: 0,
             });
         }
+
+        if (progress.itemType === "Quiz") {
+            const progressWithQuiz = await progress.populate("submissionId");
+            return res.json(progressWithQuiz);
+        }
+
         res.json(progress);
     } catch (error) {
         console.error("Error getting item progress:", error);
@@ -140,6 +148,54 @@ const updateCourseProgress = async (userId, courseId) => {
         return updated;
     } catch (err) {
         console.error("Error updating course progress:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const updateQuizProgress = async (req, res) => {
+    try {
+        const { userId, courseId, sectionId, quizId, 
+            answers, currentQuestion, isFinished, score 
+        } = req.body;
+
+        if (!courseId || !sectionId || !quizId) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+        const submission = await Submission.findOneAndUpdate(
+            { userId, courseId, sectionId, quizId },
+            {
+                userId, courseId, sectionId, quizId,
+                answers,
+                currentQuestion,
+                isFinished,
+                score: isFinished ? score : 0,
+                updatedAt: new Date(),
+            },
+            { new: true, upsert: true }
+        );
+
+        const existingProgress = await Progress.findOne({
+            userId, courseId, sectionId, itemId: quizId,
+        });
+        const finalIsCompleted = existingProgress?.isCompleted === true ? existingProgress?.isCompleted : isFinished;
+        const progress = await Progress.findOneAndUpdate(
+            { userId, courseId, sectionId, itemId: quizId },
+            {
+                $set: { submissionId: submission._id, updatedAt: new Date(), isCompleted: finalIsCompleted },
+                $setOnInsert: {
+                    userId, courseId, sectionId, itemId: quizId,
+                    itemType: "Quiz",
+                    createdAt: new Date(),
+                },
+            },
+            { new: true, upsert: true }
+        );
+
+        await updateCourseProgress(userId, courseId);
+
+        res.status(200).json(progress);
+    } catch (error) {
+        console.error("Error updating quiz progress:", error);
         res.status(500).json({ message: "Server error" });
     }
 };

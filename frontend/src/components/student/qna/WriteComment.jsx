@@ -2,16 +2,21 @@ import React, { useState } from "react";
 import MyRichTextEditor from "./MyRTE";
 import Button from "@/components/Button";
 import { useSelector } from "react-redux";
+import { useCreateCommentMutation } from "@/redux/api/qnaSlice";
 
 function WriteComment({ quesId }) {
   const [isFocused, setIsFocused] = useState(false);
   const [content, setContent] = useState("");
   const { userInfo } = useSelector((state) => state.auth);
+  const [createComment, {isLoading}] = useCreateCommentMutation();
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     if (content.trim() === "") return;
-    console.log("Bình luận:", content);
-    // TODO: gọi API gửi bình luận ở đây
+    try {
+      await createComment({ qnaId: quesId, body: { content } });
+    } catch (error) {
+      console.error("Lỗi khi tạo bình luận:", error);
+    }
     setContent("");
     setIsFocused(false);
   };
@@ -20,7 +25,7 @@ function WriteComment({ quesId }) {
     <div className="flex items-start gap-2 rounded-lg my-4">
       {/* Ảnh đại diện người dùng */}
       <img
-        src={userInfo?.profilePicture?.url !== "" ? userInfo?.profilePicture?.url : null}
+        src={userInfo?.profilePicture?.url || "/placeholder.svg"}
         alt="User's avatar"
         className="w-8 h-8 rounded-full border-1 border-[#098be4] rounded-full"
       />
@@ -35,7 +40,7 @@ function WriteComment({ quesId }) {
             className="w-full py-2 rounded-md outline-1 outline-[#eef0f2] px-3"
           />
         ) : (
-          <div>
+          <div className="w-full">
             <MyRichTextEditor
               value={content}
               onChange={setContent}
@@ -44,10 +49,10 @@ function WriteComment({ quesId }) {
               mention={null}
             />
             <div className="flex space-x-2 justify-end mt-2">
-              <Button onClick={() => setIsFocused(false)} variant="outline">
+              <Button onClick={() => setIsFocused(false)} disabled={!isLoading} variant="outline">
                 Hủy
               </Button>
-              <Button onClick={handleSubmit} variant="reverse">
+              <Button onClick={handleSubmit} disabled={!isLoading} variant="reverse">
                 Bình luận
               </Button>
             </div>

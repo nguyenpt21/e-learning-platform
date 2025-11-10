@@ -22,6 +22,14 @@ export const progressApiSlice = apiSlice.injectEndpoints({
             query: ({ courseId, sectionId, itemId }) =>
                 `${PROGRESS_URL}/course/${courseId}/section/${sectionId}/item/${itemId}`,
         }),
+        updateQuizProgress: builder.mutation({
+            query: (data) => ({
+                url: `${PROGRESS_URL}/quiz`,
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: (result, error, data) => [{ type: 'Progress', id: data.courseId }],
+        }),
     }),
 });
 
@@ -30,4 +38,5 @@ export const {
     useGetItemsProgressQuery,
     useUpdateItemProgressMutation,
     useGetItemProgressQuery,
+    useUpdateQuizProgressMutation,
 } = progressApiSlice

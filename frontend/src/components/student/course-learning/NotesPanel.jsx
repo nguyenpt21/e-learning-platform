@@ -205,7 +205,7 @@ const NotesPanel = ({ lectureId, courseId, sectionId }) => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-[2px] rounded">
+                          <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             {formatDuration(note.timestamp)}
                           </div>
                           <span className="text-sm font-semibold text-blue-600">
@@ -252,7 +252,7 @@ const NotesPanel = ({ lectureId, courseId, sectionId }) => {
 
       {/* Popup Xác nhận xóa */}
    {showConfirm && (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center">
+  <div className="fixed inset-0 z-60 flex items-center justify-center">
     {/* Nền mờ fade-in */}
     <div
       className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn"
