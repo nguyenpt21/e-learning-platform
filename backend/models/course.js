@@ -36,7 +36,7 @@ const CourseSchema = new mongoose.Schema(
         category: { type: String, default: "" },
         subcategory: { type: String, default: "" },
         isFree: { type: Boolean },
-        isPublished: { type: Boolean, default: false },
+        status: { type: String, enum: ["draft", "processing", "published"], },
         price: { type: Number, default: 0 },
         averageRating: { type: Number, default: 0 },
         sections: {

@@ -9,6 +9,7 @@ import progressRoute from "./routes/progressRoute.js"
 import videoNoteRoute from "./routes/videoNoteRoute.js"
 import { deleteFileFromS3, generateUploadURL } from "./controllers/uploadController.js";
 import paymentRoute from "./routes/paymentRoute.js"
+import { conversionComplete } from "./controllers/webhookController.js";
 
 import profileRoute from "./routes/profileRoute.js"
 
@@ -57,6 +58,7 @@ app.post("/api/generateUploadURL", generateUploadURL)
 app.use('/api/progress', progressRoute);
 app.delete("/api/deleteFile", deleteFileFromS3);
 app.use('/api/checkout', paymentRoute)
+app.use("/api/webhooks/conversion-complete", conversionComplete)
 
 app.use('/api/profile', profileRoute)
 

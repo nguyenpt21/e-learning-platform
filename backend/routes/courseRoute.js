@@ -6,7 +6,8 @@ import {
     createCourse,
     updateCourse,
     deleteCourse,
-    getCourseInfo
+    getCourseInfo,
+    processCourse
 } from "../controllers/courseController.js";
 
 import {
@@ -38,7 +39,7 @@ router.route("/:courseId")
     .delete(deleteCourse);
 router.get("/manage", getCourses);
 router.get("/info", getCourseInfo)
-
+router.post("/:courseId/process", processCourse)
 // section
 router.route("/:courseId/sections")
     .get(getAllSectionsByCourse)
