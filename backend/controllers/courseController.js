@@ -5,6 +5,17 @@ import Lecture from "../models/lecture.js";
 import cloudinary from "../config/cloudinary.js";
 import Section from "../models/section.js";
 import Quiz from "../models/quiz.js";
+import { ObjectId } from "mongodb";
+
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+
+const lambda = new LambdaClient({
+    region: process.env.AWS_REGION || "ap-southeast-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+});
 
 const getCourseById = async (req, res) => {
     try {
@@ -112,7 +123,7 @@ const updateCourse = async (req, res) => {
             "isPublished",
             "thumbnail",
             "promoVideo",
-            "sections"
+            "sections",
         ];
         const updateData = {};
         fields.forEach((key) => {
@@ -157,6 +168,261 @@ const deleteCourse = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error" });
+    }
+};
+
+const checkCoursePublishRequirements = async (course) => {
+    const errors = [];
+
+    if (!course.title || course.title.trim() === "") {
+        errors.push("Tiêu đề khóa học là bắt buộc");
+    }
+
+    if (!course.description || course.description.trim() === "") {
+        errors.push("Mô tả khóa học là bắt buộc");
+    }
+
+    if (!course.level) {
+        errors.push("Cấp độ khóa học là bắt buộc");
+    }
+
+    if (!course.category || course.category.trim() === "") {
+        errors.push("Danh mục khóa học là bắt buộc");
+    }
+
+    if (!course.learningOutcomes || course.learningOutcomes.length < 4) {
+        errors.push("Cần ít nhất 4 mục tiêu học tập");
+    } else {
+        const validOutcomes = course.learningOutcomes.filter(
+            (outcome) => outcome && outcome.trim() !== ""
+        );
+        if (validOutcomes.length < 4) {
+            errors.push("Cần ít nhất 4 mục tiêu học tập hợp lệ");
+        }
+    }
+
+    if (!course.requirements || course.requirements.length < 1) {
+        errors.push("Cần ít nhất 1 yêu cầu cho khóa học");
+    } else {
+        const validRequirements = course.requirements.filter((req) => req && req.trim() !== "");
+        if (validRequirements.length < 1) {
+            errors.push("Cần ít nhất 1 yêu cầu hợp lệ cho khóa học");
+        }
+    }
+
+    if (!course.intendedLearners || course.intendedLearners.length < 1) {
+        errors.push("Cần ít nhất 1 đối tượng học viên");
+    } else {
+        const validLearners = course.intendedLearners.filter(
+            (learner) => learner && learner.trim() !== ""
+        );
+        if (validLearners.length < 1) {
+            errors.push("Cần ít nhất 1 đối tượng học viên hợp lệ");
+        }
+    }
+
+    if (!course.sections || course.sections.length === 0) {
+        errors.push("Khóa học cần có ít nhất 1 chương");
+    } else {
+        for (const section of course.sections) {
+            const sectionDetail = await Section.findById(section.sectionId);
+            if (
+                !sectionDetail ||
+                !sectionDetail.curriculumItems ||
+                sectionDetail.curriculumItems.length === 0
+            ) {
+                errors.push(
+                    `Chương ${section.order}: "${
+                        sectionDetail?.title || section.sectionId
+                    }" cần có ít nhất 1 bài học hoặc quiz`
+                );
+                break;
+            }
+        }
+    }
+
+    const hasVideo = await checkHasAtLeastOneVideo(course);
+    if (!hasVideo) {
+        errors.push("Khóa học cần có ít nhất 1 video bài giảng");
+    }
+
+    if (course.isFree === false && (!course.price || course.price <= 0)) {
+        errors.push("Khóa học trả phí cần có giá hợp lệ");
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors,
+    };
+};
+
+// const checkHasAtLeastOneVideo = async (course) => {
+//     if (!course.sections || course.sections.length === 0) {
+//         return false;
+//     }
+
+//     for (const section of course.sections) {
+//         const sectionDetail = await Section.findById(section.sectionId);
+
+//         if (sectionDetail && sectionDetail.curriculumItems) {
+//             const lectureItems = sectionDetail.curriculumItems.filter(
+//                 item => item.itemType === 'Lecture'
+//             );
+
+//             for (const lectureItem of lectureItems) {
+//                 const lecture = await Lecture.findById(lectureItem.itemId);
+//                 if (lecture &&
+//                     lecture.type === 'video' &&
+//                     lecture.content &&
+//                     lecture.content.publicURL) {
+//                     return true;
+//                 }
+//             }
+//         }
+//     }
+
+//     return false;
+// };
+
+const checkHasAtLeastOneVideo = async (courseId) => {
+    const result = await Section.aggregate([
+        { $match: { course: new ObjectId(courseId) } },
+        { $unwind: "$curriculumItems" },
+        { $match: { "curriculumItems.itemType": "Lecture" } },
+        {
+            $lookup: {
+                from: "lectures",
+                localField: "curriculumItems.itemId",
+                foreignField: "_id",
+                as: "lecture",
+            },
+        },
+        { $unwind: "$lecture" },
+        {
+            $match: {
+                "lecture.type": "video",
+                "lecture.content.publicURL": { $exists: true, $ne: null },
+            },
+        },
+        { $limit: 1 },
+    ]);
+
+    return result.length > 0;
+};
+
+const getAllVideoS3KeysByCourse = async (courseId) => {
+    try {
+        const result = await Section.aggregate([
+            { $match: { course: new ObjectId(courseId) } },
+            { $unwind: "$curriculumItems" },
+            { $match: { "curriculumItems.itemType": "Lecture" } },
+            {
+                $lookup: {
+                    from: "lectures",
+                    localField: "curriculumItems.itemId",
+                    foreignField: "_id",
+                    as: "lecture",
+                },
+            },
+            { $unwind: "$lecture" },
+            {
+                $match: {
+                    "lecture.type": "video",
+                    "lecture.content.s3Key": { $exists: true, $nin: [null, ""] },
+                    "lecture.content.hlsURL": { $exists: false },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    s3Key: "$lecture.content.s3Key",
+                },
+            },
+        ]);
+
+        return result.map((r) => r.s3Key);
+    } catch (error) {
+        console.error("Lỗi khi lấy S3 keys:", error);
+        return null;
+    }
+};
+
+const processCourse = async (req, res) => {
+    try {
+        const courseId = req.params.courseId;
+        const course = await Course.findById(courseId).populate("sections.sectionId");
+
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Không tìm thấy khóa học",
+            });
+        }
+
+        if (course.status === "published") {
+            return res.json({
+                success: false,
+                message: "Khóa học đã được phát hành trước đó",
+            });
+        }
+
+        const checkResult = await checkCoursePublishRequirements(course);
+
+        if (!checkResult.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể phát hành khóa học",
+                errors: checkResult.errors,
+            });
+        }
+
+        const s3Keys = await getAllVideoS3KeysByCourse(courseId);
+
+        if (s3Keys.length === 0) {
+            course.status = "published";
+            await course.save();
+
+            return res.json({
+                success: true,
+                message: "Khóa học đã được phát hành thành công",
+            });
+        }
+
+        console.log("📋 S3 Keys:", s3Keys);
+
+        const payload = {
+            s3Keys: s3Keys,
+            bucket: process.env.AWS_S3_BUCKET_NAME,
+            outputPrefix: "hls-output",
+        };
+
+        const command = new InvokeCommand({
+            FunctionName: process.env.LAMBDA_FUNCTION_NAME || "video-hls-orchestrator",
+            InvocationType: "RequestResponse",
+            Payload: JSON.stringify(payload),
+        });
+
+        const lambdaResponse = await lambda.send(command);
+
+        const responsePayload = JSON.parse(Buffer.from(lambdaResponse.Payload).toString());
+
+        if (responsePayload.statusCode !== 200) {
+            throw new Error(`Lambda failed: ${responsePayload.body}`);
+        }
+
+        course.status = "processing";
+        await course.save();
+
+        return res.json({
+            success: true,
+            message: "Các video trong khóa học đang được xử lý",
+        });
+    } catch (error) {
+        console.error("Lỗi khi phát hành khóa học:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra khi phát hành khóa học",
+        });
     }
 };
 
@@ -490,4 +756,5 @@ export {
     updateCourse,
     deleteCourse,
     getCourseInfo,
+    processCourse,
 };

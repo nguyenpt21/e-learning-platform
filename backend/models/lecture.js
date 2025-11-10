@@ -9,6 +9,7 @@ const LectureSchema = new mongoose.Schema({
     content: {
         s3Key: { type: String },
         publicURL: { type: String },
+        hlsURL: { type: String },
         duration: { type: Number }, // duration in seconds
         text: { type: String },
         thumbnailS3Key : { type: String },

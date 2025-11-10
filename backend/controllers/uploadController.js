@@ -1,10 +1,13 @@
-import aws from "aws-sdk";
+import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const s3 = new aws.S3({
+// Khởi tạo S3 client
+const s3Client = new S3Client({
     region: process.env.AWS_REGION,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    signatureVersion: "v4",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
 });
 
 const deleteS3File = async (s3Key) => {
@@ -15,7 +18,9 @@ const deleteS3File = async (s3Key) => {
             Bucket: process.env.AWS_S3_BUCKET_NAME,
             Key: s3Key,
         };
-        await s3.deleteObject(params).promise();
+        
+        const command = new DeleteObjectCommand(params);
+        await s3Client.send(command);
         console.log(`Deleted S3 file: ${s3Key}`);
     } catch (error) {
         console.error(`Error deleting S3 file ${s3Key}:`, error);
@@ -32,7 +37,9 @@ const deleteMultipleS3Files = async (s3Keys) => {
             Bucket: process.env.AWS_S3_BUCKET_NAME,
             Delete: { Objects: objects },
         };
-        await s3.deleteObjects(params).promise();
+        
+        const command = new DeleteObjectsCommand(params);
+        await s3Client.send(command);
         console.log(`Deleted ${validKeys.length} S3 files`);
     } catch (error) {
         console.error("Error deleting multiple S3 files:", error);
@@ -49,11 +56,14 @@ const generateUploadURL = async (req, res) => {
             Key = courseId.toString() + "/" + Key;
         }
 
-        const uploadURL = await s3.getSignedUrlPromise("putObject", {
+        const command = new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET_NAME,
             Key,
             ContentType: fileType,
-            Expires: 600,
+        });
+
+        const uploadURL = await getSignedUrl(s3Client, command, {
+            expiresIn: 600, // 10 minutes
         });
 
         const publicURL = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
