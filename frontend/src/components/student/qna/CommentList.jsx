@@ -61,7 +61,7 @@ const CommentCard = ({ ques, comment }) => {
             src={comment?.user.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
-          <p className="font-semibold">{comment?.user.username}</p>
+          <p className="font-semibold">{comment?.user.firstName} {comment?.user.lastName}</p>
           <p className="text-sm text-gray-700">{timeAgo(comment?.createdAt)}</p>
         </div>
         <div className="flex space-x-2 items-center">

@@ -57,7 +57,7 @@ function QuestionDetail({ quesId, getBack }) {
             src={detail?.author.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
-          <p className="font-semibold">{detail?.author.username}</p>
+          <p className="font-semibold">{detail?.author.firstName} {detail?.author.lastName}</p>
           <p className="text-sm text-gray-700">{timeAgo(detail?.createdAt)}</p>
         </div>
         {detail?.isSolved ? (

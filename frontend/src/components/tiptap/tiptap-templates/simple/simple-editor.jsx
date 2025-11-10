@@ -227,7 +227,7 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
       .insertContent([
         {
           type: "mention",
-          attrs: { id: mention._id, label: `${mention.username}` },
+          attrs: { id: mention._id, label: `${mention.firstName} ${mention.lastName}` },
         },
         { type: "text", text: " " },
       ])

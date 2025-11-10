@@ -23,7 +23,7 @@ import NewQuestion from "./NewQuestion";
 import QuestionDetail from "./QuestionDetail";
 import { useGetQnAByPageQuery } from "@/redux/api/qnaSlice";
 
-export function QnASheet() {
+export function QnASheet({courseId, lectureId}) {
   const [mode, setMode] = useState("List"); // List/ Write/ Detail
   const [page, setPage] = useState(1); // trang hiện tại
   const [quesId, setQuesId] = useState(null); // câu hỏi hiện tại
@@ -31,7 +31,7 @@ export function QnASheet() {
   const [list, setList] = useState([]);
   const [totalQuestion, setTotalQuestion] = useState(0);
   const [totalPage, setTotalPage] = useState(1);
-  const { data , isLoading: isLoadingGetQnAByPage} = useGetQnAByPageQuery(page);
+  const { data , isLoading: isLoadingGetQnAByPage} = useGetQnAByPageQuery({lectureId, page});
 
   useEffect(() => {
     if (data) {
@@ -137,6 +137,8 @@ export function QnASheet() {
         }
         {mode === "Write" && (          
               <NewQuestion
+                lectureId={lectureId}
+                courseId={courseId}
                 handleQuestionClick={handleQuestionClick}
                 getBack={getBack}
               />     

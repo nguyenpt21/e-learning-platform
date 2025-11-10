@@ -11,7 +11,7 @@ import MyRichTextEditor from "./MyRTE";
 import { Spinner } from "@/components/ui/spinner";
 import { useCreateQnAMutation } from "@/redux/api/qnaSlice";
 
-const NewQuestion = ({ handleQuestionClick, getBack }) => {
+const NewQuestion = ({ courseId, lectureId, handleQuestionClick, getBack }) => {
   const [createQnA, {isLoading : isLoadingCreateQnA}] = useCreateQnAMutation();
   const handleSubmit = async () => {
     if(title.length === 0 || content.length===0){
@@ -19,7 +19,7 @@ const NewQuestion = ({ handleQuestionClick, getBack }) => {
         return
     }
     try {
-      const createdQnA = await createQnA({ type, title, content }).unwrap();
+      const createdQnA = await createQnA({ type, title, content, lectureId, courseId }).unwrap();
       handleQuestionClick(createdQnA);
     } catch (error) {
       console.log("Lỗi tạo qna:", error);

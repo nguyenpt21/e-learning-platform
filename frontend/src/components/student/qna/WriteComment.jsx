@@ -49,10 +49,10 @@ function WriteComment({ quesId }) {
               mention={null}
             />
             <div className="flex space-x-2 justify-end mt-2">
-              <Button onClick={() => setIsFocused(false)} disabled={!isLoading} variant="outline">
+              <Button onClick={() => setIsFocused(false)} disabled={isLoading} variant="outline">
                 Hủy
               </Button>
-              <Button onClick={handleSubmit} disabled={!isLoading} variant="reverse">
+              <Button onClick={handleSubmit} disabled={isLoading} variant="reverse">
                 Bình luận
               </Button>
             </div>
