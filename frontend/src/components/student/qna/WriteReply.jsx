@@ -41,10 +41,10 @@ function WriteReply({ quesId, commentId , target, onCancel }) {
               mention={target}
             />
             <div className="flex space-x-2 justify-end mt-2">
-              <Button onClick={onCancel} disabled={!isLoading} variant="outline">
+              <Button onClick={onCancel} disabled={isLoading} variant="outline">
                 Hủy
               </Button>
-              <Button onClick={handleSubmit} disabled={!isLoading} variant="reverse">
+              <Button onClick={handleSubmit} disabled={isLoading} variant="reverse">
                 Phản hồi
               </Button>
             </div>

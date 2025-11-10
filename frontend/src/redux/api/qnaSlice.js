@@ -41,8 +41,8 @@ export const questionApiSlice = apiSlice.injectEndpoints({
       providesTags: (result, error, id) => [{ type: "QnA", id }],
     }),
     getQnAByPage: builder.query({
-      query: (page = 1) => ({
-        url: `${QNA_URL}?page=${page}`,
+      query: ({lectureId, page = 1}) => ({
+        url: `${QNA_URL}?page=${page}&lectureId=${lectureId}`,
       }),
       providesTags: (result, error, id) => [{ type: "QnA", id: "LIST" }],
     }),

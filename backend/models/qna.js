@@ -7,7 +7,10 @@ const replySchema = new mongoose.Schema(
     likes: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        type: { type: String, enum: ["like", "love", "haha", "wow", "sad", "angry"] },
+        type: {
+          type: String,
+          enum: ["like", "love", "haha", "wow", "sad", "angry"],
+        },
       },
     ],
   },
@@ -18,10 +21,15 @@ const commentSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     content: { type: "String", required: true },
-    likes: [{
+    likes: [
+      {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        type: { type: String, enum: ["like", "love", "haha", "wow", "sad", "angry"] },
-    }],
+        type: {
+          type: String,
+          enum: ["like", "love", "haha", "wow", "sad", "angry"],
+        },
+      },
+    ],
     replies: [replySchema],
     isSolution: { type: Boolean, default: false },
   },
@@ -33,6 +41,16 @@ const QnASchema = new mongoose.Schema(
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+    },
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
+    },
+    lectureId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lecture",
       required: true,
     },
     type: { type: "String", require: true }, // Lý thuyết, Thử thách, ...
