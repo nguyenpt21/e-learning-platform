@@ -1,27 +1,40 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Search } from "lucide-react";
 import Button from "./Button.jsx";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/features/authSlice";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
+import { useGetCourseSearchSuggestionQuery } from "@/redux/api/coursePublicApiSlice.js";
+import { skipToken } from '@reduxjs/toolkit/query';
+import { LuDot } from "react-icons/lu";
 
-export default function Header() {
+export default function Header({ q }) {
+  const navigate = useNavigate();
   const user = useSelector((state) => state.auth.userInfo);
   const dispatch = useDispatch();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(q || "");
   const [openDropDown, setOpenDropDown] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [openSearchSuggestion, setOpenSearchSuggestion] = useState(false);
+  const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
+    searchQuery ? { q: searchQuery } : skipToken,
+  );
 
   const handleLogout = () => {
     dispatch(logout());
     window.location.href = "/sign-in";
   };
 
-  const handleSearch = () => {};
-  const handleCart = () => {};
+  const handleSearch = () => {
+    const param = new URLSearchParams()
+    param.set("q", searchQuery)
+    setOpenSearchSuggestion(false)
+    navigate(`/courses?${param.toString()}`)
+  };
+  const handleCart = () => { };
 
   const handleOpenSignIn = () => {
     setIsSignInModalOpen(true);
@@ -49,11 +62,24 @@ export default function Header() {
     setIsSignInModalOpen(true);
   };
 
+  const inputRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (inputRef.current && !inputRef.current.contains(event.target)) {
+        setOpenSearchSuggestion(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [searchQuery, openSearchSuggestion, searchSuggestions]);
+
   return (
     <header className="sticky top-0 w-full shadow-lg bg-white z-50">
-      <div className="flex items-center justify-between px-4 lg:px-8 py-3">
+      <div className="flex items-center justify-between px-4 lg:px-8 py-3 gap-8">
         {/* Logo */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 min-w-3xl">
           <Link to="/">
             <img
               src={"/logo_with_text.png"}
@@ -73,8 +99,8 @@ export default function Header() {
             )}
           </Button>
           {/* Search */}
-          <div className="flex-1 mx-2 max-w-2xl">
-            <div className="flex items-center border-2 border-gray-300 rounded-full px-3 py-2 focus-within:border-[#098be4]">
+          <div className="flex-1 mx-2">
+            <div ref={inputRef} className="relative flex items-center border-2 border-gray-300 rounded-full px-3 py-2 focus-within:border-[#098be4]">
               <Search
                 className="text-gray-500 rounded p-1 cursor-pointer hover:text-[#098be4] hover:bg-[#cee8fb]"
                 onClick={handleSearch}
@@ -82,13 +108,26 @@ export default function Header() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setOpenSearchSuggestion(true)
+
+                }}
                 placeholder="Tìm kiếm bất kì thứ gì..."
                 className="flex-1 px-2 outline-none text-sm"
                 onKeyDown={(e) => {
                   e.key === "Enter" && handleSearch();
                 }}
               />
+              <div className='absolute left-0 top-full mt-1 w-full z-10 rounded-lg'>
+                {openSearchSuggestion && !isSearching &&
+                  searchQuery != "" &&
+                  (searchSuggestions?.keywords.length > 0 || searchSuggestions?.courses.length > 0) && (
+                    <div className='border border-gray-100 bg-white shadow-lg rounded-lg'>
+                      <DropDownSuggestion searchSuggestions={searchSuggestions} setOpen={setOpenSearchSuggestion} />
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
         </div>
@@ -148,5 +187,76 @@ export default function Header() {
         onSwitchToSignIn={handleSwitchToSignIn}
       />
     </header>
+  );
+}
+
+const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
+
+  const navigate = useNavigate()
+
+  const onClickKeyword = (keyword) => {
+    const param = new URLSearchParams()
+    param.set("q", keyword)
+    setOpen(false)
+    navigate(`/courses?${param.toString()}`)
+  }
+
+  const onClickCourse = (courseId) => {
+    navigate(`/course/${courseId}`)
+  }
+
+  return (
+    <div>
+      {searchSuggestions?.keywords.length > 0 && (
+        <div>
+          {searchSuggestions?.keywords.map((keyword, index) => (
+            <div
+              key={index}
+              className='hover:bg-gray-100 font-semibold py-3 px-4 duration-300 text-base flex items-center gap-3'
+              onClick={() => {
+                onClickKeyword(keyword);
+              }}
+            >
+              <Search
+                className="text-gray-500 rounded p-1 cursor-pointer hover:text-[#098be4] hover:bg-[#cee8fb]"
+              />
+              {keyword}
+            </div>
+          ))}
+
+          {searchSuggestions?.courses.map((course, index) => (
+            <div
+              key={index}
+              className='hover:bg-gray-100 py-3 px-4 duration-300 text-base flex items-center gap-3'
+              onClick={() => {
+                onClickCourse(course._id);
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-15 h-8 shrink-0 rounded overflow-hidden">
+                  <img
+                    src={course?.thumbnail?.publicURL || "/logo.png"}
+                    alt=""
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <p className="text-base font-semibold leading-tight">
+                    {course.title}
+                  </p>
+                  <span className="flex items-center text-xs text-gray-600">
+                    {course.language}
+                    <LuDot className="text-lg mx-1" />
+                    {course.level}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

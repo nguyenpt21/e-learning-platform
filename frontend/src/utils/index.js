@@ -59,3 +59,52 @@ export const formatTimeShort = (seconds) => {
 
     return hours > 0 ? `${String(hours).padStart(2, "0")}:${mm}:${ss}` : `${mm}:${ss}`;
 };
+
+export const calculateCourseStats = (courseData) => {
+    if (!courseData?.sections)
+        return { courseDuration: 0, totalLectures: 0, totalResources: 0, sections: [] };
+
+    let courseDuration = 0;
+    let totalLectures = 0;
+    let totalResources = 0;
+    let totalQuizzes = 0;
+
+    const sections = courseData.sections.map(section => {
+        let sectionLectures = 0;
+        let sectionResources = 0;
+        let sectionQuizzes = 0;
+
+        const sectionDuration = section.curriculumItems?.reduce((sum, ci) => {
+            if ((ci.type === "video" || ci.type === "article") && ci?.content?.duration) {
+                sectionLectures += 1;
+                sectionResources += ci?.resources?.length || 0;
+                return sum + ci.content.duration;
+            }
+            if (ci.itemType === "Quiz") {
+                sectionQuizzes +=1
+            }
+            return sum;
+        }, 0);
+
+        courseDuration += sectionDuration;
+        totalLectures += sectionLectures;
+        totalResources += sectionResources;
+        totalQuizzes += sectionQuizzes;
+
+        return {
+            sectionId: section._id,
+            sectionDuration,
+            sectionLectures,
+            sectionResources,
+            sectionQuizzes
+        };
+    });
+
+    return {
+        courseDuration,
+        totalLectures,
+        totalResources,
+        totalQuizzes,
+        sections
+    };
+};

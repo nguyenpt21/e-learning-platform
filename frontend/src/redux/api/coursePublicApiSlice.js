@@ -8,6 +8,18 @@ export const coursePublicApiSlice = apiSlice.injectEndpoints({
         }),
         getCurriculumItemById: builder.query({
             query: ({itemId, itemType}) => `${COURSE_URL}/item/${itemId}/type/${itemType}`
+        }),
+        getCourseSearchSuggestion: builder.query({
+            query: (params) => ({
+                url: `${COURSE_URL}/suggestion`,
+                params
+            })
+        }),
+        getCourseSearchResults: builder.query({
+            query: (params) => ({
+                url: `${COURSE_URL}/suggestion/results`,
+                params
+            })
         })
     }),
 });
@@ -15,4 +27,6 @@ export const coursePublicApiSlice = apiSlice.injectEndpoints({
 export const {
     useGetCourseByIdQuery,
     useGetCurriculumItemByIdQuery,
+    useGetCourseSearchSuggestionQuery,
+    useGetCourseSearchResultsQuery
 } = coursePublicApiSlice

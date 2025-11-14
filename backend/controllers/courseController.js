@@ -23,7 +23,7 @@ const getCourseById = async (req, res) => {
         const course = await Course.findById(courseId).populate("sections.sectionId").lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
-        if (!course.isPublished) {
+        if (course.status !== "published") {
             return res.status(403).json({ message: "Course is not published" });
         }
 
@@ -232,8 +232,7 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${
-                        sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;
@@ -593,31 +592,102 @@ const getAllCourses = async (req, res) => {
 const getSearchCourseSuggestion = async (req, res) => {
     try {
         const { q } = req.query;
-        const query = q.trim();
-        const matchedCourses = await Course.find({
-            isPublished: true, // chỉ gợi ý khóa học đã publish
-            $or: [
-                { title: { $regex: query, $options: "i" } },
-                { subtitle: { $regex: query, $options: "i" } },
-                { category: { $regex: query, $options: "i" } },
-                { subcategory: { $regex: query, $options: "i" } },
-            ],
-        })
-            .select("title subtitle category subcategory thumbnail instructor")
-            .limit(10)
-            .populate("instructor", "firstName lastName");
+        const normalizedQuery = (q || "").trim().toLowerCase();
+        if (!q) return res.json({ keywords: [], courses: [] });
 
-        const courses = matchedCourses.map((c) => ({
-            _id: c._id,
-            title: c.title,
-            instructor:
-                `${c.instructor?.firstName || ""} ${c.instructor?.lastName || ""}`.trim() ||
-                "Unknown Instructor",
-            thumbnail: c.thumbnail?.url || null,
-            category: c.category || null,
-            subcategory: c.subcategory || null,
-        }));
-        res.status(200).json(courses);
+        const coursePipeline = [
+            {
+                $search: {
+                    index: "course_search",
+                    text: {
+                        query: normalizedQuery,
+                        path: [
+                            "title", "subtitle", "description",
+                            "category", "subcategory"
+                        ],
+                        fuzzy: {},
+                    },
+                },
+            },
+            {
+                $match: { status: "published" },
+            },
+            {
+                $limit: 4,
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    thumbnail: 1,
+                    language: 1,
+                    level: 1,
+                    category: 1,
+                    subcategory: 1,
+                },
+            },
+        ];
+
+        const keywordPipeline = [
+            {
+                $search: {
+                    index: "course_search",
+                    text: {
+                        query: normalizedQuery,
+                        path: [
+                            "title", "subtitle", "description", "learningOutcomes",
+                            "intendedLearners", "category", "subcategory", "requirements"
+                        ],
+                        fuzzy: {},
+                    },
+                },
+            },
+            {
+                $match: { status: "published" },
+            },
+            {
+                $limit: 10,
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    subtitle: 1,
+                    category: 1,
+                    subcategory: 1,
+                },
+            },
+        ];
+
+        const [courseResults, keywordResults] = await Promise.all([
+            Course.aggregate(coursePipeline),
+            Course.aggregate(keywordPipeline)
+        ]);
+
+        const keywordSet = new Set();
+        keywordSet.add(normalizedQuery);
+        keywordResults.forEach(item => {
+
+            if (item.category && item.category.toLowerCase().includes(normalizedQuery)) {
+                keywordSet.add(item.category.toLowerCase());
+            }
+
+            if (item.subcategory && item.subcategory.toLowerCase().includes(normalizedQuery)) {
+                keywordSet.add(item.subcategory.toLowerCase());
+            }
+
+            const normalizedTitle = item.title.toLowerCase();
+            if (normalizedTitle.startsWith(normalizedQuery)) {
+                keywordSet.add(course.title.toLowerCase());
+            }
+
+        })
+        const keywords = Array.from(keywordSet).slice(0, 6);
+
+        res.status(200).json({
+            keywords: keywords,
+            courses: courseResults
+        });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Server Error" });
@@ -627,126 +697,158 @@ const getSearchCourseSuggestion = async (req, res) => {
 const getSearchCourseResults = async (req, res) => {
     try {
         const {
-            q,
-            courseDuration,
-            level,
-            category,
-            subcategory,
-            language,
-            isFree,
-            minPrice,
-            maxPrice,
-            averageRating,
-            sort,
-            page,
-            limit,
+            q, courseDuration, level,
+            category, language, selectedPrices,
+            sort, page, limit,
         } = req.query;
+        const normalizedQuery = (q || "").trim().toLowerCase();
 
-        const pageNumber = Number(page) || 1;
-        const pageSize = Number(limit) || 6;
-        const skip = (pageNumber - 1) * pageSize;
-
-        let filter = {};
-        if (q && q.trim().length > 0) {
-            const keyword = q.trim();
-            filter.$or = [
-                { title: { $regex: keyword, $options: "i" } },
-                { subtitle: { $regex: keyword, $options: "i" } },
-                { category: { $regex: keyword, $options: "i" } },
-                { subcategory: { $regex: keyword, $options: "i" } },
+        let matchStage = [];
+        if (q) {
+            matchStage = [
+                {
+                    $search: {
+                        index: "course_search",
+                        text: {
+                            query: normalizedQuery,
+                            path: [
+                                "title", "subtitle", "description", "learningOutcomes",
+                                "intendedLearners", "category", "subcategory", "requirements"
+                            ],
+                            fuzzy: {},
+                        },
+                    },
+                },
+                {
+                    $match: { status: "published" },
+                },
             ];
         }
 
+        let filterStage = { $match: {} };
+
+        if (selectedPrices) {
+            const prices = selectedPrices.split(",");
+            const priceFilters = [];
+            prices.forEach(p => {
+                switch (p) {
+                    case "free":
+                        priceFilters.push({ isFree: true });
+                        break;
+                    case "paid":
+                        priceFilters.push({ isFree: false });
+                        break;
+                    case "under-300k":
+                        priceFilters.push({ price: { $lte: 300000 } });
+                        break;
+                    case "300k-500k":
+                        priceFilters.push({ price: { $gte: 300000, $lte: 500000 } });
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            if (priceFilters.length > 0) {
+                filterStage.$match.$or = priceFilters;
+            }
+        }
+        if (category) filterStage.$match.category = { $in: category.split(",") };
+        if (language) filterStage.$match.language = { $in: language.split(",") };
+        if (level) filterStage.$match.level = { $in: level.split(",") }
+
         if (courseDuration) {
-            const durations = courseDuration.split(",");
-            const durationFilters = durations
-                .map((d) => {
-                    switch (d.trim()) {
-                        case "0-3":
-                            return { courseDuration: { $gte: 0, $lte: 3 } };
-                        case "3-6":
-                            return { courseDuration: { $gte: 3, $lte: 6 } };
-                        case "6-17":
-                            return { courseDuration: { $gte: 6, $lte: 17 } };
-                        case "17-more":
-                            return { courseDuration: { $gte: 17 } };
-                        default:
-                            return null;
-                    }
-                })
-                .filter(Boolean);
-            if (durationFilters.length > 0) {
-                filter.$or = durationFilters;
-            }
-        }
-        if (level) {
-            const levelArr = level.split(",");
-            if (!levelArr.includes("All Level")) {
-                filter.level = { $in: levelArr };
-            }
-        }
-        if (category) filter.category = { $in: category.split(",") };
-        if (subcategory) filter.subcategory = { $in: subcategory.split(",") };
-        if (language) filter.language = { $in: language.split(",") };
-        if (isFree) filter.isFree = isFree === "true";
-        if (minPrice || maxPrice) {
-            filter.price = {};
-            if (minPrice) filter.price.$gte = parseFloat(minPrice);
-            if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
-        }
-        if (averageRating) {
-            filter.averageRating = { $gte: parseFloat(averageRating) };
-        }
-        let sortOption = {};
-        if (sort) {
-            switch (sort) {
-                case "newest":
-                    sortOption = { createdAt: -1 };
+            switch (courseDuration) {
+                case "0-3": {
+                    filterStage.$match.courseDuration = { $gte: 0, $lte: 3 };
                     break;
-                case "oldest":
-                    sortOption = { createdAt: 1 };
+                }
+                case "3-6": {
+                    filterStage.$match.courseDuration = { $gte: 3, $lte: 6 };
                     break;
-                case "priceLowToHigh":
-                    sortOption = { price: 1 };
+                }
+                case "6-17": {
+                    filterStage.$match.courseDuration = { $gte: 6, $lte: 17 };
                     break;
-                case "priceHighToLow":
-                    sortOption = { price: -1 };
+                }
+                case "17-more": {
+                    filterStage.$match.courseDuration = { $gte: 17 };
                     break;
-                case "ratingHighToLow":
-                    sortOption = { averageRating: -1 };
-                    break;
-                case "A-Z":
-                    sortOption = { title: 1 };
-                    break;
-                case "Z-A":
-                    sortOption = { title: -1 };
-                    break;
+                }
                 default:
-                    sortOption = {};
+                    break;
             }
         }
 
-        const courses = await Course.find(filter)
-            .sort(sortOption)
-            .skip(skip)
-            .limit(pageSize)
-            .populate("sections");
+        const sortOptions = {
+            default: [
+                { $addFields: { score: { $meta: "searchScore" } } },
+                { $sort: { score: -1 } },
+            ],
+            new: [{ $sort: { createdAt: -1 } }],
+            rating: [{ $sort: { averageRating: -1 } }],
+            priceUp: [{ $sort: { price: 1 } }],
+            priceDown: [{ $sort: { price: -1 } }],
+        };
+        const sortStage = sortOptions[sort] || sortOptions.relevance;
 
-        const totalCourses = await Course.countDocuments(filter);
+        const pageNumber = Number(page) || 1;
+        const pageSize = Number(limit) || 6;
+        1;
+        const skip = (pageNumber - 1) * pageSize;
+        const pipeline = [
+            ...matchStage,
+            filterStage,
+            ...sortStage,
+            {
+                $facet: {
+                    results: [
+                        { $skip: skip },
+                        { $limit: pageSize },
+                        {
+                            $project: {
+                                _id: 1,
+                                title: 1,
+                                subtitle: 1,
+                                thumbnail: 1,
+                                description: 1,
+                                category: 1,
+                                subcategory: 1,
+                                level: 1,
+                                language: 1,
+                                learningOutcomes: 1,
+                                price: 1,
+                                averageRating: 1,
+                                courseDuration: 1,
+                                updatedAt: 1,
+                            },
+                        },
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
+            }
+        ];
+
+        const aggResult = await Course.aggregate(pipeline);
+
+        const results = aggResult[0].results;
+        const totalCourse = aggResult[0].totalCount[0]?.total || 0;
+        const totalPage = Math.ceil(totalCourse / pageSize);
 
         res.status(200).json({
-            query: q || "",
-            totalCourses,
-            totalPages: Math.ceil(totalCourses / pageSize),
+            results,
+            totalCourse,
+            totalPage,
             currentPage: pageNumber,
-            pageSize,
-            data: courses,
         });
     } catch (error) {
-        console.log(error);
+        console.log(error)
         res.status(500).json({ message: "Server Error" });
     }
-};
+}
+
 
 export {
     getCourseById,
@@ -757,4 +859,6 @@ export {
     deleteCourse,
     getCourseInfo,
     processCourse,
+    getSearchCourseSuggestion,
+    getSearchCourseResults
 };

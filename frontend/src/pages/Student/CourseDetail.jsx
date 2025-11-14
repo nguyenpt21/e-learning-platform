@@ -15,6 +15,7 @@ import { MdOutlineOndemandVideo } from "react-icons/md";
 import { PiPuzzlePieceBold } from "react-icons/pi";
 import Footer from "../../components/Footer";
 import PromoVideoPlayer from "@/components/student/course-learning/PromoVideoPlayer";
+import { calculateCourseStats } from "@/utils";
 
 const CourseDetail = () => {
     const param = useParams();
@@ -25,33 +26,6 @@ const CourseDetail = () => {
     const [reachedFooter, setReachedFooter] = useState(false);
     const footerRef = useRef(null);
 
-    const calculateCourseStats = (courseData) => {
-        if (!courseData?.sections) return { courseDuration: 0, totalLectures: 0, totalResources: 0, sections: [] };
-        let courseDuration = 0;
-        let totalLectures = 0;
-        let totalResources = 0;
-        const sections = courseData.sections.map(section => {
-            let sectionLectures = 0;
-            let sectionResources = 0;
-            const sectionDuration = section.curriculumItems?.reduce((sum, ci) => {
-                if ((ci.type === "video" || ci.type === "article") && ci?.content?.duration) {
-                    sectionLectures += 1;
-                    sectionResources += ci?.resources?.length || 0;
-                    return sum + ci.content.duration;
-                }
-                return sum;
-            }, 0);
-            courseDuration += sectionDuration;
-            totalLectures += sectionLectures;
-            totalResources += sectionResources;
-            return {
-                sectionId: section._id, sectionDuration, sectionLectures, sectionResources
-            };
-        });
-        return {
-            courseDuration, totalLectures, totalResources, sections
-        };
-    };
     const formatDuration = (seconds) => {
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.round((seconds % 3600) / 60);
@@ -166,6 +140,14 @@ const CourseDetail = () => {
                                 </ul>
                             </div>
                         )}
+
+                        <div>
+                            <p className="text-2xl font-semibold mb-5">Thể loại</p>
+                            <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-gray-50 inline-block px-3 py-2 rounded-md">
+                                <span>{course.category}</span>
+                            </div>
+                        </div>
+
                         <div className="">
                             <p className="text-2xl font-semibold mb-5">Nội dung khoá học</p>
                             <CourseContent course={course} courseWithDurations={courseWithDurations} formatDuration={formatDuration} />
@@ -241,7 +223,7 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                     Thêm vào giỏ hàng
                 </button>
                 <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
-                onClick={()=>course?.price && navigate(`/course/${course._id}/payment`)}>
+                    onClick={() => course?.price && navigate(`/course/${course._id}/payment`)}>
                     Mua ngay
                 </button>
                 <div className="text-gray-900 text-sm px-3">
@@ -302,8 +284,21 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
         <div className="">
             <div className="flex items-center justify-between mb-2">
                 <p className="pl-1 text-gray-700 text-sm flex items-center">
-                    {courseWithDurations?.sections.length} phần<LuDot className="text-xl" />
-                    {courseWithDurations?.totalLectures} bài học<LuDot className="text-xl" />
+                    {courseWithDurations?.sections?.length > 0 && (
+                        <span className="flex items-center justify-center">
+                            {courseWithDurations?.sections.length} phần<LuDot className="text-xl" />
+                        </span>
+                    )}
+                    {courseWithDurations?.totalLectures > 0 && (
+                        <span className="flex items-center justify-center">
+                            {courseWithDurations?.totalLectures} bài học<LuDot className="text-xl" />
+                        </span>
+                    )}
+                    {courseWithDurations?.totalQuizzes > 0 && (
+                        <span className="flex items-center justify-center">
+                            {courseWithDurations?.totalQuizzes} bài kiểm tra<LuDot className="text-xl" />
+                        </span>
+                    )}
                     {formatDuration(courseWithDurations?.courseDuration)} thời lượng
                 </p>
                 <button
@@ -316,7 +311,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
             </div>
             <Accordion
                 type="multiple"
-                className="w-full border border-[#cee1ef] rounded-sm"
+                className="w-full border border-[#cee1ef]"
                 value={openSections}
                 onValueChange={(vals) => setOpenSections(vals)}
             >
@@ -326,7 +321,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                     );
                     return (
                         <AccordionItem key={section._id} value={section._id} className="border-b border-[#cee1ef]">
-                            <AccordionTrigger className="text-[16px] px-6 flex items-center bg-[#f4faff] rounded-md rounded-bl-none rounded-br-none">
+                            <AccordionTrigger className="text-[16px] px-6 flex items-center bg-[#f4faff] cursor-pointer">
                                 <span className="font-semibold">{section.title}</span>
                                 {foundSection && (
                                     <div className="text-gray-500 text-sm flex items-center ml-auto">
@@ -343,7 +338,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                                         .sort((a, b) => a.order - b.order)
                                         .map((ci) => (
                                             <div
-                                                className="flex items-center text-gray-600 text-[15px] font-light"
+                                                className="flex items-center text-gray-600 text-[15px] font-light hover:underline"
                                                 key={ci._id}
                                             >
                                                 <li className="flex items-center gap-4">
@@ -389,7 +384,7 @@ const CourseBreadcrumb = ({ course }) => {
     return (
         <Breadcrumb>
             <BreadcrumbList>
-                <BreadcrumbItem >
+                <BreadcrumbItem className={``} >
                     <BreadcrumbLink asChild>
                         <Link to="/">Home</Link>
                     </BreadcrumbLink>
@@ -400,12 +395,12 @@ const CourseBreadcrumb = ({ course }) => {
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
                         <Link to={`/category/${course?.category}`}>
-                            {course?.category?.name || "Category"}
+                            {course?.category || "Category"}
                         </Link>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
 
-                <BreadcrumbSeparator />
+                {/* <BreadcrumbSeparator />
 
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
@@ -413,7 +408,7 @@ const CourseBreadcrumb = ({ course }) => {
                             {course?.subcategory?.name || "Subcategory"}
                         </Link>
                     </BreadcrumbLink>
-                </BreadcrumbItem>
+                </BreadcrumbItem> */}
             </BreadcrumbList>
         </Breadcrumb>
     )

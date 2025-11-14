@@ -8,6 +8,12 @@ import { MdOutlineOndemandVideo } from 'react-icons/md'
 import { PiPuzzlePieceBold } from 'react-icons/pi'
 import { IoDocumentTextOutline } from 'react-icons/io5'
 import { FaCircleCheck } from 'react-icons/fa6'
+import Resources from '@/components/student/course-learning/Resources'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const formatDuration = (s) => {
     if (!s || isNaN(s)) return '00:00'
@@ -115,39 +121,60 @@ const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) 
                                 return (
                                     <div
                                         key={item._id}
-                                        className={`grid grid-cols-8 border-b py-3 px-4 items-center hover:bg-gray-100 duration-300 ${isActive ? 'bg-gray-200' : ''
+                                        className={`flex items-center border-b py-3 hover:bg-gray-100 duration-300 ${isActive ? 'bg-gray-200' : ''
                                             }`}
                                         onClick={() =>
                                             handleChange(item._id, item.itemType)
                                         }
                                     >
-                                        <div className="text-sm col-span-7">
-                                            <div className="flex items-center space-x-3 mb-2">
-                                                <span className="text-gray-600">
-                                                    {indx + 1}. {item.title}
-                                                </span>
-                                            </div>
-                                            {item.itemType === 'Lecture' ? (
-                                                <span className="flex items-center gap-2 text-xs text-gray-400">
-                                                    {item.type === 'video' ? (
-                                                        <MdOutlineOndemandVideo className="w-4 h-4" />
+                                        <div className="flex justify-center items-center px-4">
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isCompleted}
+                                                        disabled
+                                                        className="w-4 h-4 text-green-600 border-gray-300 rounded cursor-not-allowed opacity-50"
+                                                    />
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right" align="center">
+                                                    <p>Hoàn thành bài <br /> học để đánh dấu</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                        <div className="flex-1 text-sm">
+                                            <div className='flex items-center justify-between'>
+                                                <div className="mb-2">
+                                                    <span className="text-gray-600">
+                                                        {indx + 1}. {item.title}
+                                                    </span>
+                                                    {item.itemType === 'Lecture' ? (
+                                                        <span className="flex items-center gap-2 text-xs text-gray-400 mt-3">
+                                                            {item.type === 'video' ? (
+                                                                <MdOutlineOndemandVideo className="w-4 h-4" />
+                                                            ) : (
+                                                                <IoDocumentTextOutline className="w-4 h-4" />
+                                                            )}
+                                                            {formatDuration(item?.content?.duration)}
+                                                        </span>
                                                     ) : (
-                                                        <IoDocumentTextOutline className="w-4 h-4" />
+                                                        <span className="flex items-center gap-2 text-xs text-gray-400 mt-3">
+                                                            <PiPuzzlePieceBold className="w-4 h-4" />
+                                                            {item.questions.length} câu
+                                                        </span>
                                                     )}
-                                                    {formatDuration(item?.content?.duration)}
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-2 text-xs text-gray-400">
-                                                    <PiPuzzlePieceBold className="w-4 h-4" />
-                                                    {item.questions.length} câu
-                                                </span>
-                                            )}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="col-span-1 ml-auto flex justify-center">
-                                            {isCompleted && (
-                                                <FaCircleCheck className="text-green-600 w-4 h-4" />
-                                            )}
-                                        </div>
+                                        {item?.resources && item?.resources.length > 0 && (
+                                            <div
+                                                className='shrink-0 pr-4 self-end'
+                                                onMouseEnter={(e) => e.stopPropagation()}
+                                                onMouseLeave={(e) => e.stopPropagation()}
+                                            >
+                                                <Resources resources={item?.resources} />
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}
