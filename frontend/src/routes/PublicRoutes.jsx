@@ -17,11 +17,10 @@ const PublicRoutes = () => {
                 }
             >
                 <Route path="/" element={<HomePage />} />
-                <Route path="/courses" element={<CoursesCatalog />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
                 <Route path="/course/:_id/payment" element={<Payment />} />
-
             </Route>
+            <Route path="/courses" element={<CoursesCatalog />} />
             <Route path="/course/:_id" element={<CourseDetail />} />
             <Route path="/course/:_id/paypal-success" element={<PaypalSuccess />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
