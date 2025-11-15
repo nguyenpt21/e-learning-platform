@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const CourseSchema = new mongoose.Schema(
     {
         title: { type: String, required: true },
+        alias: { type: String, default: ""},
         thumbnail: {
             publicURL: { type: String },
             s3Key: { type: String },

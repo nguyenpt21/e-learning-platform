@@ -14,6 +14,7 @@ import { FaRegFolderOpen } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io";
 import { TbFileTypePdf, TbFileTypeDoc, TbFileTypePng } from "react-icons/tb";
 import { LuFile } from "react-icons/lu";
+import axios from 'axios';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -36,32 +37,31 @@ function getFileTypeFromName(filename) {
     if (parts.length > 1) {
         return parts[parts.length - 1].toLowerCase();
     }
-    return ''; 
+    return '';
 }
 
 const Resources = ({ resources }) => {
     console.log(resources)
 
-    const handleDownload = async (publicURL, fileName) => {
+    const handleDownload = async (s3Key, fileName) => {
         try {
-            const response = await fetch(publicURL);
-            if (!response.ok) {
-                throw new Error('Không thể tải file');
-            }
+            const res = await axios.get(`/api/files/download`, {
+                params: { key: s3Key }
+            });
+
+            const { downloadURL } = res.data;
+            const response = await fetch(downloadURL);
             const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
+            const blobUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
             link.download = fileName;
-            document.body.appendChild(link);
             link.click();
 
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
+            URL.revokeObjectURL(blobUrl);
         } catch (error) {
-            console.error("Lỗi download:", error);
-            window.open(publicURL, '_blank');
+            console.error("Download error:", error);
         }
     };
     return (
@@ -78,7 +78,7 @@ const Resources = ({ resources }) => {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <button
-                                        onClick={() => handleDownload(item.publicURL, item.fileName)}
+                                        onClick={() => handleDownload(item.s3Key, item.fileName)}
                                         key={id}
                                         className='flex items-center gap-1 cursor-pointer'
                                     >
