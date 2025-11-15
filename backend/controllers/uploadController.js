@@ -1,7 +1,29 @@
-import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+//download resources
+
+const downloadResources = async (req, res) => {
+    try {
+        const { key } = req.query;
+        if (!key) return;
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key: key,
+        });
+
+        const downloadURL = await getSignedUrl(s3Client, command, {
+            expiresIn: 600, 
+        });
+
+        res.status(200).json({ downloadURL });
+    } catch (error) {
+        console.error("Failed to download file", error)
+    }
+}
 
 // Khởi tạo S3 client
 const s3Client = new S3Client({
@@ -176,4 +198,4 @@ const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
 };
 
 
-export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3, uploadBase64ImagesInContent };
+export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3, uploadBase64ImagesInContent, downloadResources };
