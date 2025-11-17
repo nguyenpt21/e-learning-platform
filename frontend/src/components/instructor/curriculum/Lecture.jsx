@@ -84,7 +84,11 @@ const Lecture = ({
         const controller = new AbortController();
         controllerRef.current = controller;
         try {
+            let uploadedBytes = 0;
+            let totalBytes = file.size;
+
             const thumbnailBlob = await generateThumbnailFromVideo(file, 1.0);
+            totalBytes += thumbnailBlob.size;
 
             const [videoUploadData, thumbnailUploadData] = await Promise.all([
                 generateUploadURL({
@@ -104,15 +108,26 @@ const Lecture = ({
             await axios.put(videoUploadData.uploadURL, file, {
                 headers: { "Content-Type": file.type },
                 onUploadProgress: (e) => {
-                    setProgress(Math.round((e.loaded * 100) / e.total));
+                    const loaded = e.loaded;
+                    const currentTotal = uploadedBytes + loaded;
+                    setProgress(Math.round((currentTotal / totalBytes) * 100));
                 },
                 signal: controller.signal,
             });
 
+            uploadedBytes += file.size;
             await axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
                 headers: { "Content-Type": "image/jpeg" },
+                onUploadProgress: (e) => {
+                    const loaded = e.loaded;
+                    const currentTotal = uploadedBytes + loaded;
+                    setProgress(Math.round((currentTotal / totalBytes) * 100));
+                },
                 signal: controller.signal,
             });
+
+            uploadedBytes += thumbnailBlob.size;
+            setProgress(100);
 
             await deleteFileFromS3({ s3Key: item.content.s3Key });
             await updateLecture({

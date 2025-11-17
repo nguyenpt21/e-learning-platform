@@ -38,7 +38,7 @@ router.route("/:courseId")
     .put(updateCourse)
     .delete(deleteCourse);
 router.get("/manage", getCourses);
-router.get("/info", getCourseInfo)
+router.get("/:courseId/info", getCourseInfo)
 router.post("/:courseId/process", processCourse)
 // section
 router.route("/:courseId/sections")

@@ -230,6 +230,10 @@ const CourseInfo = ({ course }) => {
             newErrors.category = "Vui lòng chọn danh mục khóa học";
         }
 
+        if (!formData.description.replace(/<(.|\n)*?>/g, "").trim()) {
+            newErrors.description = "Vui lòng nhập mô tả khóa học khóa học";
+        }
+
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length > 0) {
@@ -401,14 +405,17 @@ const CourseInfo = ({ course }) => {
                     </div>
                 </div>
             )}
-            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50 text-white font-semibold">
                 <div className="container flex items-center justify-between">
-                    <Link
-                        to="/instructor/courses"
-                        className="text-white font-semibold px-2 py-1 rounded hover:bg-gray-600"
-                    >
-                        Quay lại
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to="/instructor/courses"
+                            className="px-2 py-1 rounded hover:bg-gray-600"
+                        >
+                            Quay lại
+                        </Link>
+                        <p>{course.title}</p>
+                    </div>
                     <div className="items-center flex gap-3">
                         <button
                             onClick={handleSave}
@@ -479,6 +486,9 @@ const CourseInfo = ({ course }) => {
                             }}
                         ></ReactQuillNew>
                     </div>
+                    {errors.description && (
+                        <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                    )}
                 </div>
                 <div className="">
                     <h3 className="font-semibold">Thông tin cơ bản</h3>

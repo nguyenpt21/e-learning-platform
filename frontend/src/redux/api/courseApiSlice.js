@@ -22,14 +22,22 @@ export const courseApiSlice = apiSlice.injectEndpoints({
         }),
         getCourseInfo: builder.query({
             query: (courseId) => ({
-                url: `${COURSE_URL}/${courseId}`,
+                url: `${COURSE_URL}/${courseId}/info`,
             }),
-            providesTags: (result, error, courseId) => [
-                { type: "CurriculumItem", id: courseId },
-            ],
+            providesTags: (result, error, courseId) => [{ type: "CurriculumItem", id: courseId }],
+        }),
+        processCourse: builder.mutation({
+            query: (courseId) => ({
+                url: `${COURSE_URL}/${courseId}/process`,
+                method: "POST",
+            }),
         }),
     }),
 });
 
-export const { useCreateCourseMutation, useUpdateCourseMutation, useGetCourseInfoQuery } =
-    courseApiSlice;
+export const {
+    useCreateCourseMutation,
+    useUpdateCourseMutation,
+    useGetCourseInfoQuery,
+    useProcessCourseMutation,
+} = courseApiSlice;

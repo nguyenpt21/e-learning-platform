@@ -36,7 +36,7 @@ const CourseSchema = new mongoose.Schema(
         category: { type: String, default: "" },
         subcategory: { type: String, default: "" },
         isFree: { type: Boolean },
-        status: { type: String, enum: ["draft", "processing", "published"], },
+        status: { type: String, enum: ["draft","processing", "published"], default: "draft" },
         price: { type: Number, default: 0 },
         averageRating: { type: Number, default: 0 },
         sections: {
@@ -57,7 +57,8 @@ const CourseSchema = new mongoose.Schema(
             thumbnailURL: { type: String },
             thumbnailS3Key: { type: String },
         },
-        // courseDuration: { type: Number, default: 0 },
+        courseDuration: { type: Number, default: 0 },
+        publishedAt: { type: Date },
         // totalCurriculumItems: { type: Number, default: 0 },
     },
     { timestamps: true }

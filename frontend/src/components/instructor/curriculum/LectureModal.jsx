@@ -19,7 +19,6 @@ import {
 } from "@/redux/api/sectionApiSlice";
 import { estimateReadingTime, generateThumbnailFromVideo } from "@/utils";
 
-
 const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
     const [showContentType, setShowContentType] = useState(true);
     const [contentType, setContentType] = useState(null);
@@ -83,7 +82,11 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
         const controller = new AbortController();
         controllerRef.current = controller;
         try {
+            let uploadedBytes = 0;
+            let totalBytes = file.size;
+
             const thumbnailBlob = await generateThumbnailFromVideo(file, 1.0);
+            totalBytes += thumbnailBlob.size;
 
             const [videoUploadData, thumbnailUploadData] = await Promise.all([
                 generateUploadURL({
@@ -103,16 +106,29 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
             await axios.put(videoUploadData.uploadURL, file, {
                 headers: { "Content-Type": file.type },
                 onUploadProgress: (e) => {
-                    setProgress(Math.round((e.loaded * 100) / e.total));
+                    const loaded = e.loaded;
+                    const currentTotal = uploadedBytes + loaded;
+                    setProgress(Math.round((currentTotal / totalBytes) * 100));
                 },
                 signal: controller.signal,
             });
 
+            uploadedBytes += file.size;
+
             await axios.put(thumbnailUploadData.uploadURL, thumbnailBlob, {
                 headers: { "Content-Type": "image/jpeg" },
+                onUploadProgress: (e) => {
+                    const loaded = e.loaded;
+                    const currentTotal = uploadedBytes + loaded;
+                    setProgress(Math.round((currentTotal / totalBytes) * 100));
+                },
                 signal: controller.signal,
             });
 
+            uploadedBytes += thumbnailBlob.size;
+
+            setProgress(100);
+            
             await addLectureToSection({
                 courseId,
                 sectionId,
