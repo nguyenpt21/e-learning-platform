@@ -1,5 +1,16 @@
 import { Outlet, useLocation, Link, useParams } from "react-router-dom";
+import { useState } from "react";
 import { FaRegCheckCircle } from "react-icons/fa";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useProcessCourseMutation } from "@/redux/api/courseApiSlice";
 const CourseManageLayout = () => {
     const location = useLocation();
     const { courseId } = useParams();
@@ -21,6 +32,25 @@ const CourseManageLayout = () => {
             to: "captions",
         },
     ];
+
+    const [processCourse, { isLoading }] = useProcessCourseMutation();
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [validationErrors, setValidationErrors] = useState([]);
+
+    const handlePublish = async () => {
+        try {
+            const result = await processCourse(courseId).unwrap();
+
+            console.log(result);
+            if (!result.success) {
+                setShowErrorModal(true);
+                setValidationErrors(result.errors);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     return (
         <div>
             <div className="flex container mt-[60px] gap-[30px] px-4">
@@ -34,8 +64,8 @@ const CourseManageLayout = () => {
                                 <Link
                                     key={index}
                                     to={item.to}
-                                    className={`flex gap-3 items-center h-12 px-4 hover:bg-primary/5 ${
-                                        isActive ? "bg-primary/5 border-l-3 border-primary" : ""
+                                    className={`flex relative gap-3 items-center h-12 px-4 hover:bg-primary/5 ${
+                                        isActive ? "bg-primary/5" : ""
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -44,11 +74,18 @@ const CourseManageLayout = () => {
                                         </div>
                                         <span className="font-light">{item.title}</span>
                                     </div>
+                                    {isActive && (
+                                        <div className="h-full w-[3px] bg-primary absolute left-0"></div>
+                                    )}
                                 </Link>
                             );
                         })}
                     </nav>
-                    <button className="mt-2 w-full py-2 font-semibold cursor-pointer text-center rounded bg-primary text-white">
+                    <button
+                        onClick={handlePublish}
+                        disabled={isLoading}
+                        className="mt-2 w-full py-2 font-semibold cursor-pointer text-center rounded bg-primary text-white"
+                    >
                         Phát hành khóa học
                     </button>
                 </div>
@@ -56,6 +93,47 @@ const CourseManageLayout = () => {
                     <Outlet />
                 </div>
             </div>
+            {isLoading && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-lg font-medium">Đang kiểm tra khóa học...</p>
+                        <p className="text-sm text-muted-foreground">Vui lòng chờ trong giây lát</p>
+                    </div>
+                </div>
+            )}
+            {/* Modal hiển thị lỗi validation */}
+            <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <AlertCircle className="h-6 w-6 text-destructive" />
+                            Khóa học chưa đủ điều kiện để phát hành
+                        </DialogTitle>
+                        <DialogDescription>
+                            Vui lòng hoàn thiện các thông tin sau để có thể phát hành khóa học:
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 mt-4">
+                        {validationErrors.map((error, index) => (
+                            <Alert key={index} variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        ))}
+                    </div>
+
+                    <div className="flex justify-end mt-6">
+                        <button
+                            className="px-2 py-1 hover:bg-gray-100 rounded cursor-pointer"
+                            onClick={() => setShowErrorModal(false)}
+                        >
+                            Đã hiểu
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

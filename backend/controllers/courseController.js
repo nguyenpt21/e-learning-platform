@@ -8,6 +8,7 @@ import Quiz from "../models/quiz.js";
 import { ObjectId } from "mongodb";
 
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import VideoConversion from "../models/videoConvertion.js";
 
 const lambda = new LambdaClient({
     region: process.env.AWS_REGION || "ap-southeast-1",
@@ -178,7 +179,7 @@ const checkCoursePublishRequirements = async (course) => {
         errors.push("Tiêu đề khóa học là bắt buộc");
     }
 
-    if (!course.description || course.description.trim() === "") {
+    if (!course.description || course.description.replace(/<(.|\n)*?>/g, "").trim() === "") {
         errors.push("Mô tả khóa học là bắt buộc");
     }
 
@@ -232,7 +233,8 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${
+                        sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;
@@ -255,33 +257,6 @@ const checkCoursePublishRequirements = async (course) => {
     };
 };
 
-// const checkHasAtLeastOneVideo = async (course) => {
-//     if (!course.sections || course.sections.length === 0) {
-//         return false;
-//     }
-
-//     for (const section of course.sections) {
-//         const sectionDetail = await Section.findById(section.sectionId);
-
-//         if (sectionDetail && sectionDetail.curriculumItems) {
-//             const lectureItems = sectionDetail.curriculumItems.filter(
-//                 item => item.itemType === 'Lecture'
-//             );
-
-//             for (const lectureItem of lectureItems) {
-//                 const lecture = await Lecture.findById(lectureItem.itemId);
-//                 if (lecture &&
-//                     lecture.type === 'video' &&
-//                     lecture.content &&
-//                     lecture.content.publicURL) {
-//                     return true;
-//                 }
-//             }
-//         }
-//     }
-
-//     return false;
-// };
 
 const checkHasAtLeastOneVideo = async (courseId) => {
     const result = await Section.aggregate([
@@ -358,17 +333,10 @@ const processCourse = async (req, res) => {
             });
         }
 
-        if (course.status === "published") {
-            return res.json({
-                success: false,
-                message: "Khóa học đã được phát hành trước đó",
-            });
-        }
-
         const checkResult = await checkCoursePublishRequirements(course);
 
         if (!checkResult.isValid) {
-            return res.status(400).json({
+            return res.json({
                 success: false,
                 message: "Không thể phát hành khóa học",
                 errors: checkResult.errors,
@@ -387,13 +355,20 @@ const processCourse = async (req, res) => {
             });
         }
 
-        console.log("📋 S3 Keys:", s3Keys);
+        const videoConversion = await VideoConversion.create({
+            courseId: courseId,
+            s3Keys: s3Keys,
+            totalVideos: s3Keys.length,
+            processedVideos: 0,
+        });
 
         const payload = {
             s3Keys: s3Keys,
             bucket: process.env.AWS_S3_BUCKET_NAME,
             outputPrefix: "hls-output",
+            jobId: videoConversion._id,
         };
+
 
         const command = new InvokeCommand({
             FunctionName: process.env.LAMBDA_FUNCTION_NAME || "video-hls-orchestrator",
@@ -414,8 +389,10 @@ const processCourse = async (req, res) => {
 
         return res.json({
             success: true,
+            state: "processing",
             message: "Các video trong khóa học đang được xử lý",
         });
+
     } catch (error) {
         console.error("Lỗi khi phát hành khóa học:", error);
         return res.status(500).json({

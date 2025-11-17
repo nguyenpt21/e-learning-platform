@@ -261,7 +261,7 @@ def upload_hls_parallel(output_dir, bucket, hls_base_path):
     print(f"✅ Uploaded {uploaded_count}/{len(files_to_upload)} files")
     return uploaded_count
     
-def notify_webhook(s3_key, status, hls_path=None, error=None, max_retries=3):
+def notify_webhook(s3_key, status, job_id, hls_path=None, error=None, max_retries=3):
     WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
     """Gọi webhook với retry logic"""
     if not WEBHOOK_URL:
@@ -271,6 +271,7 @@ def notify_webhook(s3_key, status, hls_path=None, error=None, max_retries=3):
         's3Key': s3_key,
         'status': status,
         'hlsURL': hls_path,
+        'jobId': job_id,
         'error': error
     }
     
@@ -312,8 +313,9 @@ def main():
     s3_key = os.environ.get('S3_KEY')
     bucket = os.environ.get('BUCKET')
     output_prefix = os.environ.get('OUTPUT_PREFIX', 'hls-output')
+    job_id = os.environ.get('JOB_ID')
     
-    
+    print()
     # Validate
     if not s3_key or not bucket:
         print("ERROR: S3_KEY and BUCKET environment variables are required")
@@ -357,6 +359,7 @@ def main():
         notify_webhook(
             s3_key=s3_key,
             status='success',
+            job_id=job_id,
             hls_path=f"https://{bucket}.s3.ap-southeast-1.amazonaws.com/{hls_base_path}/master.m3u8"
         )
         
@@ -367,6 +370,7 @@ def main():
         notify_webhook(
             s3_key=s3_key,
             status='failed',
+            job_id=job_id,
             error=str(e)
         )
         sys.exit(1)

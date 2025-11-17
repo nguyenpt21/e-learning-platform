@@ -149,7 +149,9 @@ const deleteSection = async (req, res) => {
         for (const item of section.curriculumItems) {
             if (item.itemType === "Lecture") {
                 const lecture = await Lecture.findById(item.itemId);
+
                 if (!lecture) return;
+                course.courseDuration -= lecture.content?.duration;
 
                 const s3KeysToDelete = [];
 
@@ -245,12 +247,15 @@ const addLectureToSection = async (req, res) => {
 
         await newLecture.save();
 
+        course.courseDuration += newLecture.content.duration;
+
         section.curriculumItems.push({
             order: newOrder,
             itemId: newLecture._id,
             itemType: "Lecture",
         });
         await section.save();
+        await course.save();
         res.status(201).json(newLecture);
     } catch (error) {
         console.error(error);
@@ -309,12 +314,12 @@ const updateCurriculumItem = async (req, res) => {
             resource, // for Lecture
         } = req.body;
 
-        // const course = await Course.findById(courseId);
-        // if (!course) return res.status(404).json({ message: "Course not found" });
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: "Course not found" });
 
-        // const sectionInCourse = course.sections.find((se) => se.sectionId.toString() === sectionId);
-        // if (!sectionInCourse)
-        //     return res.status(404).json({ message: "Section not found in course" });
+        const sectionInCourse = course.sections.find((se) => se.sectionId.toString() === sectionId);
+        if (!sectionInCourse)
+            return res.status(404).json({ message: "Section not found in course" });
 
         const section = await Section.findById(sectionId);
         if (!section) return res.status(404).json({ message: "Section not found" });
@@ -335,7 +340,13 @@ const updateCurriculumItem = async (req, res) => {
             item.title = title || item.title;
             item.description = description;
             item.type = type || item.type;
-            item.content = content || item.content;
+            if (content) {
+                course.courseDuration -= item.content.duration;
+                item.content = content;
+                course.courseDuration += content.duration;
+                await course.save();
+            }
+
             if (resource) {
                 item.resources.push(resource);
             }
@@ -385,6 +396,7 @@ const deleteCurriculumItem = async (req, res) => {
             const lecture = await Lecture.findById(itemId);
             if (!lecture) return;
 
+            course.courseDuration -= lecture.content.duration
             const s3KeysToDelete = [];
 
             if (lecture.content?.s3Key) {
@@ -408,6 +420,7 @@ const deleteCurriculumItem = async (req, res) => {
             }
 
             await Lecture.findByIdAndDelete(itemId);
+            await course.save()
         } else if (itemToDelete.itemType === "Quiz") {
             await Quiz.findByIdAndDelete(itemId);
         }

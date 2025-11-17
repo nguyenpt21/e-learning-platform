@@ -11,12 +11,13 @@ import {
 import { toast } from "react-toastify";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
+import { useGetCourseInfoQuery, useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
 import SortableItem from "@/components/instructor/curriculum/SortableItem";
 
 const Curriculum = () => {
     const { courseId } = useParams();
     const { data: sectionsData, isLoading } = useGetAllSectionsByCourseQuery(courseId);
+    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseId);
 
     const [sectionForm, setSectionForm] = useState({
         title: "",
@@ -93,18 +94,21 @@ const Curriculum = () => {
         }
     };
 
-    if (isLoading) return <></>;
+    if (isLoading || isLoandingCourseInfo) return <></>;
 
     return (
         <div>
             <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
-                <div className="container flex items-center justify-between">
-                    <Link
-                        to="/instructor/courses"
-                        className="text-white font-semibold px-2 py-1 rounded hover:bg-gray-600"
-                    >
-                        Quay lại
-                    </Link>
+                <div className="container flex items-center justify-between text-white font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to="/instructor/courses"
+                            className="px-2 py-1 rounded hover:bg-gray-600"
+                        >
+                            Quay lại
+                        </Link>
+                        <p>{course.title}</p>
+                    </div>
                 </div>
             </div>
             <div>

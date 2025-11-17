@@ -1,6 +1,5 @@
 import { useGetCourseInfoQuery } from "@/redux/api/courseApiSlice";
 import { useParams } from "react-router-dom";
-import CourseInfo from "../../pages/instructor/CourseInfo";
 import CourseGoal from "@/pages/instructor/CourseGoal";
 
 const CourseGoalWrapper = () => {

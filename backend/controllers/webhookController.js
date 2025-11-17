@@ -1,8 +1,10 @@
+import Course from "../models/course.js";
 import Lecture from "../models/lecture.js";
+import VideoConversion from "../models/videoConvertion.js";
 
 export const conversionComplete = async (req, res) => {
     try {
-        const { s3Key, status, hlsURL, error } = req.body;
+        const { s3Key, status, hlsURL, error, jobId } = req.body;
 
         console.log("Received webhook:", req.body);
 
@@ -21,16 +23,35 @@ export const conversionComplete = async (req, res) => {
             });
         }
 
-        if (status === "success") {
-            await Lecture.findByIdAndUpdate(video._id, { "content.hlsURL": hlsURL },)
+        const conversion = await VideoConversion.findById(jobId);
+        if (!conversion) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Không tìm thấy job conversion" });
+        }
+        const course = await Course.findById(conversion.courseId);
+        if (!course) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy course" });
+        }
 
+        if (status === "success") {
+            await Lecture.findByIdAndUpdate(video._id, { "content.hlsURL": hlsURL });
             console.log(`Video ${video._id} converted successfully`);
-        
+
+            conversion.processedVideos += 1;
+
+            if (conversion.processedVideos >= conversion.totalVideos) {
+                course.status = "published";
+            }
+
+            await conversion.save();
+            await course.save();
+
             return res.json({
                 success: true,
                 message: "Video conversion completed",
                 videoId: video.id,
-                hlsPath: hlsPath,
+                hlsURL: hlsURL,
             });
         } else if (status === "failed") {
             console.log(`Video ${video.id} conversion failed: ${error}`);
