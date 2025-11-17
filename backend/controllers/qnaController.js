@@ -4,16 +4,18 @@ import { uploadBase64ImagesInContent } from "./uploadController.js";
 export const createQNA = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { type, title, content } = req.body;
+    const { type, title, content, lectureId, courseId } = req.body;
 
     // Xử lý Base64 → upload lên S3 → thay link
-    const processedContent = await uploadBase64ImagesInContent(content);
+    const processedContent = await uploadBase64ImagesInContent(courseId,content);
 
     // Lưu processedContent vào DB
     const newPost = await QnA.create({
       author: userId,
       type,
       title,
+      lectureId,
+      courseId,
       content: processedContent,
     });
 
@@ -38,7 +40,7 @@ export const updateQnA = async (req, res) => {
         .status(403)
         .json({ message: "You do not have permission to update this QnA" });
     }
-    const processedContent = await uploadBase64ImagesInContent(content);
+    const processedContent = await uploadBase64ImagesInContent(qna.courseId,content);
     qna.type = type;
     qna.title = title;
     qna.content = processedContent;
@@ -75,9 +77,9 @@ export const getQnAById = async (req, res) => {
   try {
     const { qnaId } = req.params;
     const qna = await QnA.findById(qnaId)
-      .populate("author", "username profilePicture")
-      .populate("comments.user", "username profilePicture")
-      .populate("comments.replies.user", "username profilePicture");
+      .populate("author", "firstName lastName profilePicture")
+      .populate("comments.user", "firstName lastName profilePicture")
+      .populate("comments.replies.user", "firstName lastName profilePicture");
     if (!qna) {
       return res.status(404).json({ message: "QnA not found" });
     }
@@ -89,11 +91,15 @@ export const getQnAById = async (req, res) => {
 
 export const getQnAByPage = async (req, res) => {
   try {
+    const { lectureId } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = 7; // Số câu hỏi mỗi trang
-    const totalQuestions = await QnA.countDocuments();
+    if (!lectureId) {
+      return res.status(400).json({ message: "lectureId is required" });
+    }
+    const totalQuestions = await QnA.countDocuments({ lectureId });
     const totalPages = Math.ceil(totalQuestions / limit);
-    const qnas = await QnA.find()
+    const qnas = await QnA.find({ lectureId })
       .skip((page - 1) * limit)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -112,14 +118,16 @@ export const createComment = async (req, res) => {
   try {
     const { qnaId } = req.params;
     const { content } = req.body;
-    // Xử lý Base64 → upload lên S3 → thay link
-    const processedContent = await uploadBase64ImagesInContent(content);
-
+   
     const userId = req.user._id;
     const qna = await QnA.findById(qnaId);
     if (!qna) {
       return res.status(404).json({ message: "QnA not found" });
-    }
+    } 
+    
+    // Xử lý Base64 → upload lên S3 → thay link
+    const processedContent = await uploadBase64ImagesInContent(qna.courseId,content);
+
     qna.comments.push({
       user: userId,
       content: processedContent,
@@ -151,7 +159,7 @@ export const updateComment = async (req, res) => {
         .json({ message: "You do not have permission to edit this comment" });
     }
     const { content } = req.body;
-    const processedContent = await uploadBase64ImagesInContent(content);
+    const processedContent = await uploadBase64ImagesInContent(qna.courseId,content);
     comment.content = processedContent;
     await qna.save();
     res.status(200).json({ message: "Comment edited successfully" });
@@ -193,13 +201,14 @@ export const createReply = async (req, res) => {
     const { qnaId, commentId } = req.params;
     const { content } = req.body;
 
-    const processedContent = await uploadBase64ImagesInContent(content);
-
     const userId = req.user._id;
     const qna = await QnA.findById(qnaId);
     if (!qna) {
       return res.status(404).json({ message: "QnA not found" });
     }
+    
+    const processedContent = await uploadBase64ImagesInContent(qna.courseId,content);
+
     const comment = qna.comments.id(commentId);
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
@@ -239,7 +248,7 @@ export const updateReply = async (req, res) => {
         .json({ message: "You do not have permission to edit this reply" });
     }
     const { content } = req.body;
-    const processedContent = await uploadBase64ImagesInContent(content);
+    const processedContent = await uploadBase64ImagesInContent(qna.courseId,content);
     reply.content = processedContent;
     await qna.save();
     res.status(200).json({ message: "Reply edited successfully" });

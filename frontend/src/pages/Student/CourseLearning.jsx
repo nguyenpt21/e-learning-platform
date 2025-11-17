@@ -69,7 +69,7 @@ const CourseLearning = () => {
             />
             <div className="flex-grow lg:grid lg:grid-cols-7">
                 <div className='fixed bottom-5 left-5 z-50'>
-                    <QnASheet />
+                    <QnASheet courseId={course?._id} lectureId={currentItem?.itemId}/>
                 </div>
                 <div className="lg:col-span-5 h-[calc(100vh-64px)] overflow-auto">
                     <CoursePlayer

@@ -1,5 +1,29 @@
-import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+//download resources
+
+const downloadResources = async (req, res) => {
+    try {
+        const { key } = req.query;
+        if (!key) return;
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key: key,
+        });
+
+        const downloadURL = await getSignedUrl(s3Client, command, {
+            expiresIn: 600, 
+        });
+
+        res.status(200).json({ downloadURL });
+    } catch (error) {
+        console.error("Failed to download file", error)
+    }
+}
 
 // Khởi tạo S3 client
 const s3Client = new S3Client({
@@ -94,13 +118,34 @@ const deleteFileFromS3 = async (req, res) => {
     }
 };
 
-/**
- * Upload base64 images inside HTML content to S3 and replace src with S3 URLs
- * @param {string} htmlContent - the HTML string from TipTap
- * @returns {Promise<string>} processed HTML with replaced image URLs
- */
 
-const uploadBase64ImagesInContent = async (htmlContent) => {
+const generateURLFunction = async ({ courseId, type, fileName, fileType }) => {
+    try {
+        let Key;
+        Key = `${type}/${Date.now()}-${fileName}`;
+
+        if (courseId) {
+            Key = courseId.toString() + "/" + Key;
+        }
+
+        const command = new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key,
+            ContentType: fileType,
+        });
+
+        const uploadURL = await getSignedUrl(s3Client, command, {
+            expiresIn: 600, // 10 minutes
+        });
+
+        const publicURL = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
+
+        return{ uploadURL, s3Key: Key, publicURL };
+    } catch (error) {
+        console.error(error);
+    }
+};
+const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
   if (!htmlContent) return htmlContent;
 
   const regex = /<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/g;
@@ -109,30 +154,37 @@ const uploadBase64ImagesInContent = async (htmlContent) => {
   const uploads = [];
 
   while ((match = regex.exec(htmlContent)) !== null) {
-    // ✅ Copy dữ liệu để tránh bị ghi đè
     const fullTag = match[0];
     const mimeType = match[1];
     const base64Data = match[2];
 
     const buffer = Buffer.from(base64Data, "base64");
     const extension = mimeType.split("/")[1];
-    const fileKey = `editor/${Date.now()}-${uuidv4()}.${extension}`;
+    const fileName = `${uuidv4()}.${extension}`;
+    const fileType = `image/${extension}`;
 
-    uploads.push(
-      s3
-        .upload({
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: fileKey,
-          Body: buffer,
-          ContentEncoding: "base64",
-          ContentType: `image/${extension}`,
-        })
-        .promise()
-        .then((res) => ({
-          original: fullTag, // ✅ dùng bản copy an toàn
-          url: res.Location,
-        }))
-    );
+    // ✅ Gọi trực tiếp hàm generateUploadURL
+    const { uploadURL, publicURL } = await generateURLFunction({
+        courseId,
+        type:"qna",
+        fileName,
+        fileType
+    });
+
+      const uploadPromise = axios
+      .put(uploadURL, buffer, {
+        headers: { "Content-Type": fileType },
+      })
+      .then(() => ({
+        original: fullTag,
+        url: publicURL,
+      }))
+      .catch((err) => {
+        console.error("Upload failed:", err);
+        throw err;
+      });
+
+    uploads.push(uploadPromise);
   }
 
   const results = await Promise.all(uploads);
@@ -146,4 +198,4 @@ const uploadBase64ImagesInContent = async (htmlContent) => {
 };
 
 
-export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3, uploadBase64ImagesInContent };
+export { deleteMultipleS3Files, generateUploadURL, deleteFileFromS3, uploadBase64ImagesInContent, downloadResources };

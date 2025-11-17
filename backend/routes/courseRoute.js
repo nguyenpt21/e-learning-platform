@@ -7,7 +7,9 @@ import {
     updateCourse,
     deleteCourse,
     getCourseInfo,
-    processCourse
+    processCourse,
+    getSearchCourseSuggestion,
+    getSearchCourseResults
 } from "../controllers/courseController.js";
 
 import {
@@ -28,6 +30,12 @@ import {
 import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
 
 const router = express.Router();
+
+//search
+router.route("/suggestion")
+    .get(getSearchCourseSuggestion)
+router.route("/suggestion/results")
+    .get(getSearchCourseResults)
 
 //course
 router.route("/")
@@ -75,5 +83,7 @@ router.route("/quizzes/:quizId/questions/:questionId")
     .delete(deleteQuestionFromQuiz);
 
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
+
+
 
 export default router;
