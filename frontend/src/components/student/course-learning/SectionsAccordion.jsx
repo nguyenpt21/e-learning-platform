@@ -111,7 +111,7 @@ const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) 
                             {section.curriculumItems?.map((item, indx) => {
                                 const isCompleted = (() => {
                                     const progressFromDb = itemsProgress?.find(p => p.itemId === item._id);
-                                    if (progressFromDb) return progressFromDb.isCompleted;
+                                    if (progressFromDb !== undefined) return progressFromDb.isCompleted;
                                     if (currentItem?.itemId === item._id) return isDone;
                                     return false;
                                 })();
@@ -130,12 +130,25 @@ const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) 
                                         <div className="flex justify-center items-center px-4">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isCompleted}
-                                                        disabled
-                                                        className="w-4 h-4 text-green-600 border-gray-300 rounded cursor-not-allowed opacity-50"
-                                                    />
+                                                    <div
+                                                        className={`w-4 h-4 rounded border flex items-center justify-center cursor-not-allowed opacity-70
+                                                        ${isCompleted ? "bg-blue-500" : "bg-white border-gray-300"}`}
+                                                    >
+                                                        {isCompleted && (
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="w-3 h-3 text-white"
+                                                                viewBox="0 0 20 20"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                        )}
+                                                    </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="right" align="center">
                                                     <p>Hoàn thành bài <br /> học để đánh dấu</p>

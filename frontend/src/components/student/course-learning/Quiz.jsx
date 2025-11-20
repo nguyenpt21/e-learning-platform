@@ -43,7 +43,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
             }
             else {
                 setStep("quiz");
-                setCurrentIndex(submission.currentQuestion || 0);
+                setCurrentIndex(submission.currentQuestion - 1 || 0);
             }
         }
         else {
@@ -91,7 +91,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
 
     const handleAnswer = (questionId, selectedOptionIndex) => {
         const isTrue =
-            questions.find((q) => q._id === questionId)?.options[
+            questions.find((q) => q?._id === questionId)?.options[
                 selectedOptionIndex
             ]?.isCorrect || false;
         setAnswers((prev) => {
@@ -110,11 +110,12 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
 
     const goNext = async () => {
         const q = questions[currentIndex];
-        const found = answers.find((a) => a.questionId === q._id);
+        const found = answers.find((a) => a.questionId === q?._id);
         if (!found) {
             setErrorMessage("Vui lòng chọn đáp án trước khi tiếp tục.");
             return;
         }
+        const pc = Math.round((answers.length / questions.length) * 100);
         const submissionProcessData = {
             userId: userInfo._id,
             courseId: item.courseId,
@@ -123,17 +124,17 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
             answers,
             currentQuestion: answers.length,
             isFinished: false,
+            percentProgress: pc
         };
-        // console.log("Lưu tiến trình:", submissionProcessData);
         try {
             const res = await updateQuizProgress(submissionProcessData).unwrap();
-            // console.log("Tiến trình lưu thành công:", res);
+            console.log("Tiến trình lưu thành công:", res);
         } catch (error) {
             console.error("Lỗi khi lưu tiến trình làm bài quiz:", error);
         }
 
         if (currentIndex < questions.length - 1) {
-            setCurrentIndex(currentIndex + 1);
+            setCurrentIndex(prev => Math.min(prev + 1, questions.length - 1));
             setErrorMessage("");
         } else {
             const percentage = Math.round((answers.filter((a) => a.isTrue).length / questions.length) * 100);
@@ -147,11 +148,10 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                 currentQuestion: answers.length,
                 isFinished: true,
             };
-            // console.log("Nộp bài:", submissionData);
             try {
                 const res = await updateQuizProgress(submissionData).unwrap();
                 setIsDone(true);
-                // console.log("Nộp bài thành công:", res);
+                console.log("Nộp bài thành công:", res);
             } catch (error) {
                 console.error("Lỗi khi nộp bài quiz:", error);
             }
@@ -209,7 +209,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
 
     if (step === "quiz") {
         const q = questions[currentIndex];
-        const selected = answers.find((a) => a.questionId === q._id);
+        const selected = answers.find((a) => a.questionId === q?._id);
 
         return (
             <div className="px-20 py-8">
@@ -218,17 +218,17 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                 </p>
                 <h3
                     className="mt-2 mb-4 font-light"
-                    dangerouslySetInnerHTML={{ __html: q.questionText }}
+                    dangerouslySetInnerHTML={{ __html: q?.questionText }}
                 />
 
                 <RadioGroup
                     value={selected?.selectedOptionIndex?.toString() || ""}
                     onValueChange={(val) => {
-                        handleAnswer(q._id, val)
+                        handleAnswer(q?._id, val)
                     }}
                     className="space-y-2"
                 >
-                    {q.options.map((opt, index) => (
+                    {q?.options.map((opt, index) => (
                         <div
                             key={opt._id}
                             className="border border-gray-300 rounded-md px-4 py-3 hover:bg-gray-100 transition-colors"
@@ -325,14 +325,14 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                 <Accordion type="multiple" className="w-full">
                     {questions.map((q, i) => {
                         const userAnswer = answers.find(
-                            (a) => a.questionId === q._id
+                            (a) => a.questionId === q?._id
                         );
                         const userOptionIndex = userAnswer?.selectedOptionIndex;
                         const isUserCorrect = userAnswer?.isTrue;
 
                         return (
                             <AccordionItem
-                                key={q._id}
+                                key={q?._id}
                                 value={`item-${i}`}
                                 className={`
                                     border-1 rounded-md shadow-sm mb-4 last:border-b-1
@@ -354,7 +354,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                                             <span
                                                 className="font-normal pl-2"
                                                 dangerouslySetInnerHTML={{
-                                                    __html: q.questionText.replace(/<\/?p>/g, '').replace(/<\/?div>/g, ''),
+                                                    __html: q?.questionText.replace(/<\/?p>/g, '').replace(/<\/?div>/g, ''),
                                                 }}
                                             />
                                         </div>
@@ -362,7 +362,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 pt-0 pb-4">
                                     <div className="px-2">
-                                        {q.options.map((opt, index) => {
+                                        {q?.options.map((opt, index) => {
                                             const isThisCorrect = opt.isCorrect;
                                             const isThisSelected =
                                                 userOptionIndex?.toString() ===

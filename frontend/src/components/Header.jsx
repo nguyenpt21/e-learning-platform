@@ -9,6 +9,7 @@ import SignUpModal from "./SignUpModal";
 import { useGetCourseSearchSuggestionQuery } from "@/redux/api/coursePublicApiSlice.js";
 import { skipToken } from '@reduxjs/toolkit/query';
 import { LuDot } from "react-icons/lu";
+import { useLogoutMutation } from "@/redux/api/authSlice.js";
 
 export default function Header({ q }) {
   const navigate = useNavigate();
@@ -22,10 +23,17 @@ export default function Header({ q }) {
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
+  const [logoutApi] = useLogoutMutation();
 
-  const handleLogout = () => {
-    dispatch(logout());
-    window.location.href = "/sign-in";
+  const handleLogout = async () => {
+    try {
+      await logoutApi().unwrap();
+      dispatch(logout());
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Logout thất bại, thử lại");
+    }
   };
 
   const handleSearch = () => {

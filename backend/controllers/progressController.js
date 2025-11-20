@@ -4,6 +4,7 @@ import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Course from "../models/course.js"
 import Submission from "../models/submission.js";
+import mongoose from "mongoose";
 
 export const getCourseProgress = async (req, res) => {
     try {
@@ -75,13 +76,26 @@ export const updateItemProgress = async (req, res) => {
         const watched = Number(watchedSeconds) || 0;
         const total = Number(totalSeconds) || 0;
         const percent = Math.min(Number(progressPercent) || 0, 100);
+        let ws = 0;
+        if (type === "article") {
+            ws = Math.floor((percent / 100) * total)
+        }
+        else if (type === "video") {
+            ws = watched
+        }
 
         const filter = { userId, courseId, sectionId, itemId };
         const existingProgress = await Progress.findOne(filter);
         if (existingProgress?.isCompleted) {
             await Progress.updateOne(
                 { _id: existingProgress._id },
-                { $set: { updatedAt: new Date() } }
+                {
+                    $set: {
+                        watchedSeconds: ws,
+                        progressPercent: percent,
+                        updatedAt: new Date()
+                    }
+                }
             );
             const updated = await Progress.findById(existingProgress._id);
             return res.status(200).json(updated);
@@ -91,11 +105,15 @@ export const updateItemProgress = async (req, res) => {
             itemType: "Lecture",
             progressPercent: percent,
             isCompleted: percent >= 85,
+            totalSeconds: total,
         };
         if (type === "video") {
             Object.assign(update, {
-                watchedSeconds: watched,
-                totalSeconds: total,
+                watchedSeconds: ws,
+            });
+        } else if (type === "article") {
+            Object.assign(update, {
+                watchedSeconds: ws,
             });
         }
         const progress = await Progress.findOneAndUpdate(filter, update, {
@@ -154,8 +172,8 @@ const updateCourseProgress = async (userId, courseId) => {
 
 export const updateQuizProgress = async (req, res) => {
     try {
-        const { userId, courseId, sectionId, quizId, 
-            answers, currentQuestion, isFinished, score 
+        const { userId, courseId, sectionId, quizId,
+            answers, currentQuestion, isFinished, score, percentProgress
         } = req.body;
 
         if (!courseId || !sectionId || !quizId) {
@@ -178,10 +196,11 @@ export const updateQuizProgress = async (req, res) => {
             userId, courseId, sectionId, itemId: quizId,
         });
         const finalIsCompleted = existingProgress?.isCompleted === true ? existingProgress?.isCompleted : isFinished;
+        const pc = existingProgress?.progressPercent > percentProgress ? existingProgress?.progressPercent : percentProgress
         const progress = await Progress.findOneAndUpdate(
             { userId, courseId, sectionId, itemId: quizId },
             {
-                $set: { submissionId: submission._id, updatedAt: new Date(), isCompleted: finalIsCompleted },
+                $set: { submissionId: submission._id, updatedAt: new Date(), isCompleted: finalIsCompleted, progressPercent: pc },
                 $setOnInsert: {
                     userId, courseId, sectionId, itemId: quizId,
                     itemType: "Quiz",

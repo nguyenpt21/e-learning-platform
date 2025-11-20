@@ -9,7 +9,8 @@ import {
     getCourseInfo,
     processCourse,
     getSearchCourseSuggestion,
-    getSearchCourseResults
+    getSearchCourseResults,
+    getAllCoursesInfo
 } from "../controllers/courseController.js";
 
 import {
@@ -36,6 +37,8 @@ router.route("/suggestion")
     .get(getSearchCourseSuggestion)
 router.route("/suggestion/results")
     .get(getSearchCourseResults)
+router.route("/getAllCoursesInfo")
+    .get(getAllCoursesInfo)
 
 //course
 router.route("/")
