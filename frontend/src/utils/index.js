@@ -108,3 +108,28 @@ export const calculateCourseStats = (courseData) => {
         sections
     };
 };
+
+export const getTotals = (data) => {
+    if (!Array.isArray(data) || data.length === 0) {
+        return { totalMinutes: 0 };
+    }
+
+    const totalMinutes = Number(
+        data.reduce((sum, item) => sum + (Number(item.minutes) || 0), 0).toFixed(2)
+    );
+    
+    return { totalMinutes };
+};
+
+export const getTotalLearningItems = (data) => {
+    if (!Array.isArray(data) || data.length === 0) return { totalLectures: 0, totalQuizzes: 0 };
+
+    return data.reduce(
+        (totals, item) => {
+            totals.totalLectures += item.lectureCount || 0;
+            totals.totalQuizzes += item.quizCount || 0;
+            return totals;
+        },
+        { totalLectures: 0, totalQuizzes: 0 }
+    );
+};

@@ -14,7 +14,7 @@ import { conversionComplete } from "./controllers/webhookController.js";
 import profileRoute from "./routes/profileRoute.js"
 
 import qnaRoute from "./routes/qnaRoute.js"
-
+import performanceRoute from "./routes/performanceRoute.js"
 
 dotenv.config();
 
@@ -64,6 +64,8 @@ app.get("/api/downloadResources", downloadResources)
 app.use('/api/profile', profileRoute)
 
 app.use('/api/qna', qnaRoute)
+
+app.use('/api/performance', performanceRoute)
 
 
 app.listen(PORT, () => {

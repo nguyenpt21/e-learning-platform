@@ -61,6 +61,10 @@ const InstructorLayout = () => {
                     title: "Review",
                     to: "/instructor/reviews",
                 },
+                {
+                    title: "Tương tác khoá học",
+                    to: "/instructor/performance/engagement",
+                },
             ],
         },
     ];
