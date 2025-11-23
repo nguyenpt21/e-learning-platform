@@ -838,6 +838,27 @@ const getAllCoursesInfo = async (req, res) => {
     }
 };
 
+const searchCourses = async (req, res) => {
+  try {
+    const keyword = (req.query.keyword || "").trim();
+
+    if (!keyword) {
+      return res.json([]);
+    }
+
+    const courses = await Course.find({
+      title: { $regex: keyword, $options: "i" }
+    })
+      .select("_id title")
+      .lean();
+
+    return res.json(courses);
+  } catch (err) {
+    console.error("Search Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
 
 export {
     getCourseById,
@@ -850,5 +871,6 @@ export {
     processCourse,
     getSearchCourseSuggestion,
     getSearchCourseResults,
-    getAllCoursesInfo
+    getAllCoursesInfo,
+    searchCourses,
 };
