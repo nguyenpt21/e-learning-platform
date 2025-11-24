@@ -54,7 +54,7 @@ const NewQuestion = ({ courseId, lectureId, handleQuestionClick, getBack }) => {
     );
 
   return (
-    <div className="flex w-full flex-col px-4 space-y-2">
+    <div className="flex w-full flex-col px-4 space-y-2 overflow-y-auto">
       <p className=" text-lg font-semibold">Đặt câu hỏi mới</p>
       <Select value={type} onValueChange={setType}>
         <SelectTrigger className="w-[250px]">
