@@ -182,7 +182,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
           totalSeconds,
           progressPercent,
         }).unwrap();
-        // console.log("Progress video saved:", res);
+        console.log("Progress video saved:", res);
       } catch (err) {
         console.error("Update video failed:", err);
       }
@@ -193,7 +193,11 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
         await handleSaveProgress();
       }
     };
-    saveInitialProgress();
+
+    setTimeout(() => {
+      saveInitialProgress();
+    }, 300);
+
     interval = setInterval(() => {
       if (!videoRef.current) return;
       const watchedSeconds = videoRef.current.getCurrentTime?.() || 0;
@@ -202,12 +206,14 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
         ? Math.round((watchedSeconds / totalSeconds) * 100)
         : 0;
       if (
-        !hasSavedCompletion &&
         progressPercent >= 85 &&
-        watchedSeconds >= (itemProgress?.watchedSeconds || 0)
+        watchedSeconds >= (itemProgress?.watchedSeconds || 0) &&
+        watchedSeconds != totalSeconds
       ) {
-        hasSavedCompletion = true;
-        setIsDone(true);
+        if (!hasSavedCompletion) {
+          hasSavedCompletion = true;
+          setIsDone(true);
+        }
         handleSaveProgress();
       }
     }, 1000);
@@ -345,7 +351,7 @@ const ArticleRender = ({ item, itemProgress, setIsDone }) => {
         itemId: item._id,
         itemType: "article",
         watchedSeconds: null,
-        totalSeconds: null,
+        totalSeconds: item.content?.duration,
         progressPercent: progressPercentToSave,
       }).unwrap();
       // console.log("Article progress saved:", progressPercentToSave);

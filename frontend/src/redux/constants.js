@@ -7,3 +7,5 @@ export const PAYMENT_URL = "/api/checkout"
 export const QNA_URL = "/api/qna"
 export const NOTES_URL = "/api/video-notes";
 export const PROFILE_URL = "/api/profile";
+export const PERFORMANCE_URL = "/api/performance"
+export const ANNOUNCEMENT_URL = "/api/announcement"

@@ -380,7 +380,7 @@ const CourseInfo = ({ course }) => {
     return (
         <div className="">
             {isUploading && (
-                <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-[9999]">
+                <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-9999">
                     <div className="flex flex-col items-center justify-center -translate-y-[50%]">
                         <div className="text-white mb-2">Đang tải video và ảnh lên...</div>
                         <div className="flex items-center gap-3">
@@ -405,7 +405,7 @@ const CourseInfo = ({ course }) => {
                     </div>
                 </div>
             )}
-            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50 text-white font-semibold">
+            <div className="fixed w-full min-h-[50px] py-2.5 top-0 left-0 bg-gray-800 z-50 text-white font-semibold">
                 <div className="container flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Link
