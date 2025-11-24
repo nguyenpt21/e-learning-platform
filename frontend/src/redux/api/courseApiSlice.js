@@ -42,6 +42,11 @@ export const courseApiSlice = apiSlice.injectEndpoints({
         params: { keyword },
       }),
     }),
+    getInstructorCourses: builder.query({
+      query: () => ({
+        url: `${COURSE_URL}/instructor`,
+      }),
+    }),
   }),
 });
 
@@ -51,4 +56,5 @@ export const {
   useGetCourseInfoQuery,
   useProcessCourseMutation,
   useSearchCoursesQuery,
+  useGetInstructorCoursesQuery
 } = courseApiSlice;
