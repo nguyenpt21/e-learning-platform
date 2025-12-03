@@ -24,8 +24,8 @@ import { Link } from "react-router-dom";
 // };
 
 const LANGUAGE_OPTIONS = [
-    { value: "English", label: "Tiếng Anh" },
-    { value: "Vietnamese", label: "Tiếng Việt" },
+    { value: "en", label: "Tiếng Anh" },
+    { value: "vi", label: "Tiếng Việt" },
 ];
 
 const LEVEL_OPTIONS = [
@@ -501,7 +501,7 @@ const CourseInfo = ({ course }) => {
                                 value={formData.language}
                                 onValueChange={(value) => {
                                     handleChange("language", value);
-                                    console.log("language", value);
+                                   
                                 }}
                             >
                                 <SelectTrigger className="w-full px-3 py-2 min-h-[41px] text-[16px] rounded  border-gray-300">

@@ -10,6 +10,9 @@ import {
     processCourse,
     getSearchCourseSuggestion,
     getSearchCourseResults,
+    generateCaption,
+    getCaptionVideoStatus,
+    addCaptionVideo
     getAllCoursesInfo,
     searchCourses,
     getInstructorCourses,
@@ -92,6 +95,8 @@ router.route("/quizzes/:quizId/questions/:questionId")
 
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
-
+router.post('/:courseId/generate-captions', generateCaption)
+router.get('/:courseId/captions', getCaptionVideoStatus)
+router.post('/:courseId/captions', addCaptionVideo)
 
 export default router;
