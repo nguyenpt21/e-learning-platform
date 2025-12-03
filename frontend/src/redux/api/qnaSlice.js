@@ -124,17 +124,66 @@ export const questionApiSlice = apiSlice.injectEndpoints({
         { type: "QnA", id: qnaId },
       ],
     }),
-    solveTheQnA: builder.mutation({
+    getQnAByCourseId: builder.query({
+      query: (courseId) => ({
+        url: `${QNA_URL}/course/${courseId}`,
+      }),
+      providesTags: (result, error, courseId) => [
+        { type: "QnA", id: `course-${courseId}` }
+      ],
+    }),
+    getQnAByInstructor: builder.query({
+      query: () => ({
+        url: `${QNA_URL}/instructor`,
+      }),
+      providesTags: (result, error, id) => [{ type: "QnA", id: "instructor" }],
+    }),
+    updateIsRead: builder.mutation({
       query: ({ qnaId, body }) => ({
-        url: `${QNA_URL}/${qnaId}/solve`,
+        url: `${QNA_URL}/${qnaId}/isRead`,
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { qnaId }) => [
-        { type: "QnA", id: qnaId },
-        { type: "QnA", id: "LIST" },
+      invalidatesTags: (result, error, { courseId }) => [
+        { type: "QnA", id: `course-${courseId}` },
+        { type: "QnA", id: "instructor" },
       ],
-    })
+    }),
+    updateAnswer:builder.mutation({
+      query: ({ qnaId, body }) => ({
+        url: `${QNA_URL}/${qnaId}/answer`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId, courseId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: `course-${courseId}` },
+        { type: "QnA", id: "instructor" },
+      ],
+    }),
+    createInstructorReply: builder.mutation({
+      query: ({ qnaId, commentId, body }) => ({
+        url: `${QNA_URL}/${qnaId}/comment/${commentId}/reply`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { qnaId, courseId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: `course-${courseId}` },
+        { type: "QnA", id: "instructor" },
+      ],
+    }),
+    upvoteComment: builder.mutation({
+      query: ({ qnaId, commentId }) => ({
+        url: `${QNA_URL}/${qnaId}/upvote/${commentId}`,
+        method: "PUT",
+      }),
+      invalidatesTags: (result, error, { courseId }) => [
+        { type: "QnA", id: qnaId },
+        { type: "QnA", id: `course-${courseId}` },
+        { type: "QnA", id: "instructor" },
+      ],
+    }),
   }),
 });
 
@@ -152,5 +201,10 @@ export const {
   useDeleteReplyMutation,
   useUpdateReactionCommentMutation,
   useUpdateReactionReplyMutation,
-  useSolveTheQnAMutation
+  useGetQnAByCourseIdQuery,
+  useGetQnAByInstructorQuery,
+  useUpdateIsReadMutation,
+  useUpdateAnswerMutation,
+  useCreateInstructorReplyMutation,
+  useUpvoteCommentMutation
 } = questionApiSlice;

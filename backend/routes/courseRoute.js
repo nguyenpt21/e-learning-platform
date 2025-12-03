@@ -13,6 +13,9 @@ import {
     generateCaption,
     getCaptionVideoStatus,
     addCaptionVideo
+    getAllCoursesInfo,
+    searchCourses,
+    getInstructorCourses,
 } from "../controllers/courseController.js";
 
 import {
@@ -31,7 +34,7 @@ import {
 } from "../controllers/sectionController.js";
 
 import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
-
+import { protectRoute } from "../middleware/authMiddleware.js"
 const router = express.Router();
 
 //search
@@ -39,6 +42,11 @@ router.route("/suggestion")
     .get(getSearchCourseSuggestion)
 router.route("/suggestion/results")
     .get(getSearchCourseResults)
+router.route("/getAllCoursesInfo")
+    .get(getAllCoursesInfo)
+router.route("/search")
+    .get(searchCourses)
+router.get("/instructor", protectRoute, getInstructorCourses)
 
 //course
 router.route("/")

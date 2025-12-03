@@ -2,6 +2,7 @@ import { S3Client, DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, 
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import sharp from "sharp";
 
 //download resources
 
@@ -155,13 +156,14 @@ const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
 
   while ((match = regex.exec(htmlContent)) !== null) {
     const fullTag = match[0];
-    const mimeType = match[1];
     const base64Data = match[2];
 
     const buffer = Buffer.from(base64Data, "base64");
-    const extension = mimeType.split("/")[1];
-    const fileName = `${uuidv4()}.${extension}`;
-    const fileType = `image/${extension}`;
+    const finalExtension = "jpg";
+    const fileType = "image/jpeg";
+    const fileName = `${uuidv4()}.${finalExtension}`;
+
+    const convertedBuffer = await sharp(buffer).jpeg().toBuffer();
 
     // ✅ Gọi trực tiếp hàm generateUploadURL
     const { uploadURL, publicURL } = await generateURLFunction({
@@ -172,7 +174,7 @@ const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
     });
 
       const uploadPromise = axios
-      .put(uploadURL, buffer, {
+      .put(uploadURL, convertedBuffer, {
         headers: { "Content-Type": fileType },
       })
       .then(() => ({

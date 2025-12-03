@@ -16,9 +16,7 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 method: "PUT",
                 body: data,
             }),
-            invalidatesTags: (result, error, { courseId }) => [
-                { type: "Course", id: courseId },
-            ],
+            invalidatesTags: (result, error, { courseId }) => [{ type: "Course", id: courseId }],
         }),
         getCourseInfo: builder.query({
             query: (courseId) => ({
@@ -36,7 +34,10 @@ export const courseApiSlice = apiSlice.injectEndpoints({
             query: (courseId) => ({
                 url: `${COURSE_URL}/${courseId}/captions`,
             }),
-            providesTags: (result, error, courseId) => [{ type: "Caption", id: courseId }, { type: "Course", id: courseId }],
+            providesTags: (result, error, courseId) => [
+                { type: "Caption", id: courseId },
+                { type: "Course", id: courseId },
+            ],
         }),
         addCaption: builder.mutation({
             query: ({ courseId, caption }) => ({
@@ -44,9 +45,19 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 method: "POST",
                 body: caption,
             }),
-            invalidatesTags: (result, error, { courseId }) => [
-                { type: "Caption", id: courseId },
-            ],
+            invalidatesTags: (result, error, { courseId }) => [{ type: "Caption", id: courseId }],
+        }),
+    }),
+    searchCourses: builder.query({
+        query: (keyword) => ({
+            url: `${COURSE_URL}/search`,
+            method: "GET",
+            params: { keyword },
+        }),
+    }),
+    getInstructorCourses: builder.query({
+        query: () => ({
+            url: `${COURSE_URL}/instructor`,
         }),
     }),
 });
@@ -57,5 +68,7 @@ export const {
     useGetCourseInfoQuery,
     useProcessCourseMutation,
     useGetCaptionStatusQuery,
-    useAddCaptionMutation
+    useAddCaptionMutation,
+    useSearchCoursesQuery,
+    useGetInstructorCoursesQuery,
 } = courseApiSlice;

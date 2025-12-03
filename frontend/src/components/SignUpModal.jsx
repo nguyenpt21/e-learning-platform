@@ -127,7 +127,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
       <div className="space-y-6">
         {/* Welcome message */}
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-[#27B5FC] to-[#098be4] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-linear-to-r from-[#27B5FC] to-[#098be4] rounded-full flex items-center justify-center mx-auto mb-4">
             <FaUserPlus className="text-white text-2xl" />
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Tạo tài khoản mới</h3>
@@ -290,7 +290,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-gradient-to-r from-[#27B5FC] to-[#098be4] text-white rounded-xl hover:from-[#098be4] hover:to-[#27B5FC] focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="w-full py-3 bg-linear-to-r from-[#27B5FC] to-[#098be4] text-white rounded-xl hover:from-[#098be4] hover:to-[#27B5FC] focus:outline-none focus:ring-2 focus:ring-[#27B5FC] focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">

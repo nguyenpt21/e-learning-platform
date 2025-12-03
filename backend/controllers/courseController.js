@@ -87,6 +87,20 @@ const getCourseInfo = async (req, res) => {
     }
 };
 
+const getInstructorCourses = async(req, res)=>{
+    try {
+        const instructorId = req.user._id;
+        const courses = await Course.find({
+            instructor: instructorId,
+            status: "published",
+        })
+        res.status(200).json(courses)
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
 const createCourse = async (req, res) => {
     try {
         // const instructorId = req.user._id;
@@ -234,8 +248,7 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${
-                        sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;

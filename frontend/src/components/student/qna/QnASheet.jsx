@@ -78,7 +78,7 @@ export function QnASheet({courseId, lectureId}) {
       <SheetContent
         aria-describedby={undefined}
         side="left"
-        className="w-2/3 max-h-screen"
+        className="w-2/3 max-h-screen overflow-y-auto"
       >
         <SheetHeader className={"relative"}>
           <Button

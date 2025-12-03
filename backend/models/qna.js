@@ -32,6 +32,7 @@ const commentSchema = new mongoose.Schema(
     ],
     replies: [replySchema],
     isSolution: { type: Boolean, default: false },
+    isTopComment:{ type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -58,6 +59,7 @@ const QnASchema = new mongoose.Schema(
     content: { type: "String", required: true },
     comments: [commentSchema],
     isSolved: { type: Boolean, default: false },
+    isRead:{ type: Boolean, default: false },
   },
   { timestamps: true }
 );

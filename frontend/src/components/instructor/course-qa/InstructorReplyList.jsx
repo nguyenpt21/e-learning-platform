@@ -4,15 +4,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import TopReaction from "./TopReaction";
 import { MessageCircle } from "lucide-react";
-import ReactButton from "./ReactButton";
 import { useSelector } from "react-redux";
 import Button from "@/components/Button";
 import { useUpdateReactionReplyMutation } from "@/redux/api/qnaSlice";
-import OptionOnReply from "./OptionOnReply";
+import InstructorReactButton from "./InstructorReactButton";
+import TopReaction from "@/components/student/qna/TopReaction";
+import OptionOnReply from "@/components/student/qna/OptionOnReply";
+import InstructorReply from "./InstructorReply";
 
-const ReplyCard = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
+const ReplyCard = ({ reply, courseId, quesId, commentId }) => {
   const { userInfo } = useSelector((state) => state.auth);
   const [updateReactionReply] = useUpdateReactionReplyMutation();
 
@@ -71,18 +72,11 @@ const ReplyCard = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
       />
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
-          <ReactButton reaction={reaction} handler={handleReaction} />
-          <Button
-            variant="default"
-            className="flex gap-2 items-center text-gray-500"
-            onClick={() => {
-              setReplyBox(true);
-              setTarget(reply?.user);
-            }}
-          >
-            <MessageCircle style={{ width: "20px", height: "20px" }} />
-            Phản hồi
-          </Button>
+          <InstructorReactButton reaction={reaction} handler={handleReaction} />
+          <InstructorReply quesId={quesId}
+            commentId={commentId}
+            target={reply.user}
+            courseId={courseId}/>
         </div>
         {/*Số lượng reaction & top 3*/}
         <TopReaction likes={reply.likes} />
@@ -91,7 +85,7 @@ const ReplyCard = ({ reply, setTarget, setReplyBox, quesId, commentId }) => {
   );
 };
 
-function ReplyList({ quesId, commentId, setReplyBox, setTarget, replies }) {
+function InstructorReplyList({ quesId, commentId, courseId, replies }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -113,8 +107,7 @@ function ReplyList({ quesId, commentId, setReplyBox, setTarget, replies }) {
               reply={reply}
               quesId={quesId}
               commentId={commentId}
-              setReplyBox={setReplyBox}
-              setTarget={setTarget}
+              courseId={courseId}
             />
           );
         })}
@@ -123,4 +116,4 @@ function ReplyList({ quesId, commentId, setReplyBox, setTarget, replies }) {
   );
 }
 
-export default ReplyList;
+export default InstructorReplyList;

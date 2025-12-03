@@ -104,7 +104,7 @@ const CoursesManage = () => {
                                 />
                             </div>
 
-                            <button className="flex px-[10px] py-2 rounded bg-primary cursor-pointer">
+                            <button className="flex px-2.5 py-2 rounded bg-primary cursor-pointer">
                                 <FiSearch className="w-5 h-5 text-white" />
                             </button>
                         </div>

@@ -1,15 +1,18 @@
 import { ArrowBigUp, CircleCheck, MessageCircle } from "lucide-react";
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-import ReactButton from "./ReactButton";
 import Button from "@/components/Button";
-import TopReaction from "./TopReaction";
-import WriteReply from "./WriteReply";
-import ReplyList from "./ReplyList";
 import { useUpdateReactionCommentMutation } from "@/redux/api/qnaSlice";
-import OptionOnComment from "./OptionOnComment";
 
-const CommentCard = ({ ques, comment }) => {
+import InstructorReply from "./InstructorReply";
+import InstructorReactButton from "./InstructorReactButton";
+import TopReaction from "@/components/student/qna/TopReaction";
+import ReplyList from "@/components/student/qna/ReplyList";
+import OptionOnComment from "@/components/student/qna/OptionOnComment";
+import InstructorReplyList from "./InstructorReplyList";
+import UpvoteButton from "./UpvoteButton";
+
+const CommentCard = ({ ques, comment, courseId }) => {
   const { userInfo } = useSelector((state) => state.auth);
   const [updateReactionComment] = useUpdateReactionCommentMutation();
 
@@ -60,7 +63,9 @@ const CommentCard = ({ ques, comment }) => {
             src={comment?.user.profilePicture.url || "/placeholder.svg"}
             className="w-10 h-10 rounded-full border-1 border-[#098be4]"
           />
-          <p className="font-semibold">{comment?.user.firstName} {comment?.user.lastName}</p>
+          <p className="font-semibold">
+            {comment?.user.firstName} {comment?.user.lastName}
+          </p>
           <p className="text-sm text-gray-700">{timeAgo(comment?.createdAt)}</p>
         </div>
         <div className="flex space-x-2 items-center">
@@ -76,7 +81,13 @@ const CommentCard = ({ ques, comment }) => {
                 Bình luận top
               </div>
             </div>
-          ) : null}
+          ) : (
+            <UpvoteButton
+              quesId={ques._id}
+              commentId={comment._id}
+              courseId={courseId}
+            />
+          )}
           {userInfo._id === comment?.user._id && (
             <OptionOnComment commentInfo={{ quesId: ques._id, comment }} />
           )}
@@ -88,44 +99,30 @@ const CommentCard = ({ ques, comment }) => {
       />
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
-          <ReactButton reaction={reaction} handler={handleReaction} />
-          <Button
-            variant="default"
-            className="flex gap-2 items-center text-gray-500"
-            onClick={() => {
-              setReplyBox(!replyBox);
-              setTarget(comment?.user);
-            }}
-          >
-            <MessageCircle style={{ width: "20px", height: "20px" }} />
-            Phản hồi
-          </Button>
+          <InstructorReactButton reaction={reaction} handler={handleReaction} />
+          <InstructorReply
+            quesId={ques._id}
+            commentId={comment._id}
+            target={comment.user}
+            courseId={courseId}
+          />
         </div>
         {/*Số lượng reaction & top 3*/}
         <TopReaction likes={comment.likes} />
       </div>
       {comment.replies.length > 0 && (
-        <ReplyList
+        <InstructorReplyList
           quesId={ques._id}
           commentId={comment._id}
-          setReplyBox={setReplyBox}
-          setTarget={setTarget}
+          courseId={courseId}
           replies={comment.replies}
-        />
-      )}
-      {replyBox && (
-        <WriteReply
-          quesId={ques._id}
-          commentId={comment._id}
-          target={replyTarget}
-          onCancel={() => setReplyBox(false)}
         />
       )}
     </div>
   );
 };
 
-function CommentList({ ques, comments }) {
+function InstructorCommentList({ ques, comments, courseId }) {
   const totalComments = comments?.reduce(
     (total, comment) => total + 1 + (comment.replies?.length || 0),
     0
@@ -144,10 +141,17 @@ function CommentList({ ques, comments }) {
           : "Chưa có bình luận nào"}
       </span>
       {comments?.map((cmt, index) => {
-        return <CommentCard key={index} ques={ques} comment={cmt} />;
+        return (
+          <CommentCard
+            key={index}
+            ques={ques}
+            comment={cmt}
+            courseId={courseId}
+          />
+        );
       })}
     </div>
   );
 }
 
-export default CommentList;
+export default InstructorCommentList;
