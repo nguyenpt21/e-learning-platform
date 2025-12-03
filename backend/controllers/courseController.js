@@ -839,6 +839,40 @@ const getSearchCourseResults = async (req, res) => {
     }
 };
 
+const getAllCoursesInfo = async (req, res) => {
+    try {
+        const courses = await Course.find(
+            { status: "published" }, 
+            { _id: 1, title: 1 }    
+        );
+        return res.status(200).json(courses);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+const searchCourses = async (req, res) => {
+  try {
+    const keyword = (req.query.keyword || "").trim();
+
+    if (!keyword) {
+      return res.json([]);
+    }
+
+    const courses = await Course.find({
+      title: { $regex: keyword, $options: "i" }
+    })
+      .select("_id title")
+      .lean();
+
+    return res.json(courses);
+  } catch (err) {
+    console.error("Search Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
 const generateCaption = async (req, res) => {
     const { courseId } = req.params;
     try {
@@ -1184,8 +1218,11 @@ export {
     processCourse,
     getSearchCourseSuggestion,
     getSearchCourseResults,
+    getAllCoursesInfo,
     generateCaption,
     handleCaptionWebhook,
     getCaptionVideoStatus,
     addCaptionVideo,
+    getInstructorCourses,
+    searchCourses
 };

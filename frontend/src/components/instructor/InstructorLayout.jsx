@@ -99,9 +99,9 @@ const InstructorLayout = () => {
                     ></NavItem>
                 </div>
             </header>
-            <div className="flex ">
+            <div className="flex">
                 <div
-                    className={`fixed left-0 h-screen w-[18%] border-r-gray-300 border-r-[1.5px] `}
+                    className={`sticky top-0 left-0 h-screen w-[18%] border-r-gray-300 border-r-[1.5px] `}
                 >
                     <nav>
                         <ul className="flex flex-col gap-1">
@@ -165,7 +165,7 @@ const InstructorLayout = () => {
                         </ul>
                     </nav>
                 </div>
-                <div className={`flex-1 pl-[18%] w-full"`}>
+                <div className={`flex-1 w-full"`}>
                     <Outlet />
                 </div>
             </div>

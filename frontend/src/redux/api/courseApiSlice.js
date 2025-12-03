@@ -47,17 +47,17 @@ export const courseApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: (result, error, { courseId }) => [{ type: "Caption", id: courseId }],
         }),
-    }),
-    searchCourses: builder.query({
-        query: (keyword) => ({
-            url: `${COURSE_URL}/search`,
-            method: "GET",
-            params: { keyword },
+        searchCourses: builder.query({
+            query: (keyword) => ({
+                url: `${COURSE_URL}/search`,
+                method: "GET",
+                params: { keyword },
+            }),
         }),
-    }),
-    getInstructorCourses: builder.query({
-        query: () => ({
-            url: `${COURSE_URL}/instructor`,
+        getInstructorCourses: builder.query({
+            query: () => ({
+                url: `${COURSE_URL}/instructor`,
+            }),
         }),
     }),
 });

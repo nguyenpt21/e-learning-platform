@@ -12,7 +12,7 @@ import {
     getSearchCourseResults,
     generateCaption,
     getCaptionVideoStatus,
-    addCaptionVideo
+    addCaptionVideo,
     getAllCoursesInfo,
     searchCourses,
     getInstructorCourses,
