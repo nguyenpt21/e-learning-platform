@@ -9,6 +9,7 @@ import { ObjectId } from "mongodb";
 
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import VideoConversion from "../models/videoConvertion.js";
+import TranscriptionBatch from "../models/transcriptionBatch.js";
 
 const lambda = new LambdaClient({
     region: process.env.AWS_REGION || "ap-southeast-1",
@@ -257,7 +258,6 @@ const checkCoursePublishRequirements = async (course) => {
     };
 };
 
-
 const checkHasAtLeastOneVideo = async (courseId) => {
     const result = await Section.aggregate([
         { $match: { course: new ObjectId(courseId) } },
@@ -369,7 +369,6 @@ const processCourse = async (req, res) => {
             jobId: videoConversion._id,
         };
 
-
         const command = new InvokeCommand({
             FunctionName: process.env.LAMBDA_FUNCTION_NAME || "video-hls-orchestrator",
             InvocationType: "RequestResponse",
@@ -392,7 +391,6 @@ const processCourse = async (req, res) => {
             state: "processing",
             message: "Các video trong khóa học đang được xử lý",
         });
-
     } catch (error) {
         console.error("Lỗi khi phát hành khóa học:", error);
         return res.status(500).json({
@@ -578,10 +576,7 @@ const getSearchCourseSuggestion = async (req, res) => {
                     index: "course_search",
                     text: {
                         query: normalizedQuery,
-                        path: [
-                            "title", "subtitle", "description",
-                            "category", "subcategory"
-                        ],
+                        path: ["title", "subtitle", "description", "category", "subcategory"],
                         fuzzy: {},
                     },
                 },
@@ -612,8 +607,14 @@ const getSearchCourseSuggestion = async (req, res) => {
                     text: {
                         query: normalizedQuery,
                         path: [
-                            "title", "subtitle", "description", "learningOutcomes",
-                            "intendedLearners", "category", "subcategory", "requirements"
+                            "title",
+                            "subtitle",
+                            "description",
+                            "learningOutcomes",
+                            "intendedLearners",
+                            "category",
+                            "subcategory",
+                            "requirements",
                         ],
                         fuzzy: {},
                     },
@@ -638,13 +639,12 @@ const getSearchCourseSuggestion = async (req, res) => {
 
         const [courseResults, keywordResults] = await Promise.all([
             Course.aggregate(coursePipeline),
-            Course.aggregate(keywordPipeline)
+            Course.aggregate(keywordPipeline),
         ]);
 
         const keywordSet = new Set();
         keywordSet.add(normalizedQuery);
-        keywordResults.forEach(item => {
-
+        keywordResults.forEach((item) => {
             if (item.category && item.category.toLowerCase().includes(normalizedQuery)) {
                 keywordSet.add(item.category.toLowerCase());
             }
@@ -657,13 +657,12 @@ const getSearchCourseSuggestion = async (req, res) => {
             if (normalizedTitle.startsWith(normalizedQuery)) {
                 keywordSet.add(course.title.toLowerCase());
             }
-
-        })
+        });
         const keywords = Array.from(keywordSet).slice(0, 6);
 
         res.status(200).json({
             keywords: keywords,
-            courses: courseResults
+            courses: courseResults,
         });
     } catch (err) {
         console.log(err);
@@ -673,11 +672,8 @@ const getSearchCourseSuggestion = async (req, res) => {
 
 const getSearchCourseResults = async (req, res) => {
     try {
-        const {
-            q, courseDuration, level,
-            category, language, selectedPrices,
-            sort, page, limit,
-        } = req.query;
+        const { q, courseDuration, level, category, language, selectedPrices, sort, page, limit } =
+            req.query;
         const normalizedQuery = (q || "").trim().toLowerCase();
 
         let matchStage = [];
@@ -689,8 +685,14 @@ const getSearchCourseResults = async (req, res) => {
                         text: {
                             query: normalizedQuery,
                             path: [
-                                "title", "subtitle", "description", "learningOutcomes",
-                                "intendedLearners", "category", "subcategory", "requirements"
+                                "title",
+                                "subtitle",
+                                "description",
+                                "learningOutcomes",
+                                "intendedLearners",
+                                "category",
+                                "subcategory",
+                                "requirements",
                             ],
                             fuzzy: {},
                         },
@@ -707,7 +709,7 @@ const getSearchCourseResults = async (req, res) => {
         if (selectedPrices) {
             const prices = selectedPrices.split(",");
             const priceFilters = [];
-            prices.forEach(p => {
+            prices.forEach((p) => {
                 switch (p) {
                     case "free":
                         priceFilters.push({ isFree: true });
@@ -732,7 +734,7 @@ const getSearchCourseResults = async (req, res) => {
         }
         if (category) filterStage.$match.category = { $in: category.split(",") };
         if (language) filterStage.$match.language = { $in: language.split(",") };
-        if (level) filterStage.$match.level = { $in: level.split(",") }
+        if (level) filterStage.$match.level = { $in: level.split(",") };
 
         if (courseDuration) {
             switch (courseDuration) {
@@ -801,11 +803,9 @@ const getSearchCourseResults = async (req, res) => {
                             },
                         },
                     ],
-                    totalCount: [
-                        { $count: "total" }
-                    ]
-                }
-            }
+                    totalCount: [{ $count: "total" }],
+                },
+            },
         ];
 
         const aggResult = await Course.aggregate(pipeline);
@@ -821,11 +821,344 @@ const getSearchCourseResults = async (req, res) => {
             currentPage: pageNumber,
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(500).json({ message: "Server Error" });
     }
-}
+};
 
+const generateCaption = async (req, res) => {
+    const { courseId } = req.params;
+    try {
+        // 1. Lấy videos chưa có caption
+        const videoLectures = await Lecture.find({
+            courseId: courseId,
+            type: "video",
+            $or: [{ "content.captions": { $exists: false } }, { "content.captions": null }],
+        });
+
+        const course = await Course.findById(courseId, "promoVideo language");
+        const courseS3Keys = [];
+
+        if (
+            course?.promoVideo?.s3Key &&
+            (!course.promoVideo.captions || course.promoVideo.captions?.length === 0)
+        ) {
+            courseS3Keys.push(course.promoVideo.s3Key);
+        }
+
+        const videoLectureS3Keys = videoLectures
+            .map((video) => video.content.s3Key)
+            .filter(Boolean);
+
+        const allVideoS3Keys = [...videoLectureS3Keys, ...courseS3Keys];
+
+        console.log(`📹 Found ${allVideoS3Keys.length} videos without captions`);
+
+        console.log("allVideoS3Keys", allVideoS3Keys);
+
+        if (allVideoS3Keys.length === 0) {
+            return res.json({
+                success: true,
+                message: "Không có video nào để xử lý",
+            });
+        }
+
+        await TranscriptionBatch.deleteMany({ courseId: courseId });
+
+        // 2. Tạo batches
+        const BATCH_SIZE = 10;
+        const batchDocs = [];
+
+        for (let i = 0; i < allVideoS3Keys.length; i += BATCH_SIZE) {
+            const batchVideoS3Keys = allVideoS3Keys.slice(i, i + BATCH_SIZE);
+            const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+            console.log("batchVideoS3Keys", batchVideoS3Keys);
+            const batch = new TranscriptionBatch({
+                courseId: courseId,
+                batchNumber: batchNumber,
+                totalVideos: batchVideoS3Keys.length,
+                completedVideos: 0,
+                failedVideos: 0,
+                status: "pending",
+                videoS3Keys: batchVideoS3Keys,
+            });
+
+            await batch.save();
+
+            batchDocs.push(batch);
+
+            console.log(`📦 Created batch ${batchNumber} with ${batchVideoS3Keys.length} videos`);
+        }
+
+        console.log(`✅ Created ${batchDocs.length} batches`);
+
+        // 3. Launch batch đầu tiên
+        await launchNextBatch(courseId, course.language);
+
+        return res.json({
+            success: true,
+            totalVideos: allVideoS3Keys.length,
+            totalBatches: batchDocs.length,
+            message: "Transcription started",
+        });
+    } catch (error) {
+        console.error(`❌ Error starting transcription:`, error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const launchNextBatch = async (courseId, language) => {
+    try {
+        const languageMap = {
+            vi: "Tiếng Việt",
+            en: "Tiếng Anh",
+        };
+        const nextBatch = await TranscriptionBatch.findOne({
+            courseId: courseId,
+            status: "pending",
+        }).sort({ batchNumber: 1 });
+
+        if (!nextBatch) {
+            console.log(`✅ No more batches for course ${courseId}`);
+            return null;
+        }
+
+        console.log(`🚀 Launching batch ${nextBatch.batchNumber}`);
+
+        // Get S3 keys
+        const s3Keys = nextBatch.videoS3Keys;
+
+        // Invoke Lambda với AWS SDK v3
+        const command = new InvokeCommand({
+            FunctionName: "video-caption-orchestrator",
+            InvocationType: "RequestResponse",
+            Payload: JSON.stringify({
+                s3Bucket: process.env.AWS_S3_BUCKET_NAME,
+                s3Keys: s3Keys,
+                language: Object.keys(languageMap).find((key) => languageMap[key] === language),
+                batchId: nextBatch._id.toString(),
+            }),
+        });
+
+        const lambdaResponse = await lambda.send(command);
+
+        const responsePayload = JSON.parse(Buffer.from(lambdaResponse.Payload).toString());
+
+        if (responsePayload.statusCode !== 200) {
+            throw new Error(`Lambda failed: ${responsePayload.body}`);
+        }
+
+        // Update batch
+        nextBatch.status = "processing";
+        await nextBatch.save();
+
+        console.log(`✅ Batch ${nextBatch.batchNumber} launched (${s3Keys.length} videos)`);
+
+        return nextBatch;
+    } catch (error) {
+        console.error(`❌ Error launching batch:`, error);
+        throw error;
+    }
+};
+
+const handleCaptionWebhook = async (req, res) => {
+    const {
+        batch_id: batchId,
+        s3_key: s3Key,
+        status,
+        generated_captions: generatedCaptions,
+        error,
+        language,
+    } = req.body;
+
+    console.log("webhookData: ", req.body);
+    console.log(`Webhook: batch ${batchId}): ${status}`);
+
+    const captions = Object.entries(generatedCaptions).map(([language, data]) => ({
+        s3Key: data.s3_key,
+        publicURL: data.public_url,
+        language: language,
+        isTranslation: data.is_translation,
+        status: "auto-generated",
+    }));
+
+    try {
+        const batch = await TranscriptionBatch.findById(batchId);
+
+        if (!batch) {
+            console.error(`Batch not found: ${batchId}`);
+            return;
+        }
+
+        const lecuture = await Lecture.findOne({ "content.s3Key": s3Key });
+
+        const course = await Course.findOne({ "promoVideo.s3Key": s3Key });
+
+        if (!lecuture && !course) {
+            console.error(`Video not found: ${s3Key}`);
+            return;
+        }
+
+        if (lecuture) {
+            lecuture.content.captions = captions;
+            await lecuture.save();
+            console.log(`Updated lecture ${lecuture._id}: ${status}`);
+        }
+
+        if (course) {
+            course.promoVideo.captions = captions;
+            await course.save();
+            console.log(`Updated course ${course._id}: ${status}`);
+        }
+
+        if (status === "success") {
+            batch.completedVideos += 1;
+        } else if (status === "error") {
+            batch.failedVideos += 1;
+        }
+
+        await batch.save();
+
+        const totalProcessed = batch.completedVideos + batch.failedVideos;
+        const progress = Math.round((totalProcessed / batch.totalVideos) * 100);
+
+        console.log(
+            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`
+        );
+
+        if (totalProcessed === batch.totalVideos) {
+            console.log(`🎉 Batch ${batch.batchNumber} completed!`);
+
+            batch.status = "completed";
+            await batch.save();
+
+            // 4. Launch next batch
+            console.log(`Launching next batch...`);
+            const nextBatch = await launchNextBatch(batch.courseId, language);
+
+            if (!nextBatch) {
+                console.log(`🎊 Course ${batch.courseId} completed!`);
+                return res.json({ success: true });
+            }
+        }
+        return res.json({ success: true });
+    } catch (error) {
+        console.error(`❌ Error handling webhook:`, error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+const getCaptionVideoStatus = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+
+        const promoVideoSection = {
+            sectionTitle: "Video giới thiệu",
+            items: [
+                {
+                    itemType: "promoVideo",
+                    title: "Video giới thiệu",
+                    content: course.promoVideo,
+                },
+            ],
+        };
+
+        const sections = await Section.aggregate([
+            {
+                $match: {
+                    course: new mongoose.Types.ObjectId(courseId),
+                },
+            },
+            {
+                $unwind: "$curriculumItems",
+            },
+            {
+                $match: {
+                    "curriculumItems.itemType": "Lecture",
+                },
+            },
+            {
+                $lookup: {
+                    from: "lectures",
+                    localField: "curriculumItems.itemId",
+                    foreignField: "_id",
+                    as: "lectureInfo",
+                },
+            },
+            {
+                $unwind: {
+                    path: "$lectureInfo",
+                    preserveNullAndEmptyArrays: false, // Chỉ lấy những item có lecture tương ứng
+                },
+            },
+            {
+                $match: {
+                    "lectureInfo.type": "video",
+                    "lectureInfo.content": { $exists: true, $ne: null },
+                },
+            },
+            {
+                $group: {
+                    _id: "$_id",
+                    sectionTitle: { $first: "$title" },
+                    items: {
+                        $push: {
+                            _id: "$lectureInfo._id",
+                            title: "$lectureInfo.title",
+                            content: "$lectureInfo.content",
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    sectionTitle: 1,
+                    items: 1,
+                },
+            },
+        ]);
+
+        res.json({
+            defaultLanguage: course.language,
+            captions: [promoVideoSection, ...sections],
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+const addCaptionVideo = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { videoType, itemId, caption } = req.body;
+
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+
+        if (videoType === "promoVideo") {
+            course.promoVideo.captions.push(caption);
+
+            await course.save();
+        } else {
+            const lecture = await Lecture.findById(itemId);
+            if (!lecture) return res.status(404).json({ message: "Lecture not found" });
+            lecture.content.captions.push(caption);
+
+            await lecture.save();
+        }
+        return res.json({
+            success: true,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
 
 export {
     getCourseById,
@@ -837,5 +1170,9 @@ export {
     getCourseInfo,
     processCourse,
     getSearchCourseSuggestion,
-    getSearchCourseResults
+    getSearchCourseResults,
+    generateCaption,
+    handleCaptionWebhook,
+    getCaptionVideoStatus,
+    addCaptionVideo,
 };

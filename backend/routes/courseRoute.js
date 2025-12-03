@@ -9,7 +9,10 @@ import {
     getCourseInfo,
     processCourse,
     getSearchCourseSuggestion,
-    getSearchCourseResults
+    getSearchCourseResults,
+    generateCaption,
+    getCaptionVideoStatus,
+    addCaptionVideo
 } from "../controllers/courseController.js";
 
 import {
@@ -84,6 +87,8 @@ router.route("/quizzes/:quizId/questions/:questionId")
 
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
-
+router.post('/:courseId/generate-captions', generateCaption)
+router.get('/:courseId/captions', getCaptionVideoStatus)
+router.post('/:courseId/captions', addCaptionVideo)
 
 export default router;

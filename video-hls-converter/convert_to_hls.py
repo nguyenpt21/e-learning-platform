@@ -290,6 +290,7 @@ def notify_webhook(s3_key, status, job_id, hls_path=None, error=None, max_retrie
                 return True
             else:
                 print(f"Webhook returned {response.status_code}, retrying...")
+                return False
                 
         except requests.exceptions.Timeout:
             print(f"Webhook timeout, retrying in 10s...")

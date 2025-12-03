@@ -26,7 +26,7 @@ const LectureResources = ({ handleClose, courseId, sectionId, itemId }) => {
     const [generateUploadURL] = useGenerateUploadUrlMutation();
     const [updateLecture] = useUpdateCurriculumItemMutation();
     const handleUploadFile = async () => {
-        if (!file) return alert("Vui lòng chọn video!");
+        if (!file) return alert("Vui lòng chọn file!");
 
         setIsUploading(true);
         const controller = new AbortController();
