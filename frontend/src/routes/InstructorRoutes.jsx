@@ -6,6 +6,7 @@ import CourseManageLayout from "../components/instructor/CourseManageLayout";
 import Curriculum from "../pages/instructor/Curriculum";
 import CourseInfoWrapper from "@/components/instructor/CourseInfoWrapper";
 import CourseGoalWrapper from "@/components/instructor/CourseGoalWrapper";
+import Captions from "@/pages/instructor/Captions";
 import CourseEngagement from "@/pages/instructor/CourseEngagement";
 import CourseAnnouncement from "@/pages/instructor/CourseAnnouncement";
 import CourseQA from "@/pages/instructor/CourseQA";
@@ -27,6 +28,7 @@ const InstructorRoutes = () => {
                 <Route path="goal" element={<CourseGoalWrapper />} />
                 <Route path="curriculum" element={<Curriculum />}></Route>
                 <Route path="basics" element={<CourseInfoWrapper></CourseInfoWrapper>}></Route>
+                <Route path="captions" element={<Captions />}></Route>
             </Route>
         </Routes>
     );

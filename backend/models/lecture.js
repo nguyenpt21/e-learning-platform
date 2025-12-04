@@ -15,6 +15,15 @@ const LectureSchema = new mongoose.Schema({
         thumbnailS3Key : { type: String },
         thumbnailURL: { type: String },
         fileName: { type: String },
+        captions: [
+            {
+                s3Key: String,
+                publicURL: String,
+                language: String,
+                isTranslation: Boolean,
+                status: { type: String, enum: ["uploaded", "auto-generated", "edited"] },
+            },
+        ],
     },
     // order: { type: Number, required: true },
     resources: {

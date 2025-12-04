@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const CourseSchema = new mongoose.Schema(
     {
         title: { type: String, required: true },
-        alias: { type: String, default: ""},
+        alias: { type: String, default: "" },
         thumbnail: {
             publicURL: { type: String },
             s3Key: { type: String },
@@ -37,7 +37,7 @@ const CourseSchema = new mongoose.Schema(
         category: { type: String, default: "" },
         subcategory: { type: String, default: "" },
         isFree: { type: Boolean },
-        status: { type: String, enum: ["draft","processing", "published"], default: "draft" },
+        status: { type: String, enum: ["draft", "processing", "published"], default: "draft" },
         price: { type: Number, default: 0 },
         averageRating: { type: Number, default: 0 },
         sections: {
@@ -57,6 +57,15 @@ const CourseSchema = new mongoose.Schema(
             s3Key: { type: String },
             thumbnailURL: { type: String },
             thumbnailS3Key: { type: String },
+            captions: [
+                {
+                    s3Key: String,
+                    publicURL: String,
+                    language: String,
+                    isTranslation: Boolean,
+                    status: { type: String, enum: ["uploaded", "auto-generated", "edited"] },
+                },
+            ],
         },
         courseDuration: { type: Number, default: 0 },
         publishedAt: { type: Date },
