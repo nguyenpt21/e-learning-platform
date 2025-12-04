@@ -25,9 +25,10 @@ import {
 import { Star } from "lucide-react";
 import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
 import { useBreakpoint } from "@/hooks/tiptap/useBreakpoint";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
+import { toSlug } from "@/utils";
 
 
 const categories = [
@@ -68,6 +69,7 @@ const languageOptions = [
 
 export function CoursesCatalog() {
   const COURSES_PER_PAGE = 3;
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const q = searchParams.get("q")
 
@@ -82,8 +84,8 @@ export function CoursesCatalog() {
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
 
-  const {data: courses1} = useGetCourseSearchResultsQuery({
-    q: q, 
+  const { data: courses1 } = useGetCourseSearchResultsQuery({
+    q: q,
     courseDuration: selectedDurations,
     level: selectedLevels,
     category: selectedCategories,
@@ -92,7 +94,7 @@ export function CoursesCatalog() {
     sort: sortBy,
     page: currentPage, limit: COURSES_PER_PAGE
   })
-  
+
   const totalPages = courses1?.totalPage;
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
   const endIndex = startIndex + COURSES_PER_PAGE;
@@ -168,7 +170,12 @@ export function CoursesCatalog() {
       </div>
     );
   };
-  
+
+  const onClickCourse = (courseId, courseTitle) => {
+    const slug = toSlug(courseTitle);
+    navigate(`/course/${slug}`, { state: { id: courseId } });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header q={q} />
@@ -188,9 +195,9 @@ export function CoursesCatalog() {
       </header>
 
       <div className="container py-8">
-        <div className="flex gap-8 h-[calc(100vh-8rem)]">
+        <div className="flex gap-3 h-[calc(100vh-8rem)]">
           {/* Sidebar Filters */}
-          <div className="w-64 shrink-0 overflow-y-auto">
+          <div className="w-56 shrink-0 overflow-y-auto">
             <div className=" top-8 space-y-6">
               {/* Category */}
               <div>
@@ -330,7 +337,7 @@ export function CoursesCatalog() {
           </div>
 
           {/* Course Grid */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="px-10 flex-1 overflow-y-auto">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Hiển thị {startIndex + 1}-{Math.min(endIndex, courses1?.totalCourse)} trong tổng số {courses1?.results.length} kết quả
@@ -348,15 +355,19 @@ export function CoursesCatalog() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:grid-cols-3">
               {courses1?.results.map((course, index) => (
-                <CardCatalog
-                  key={course._id}
-                  course={course}
-                  index={index}
-                  columns={3}// cột hiện tại ở breakpoint xl (tuỳ chỉnh)
-                />
+                <div
+                  onClick={() => onClickCourse(course._id, course.title)}
+                >
+                  <CardCatalog
+                    key={course._id}
+                    course={course}
+                    index={index}
+                    columns={3}// cột hiện tại ở breakpoint xl (tuỳ chỉnh)
+                  />
+                </div>
               ))}
             </div>
 

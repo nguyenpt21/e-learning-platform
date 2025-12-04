@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/Header";
 import { useGetCourseByIdQuery } from '../../redux/api/coursePublicApiSlice';
 import { Spinner } from "@/components/ui/spinner"
@@ -18,8 +18,9 @@ import PromoVideoPlayer from "@/components/student/course-learning/PromoVideoPla
 import { calculateCourseStats } from "@/utils";
 
 const CourseDetail = () => {
-    const param = useParams();
-    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(param._id);
+    const location = useLocation();
+    const courseId = location.state?.id;
+    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(courseId);
     const [courseWithDurations, setCourseWithDurations] = useState(null);
     const [showStickyHeader, setShowStickyHeader] = useState(false);
     const [showSticky, setShowSticky] = useState(false);

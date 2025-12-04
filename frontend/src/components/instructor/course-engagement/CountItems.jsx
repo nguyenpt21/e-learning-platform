@@ -15,7 +15,7 @@ const CountItems = ({ selectedCourse }) => {
     })
 
     const { totalLectures, totalQuizzes } = useMemo(() => getTotalLearningItems(data?.result), [data?.result]);
-    // console.log(data)
+    console.log(data)
     return (
         <div>
             <Card>
