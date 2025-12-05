@@ -26,7 +26,7 @@ export const getAllUserCoursesProgress = async (req, res) => {
             return res.status(400).json({ message: "Missing userId" });
         }
         const progressList = await CourseProgress.find({ userId })
-            .populate("courseId", "title thumbnail")
+            .populate("courseId", "title thumbnail alias")
             .lean();
         res.status(200).json(progressList || []);
     } catch (error) {

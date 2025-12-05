@@ -20,7 +20,11 @@ const MyCourseDropdown = () => {
             </div>
         );
     }
-    
+
+    const handleClickCourse = (courseAlias) => {
+        navigate(`/student/learning/${courseAlias}`);
+    }
+
     return (
         <div className="w-80">
             <div className="px-2 pt-2 font-semibold text-lg">Khóa học của tôi</div>
@@ -30,6 +34,7 @@ const MyCourseDropdown = () => {
                         <div
                             key={course.courseId._id}
                             className="flex space-x-3 hover:bg-gray-100 px-3 py-2 mb-2 rounded-md cursor-pointer"
+                            onClick={() => handleClickCourse(course.courseId.alias)}
                         >
                             <img
                                 src={course.courseId.thumbnail.publicURL}
@@ -58,7 +63,7 @@ const MyCourseDropdown = () => {
                         <button
                             className="mt-2 w-full px-4 font-semibold py-2 border border-blue-600 hover:bg-blue-100 text-blue-600 rounded-md"
                             onClick={() => {
-
+                                navigate('/student/my-courses')
                             }}
                         >
                             Xem tất cả khóa học

@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/tooltip"
 
 const formatDuration = (s) => {
-    if (!s || isNaN(s)) return '00:00'
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
-    return (h ? [h, m, sec] : [m, sec]).map(v => String(v).padStart(2, '0')).join(':')
-}
+    if (!s || isNaN(s)) return "00:00";
+    s = Math.round(s);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+};
 
 const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, isDone }) => {
     const { data: itemsProgress, isLoading: isProgressLoading, refetch } =
@@ -75,6 +78,7 @@ const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, 
     const handleChange = (itemId, itemType) => {
         handleChangeItem(itemId, itemType)
     }
+    console.log('sectionsWithComputedData', sectionsWithComputedData);
 
     return (
         <div className="border-t border-gray-200 lg:border-t-0 lg:border-l">
