@@ -7,11 +7,12 @@ import { QnASheet } from '@/components/student/qna/QnASheet'
 import SectionsAccordion from '@/components/student/course-learning/SectionsAccordion'
 import { useGetCourseByIdQuery } from '@/redux/api/coursePublicApiSlice'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
+import { skipToken } from '@reduxjs/toolkit/query'
 
 const CourseLearning = () => {
     const params = useParams()
-    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(params._id)
-    const { data: itemsProgress, isLoading: isProgressLoading } = useGetItemsProgressQuery(params._id)
+    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(params.courseAlias)
+    const { data: itemsProgress, isLoading: isProgressLoading } = useGetItemsProgressQuery(course?._id ?? skipToken);
     const latestProgress = useMemo(() => {
         if (!course) return null
         if (!itemsProgress || itemsProgress.length === 0) {
@@ -81,6 +82,7 @@ const CourseLearning = () => {
                 </div>
                 <div className="lg:col-span-2 h-[calc(100vh-64px)] overflow-auto border-l">
                     <SectionsAccordion
+                        courseId = {course._id}
                         sections={course.sections}
                         handleChangeItem={handleChangeItem}
                         currentItem={currentItem}

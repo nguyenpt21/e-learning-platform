@@ -35,14 +35,14 @@ const CountItemsChart = ({ data }) => {
                         dataKey="lectureCount"
                         stackId="a"
                         fill="#0062A3"
-                        name="Bài giảng video"
+                        name="Bài giảng"
                         radius={[0, 0, 0, 0]}
                     />
                     <Bar
                         dataKey="quizCount"
                         stackId="a"
                         fill="#2EABFF"
-                        name="Bài tập lập trình"
+                        name="Bài tập"
                         radius={[4, 4, 0, 0]}
                     />
                 </BarChart>

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CourseStats = ({ selectedCourse }) => {
     const { data, isLoading } = useGetCourseStatsQuery(selectedCourse);
-
+    console.log("CourseStats data:", data);
     if (isLoading)
         return (
             <div>
@@ -67,6 +67,8 @@ const CourseStats = ({ selectedCourse }) => {
 const SectionStats = ({ section, id }) => {
     const [isOpen, setIsOpen] = useState(true);
 
+    // console.log(section);
+
     return (
         <div>
             <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg bg-card">
@@ -76,15 +78,15 @@ const SectionStats = ({ section, id }) => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full table-fixed">
                             <thead>
                                 <tr className="border-b bg-muted/30">
-                                    <th className="text-left p-4 font-medium text-sm">
+                                    <th className="text-left p-4 font-medium text-sm w-2/4">
                                         <div className="flex items-center gap-2">
                                             Tên bài học
                                         </div>
                                     </th>
-                                    <th className="text-left p-4 font-medium text-sm">
+                                    <th className="text-left p-4 font-medium text-sm w-1/4">
                                         <div className="flex items-center gap-2">
                                             Đã xem
                                             <TooltipProvider>
@@ -99,9 +101,9 @@ const SectionStats = ({ section, id }) => {
                                             </TooltipProvider>
                                         </div>
                                     </th>
-                                    <th className="text-left p-4 font-medium text-sm min-w-[300px]">
+                                    <th className="text-left p-4 font-medium text-sm w-1/4 min-w-[300px]">
                                         <div className="flex items-center gap-2">
-                                            Thời lượng đã xem
+                                            Tỉ lệ hoàn thành
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger>

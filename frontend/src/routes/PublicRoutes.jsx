@@ -21,7 +21,7 @@ const PublicRoutes = () => {
                 <Route path="/course/:_id/payment" element={<Payment />} />
             </Route>
             <Route path="/courses" element={<CoursesCatalog />} />
-            <Route path="/course/:_id" element={<CourseDetail />} />
+            <Route path="/course/:courseAlias" element={<CourseDetail />} />
             <Route path="/course/:_id/paypal-success" element={<PaypalSuccess />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />

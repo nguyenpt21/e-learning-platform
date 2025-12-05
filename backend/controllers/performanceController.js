@@ -34,15 +34,17 @@ const getSectionStats = async (sectionId) => {
         if (ci.itemType === "Lecture") {
             const lecture = lectureMap[idStr];
             const watched = related.length;
-            const amountWatched = watched ? Math.round(related.reduce((sum, p) => sum + (p.totalSeconds ? p.watchedSeconds / p.totalSeconds : 0), 0) / watched * 100) : 0;
-            const duration = lecture.content?.duration || 0;
-            const durationStr = `${Math.floor(duration / 60).toString().padStart(2,"0")}:${(duration % 60).toString().padStart(2,"0")}`;
+            const amountWatched = watched ? Math.ceil(related.reduce((sum, p) => sum + (p.totalSeconds ? p.watchedSeconds / p.totalSeconds : 0), 0) / watched * 100) : 0;
+            const rawDuration = Math.round(lecture.content?.duration || 0);
+            const minutes = Math.floor(rawDuration / 60);
+            const seconds = rawDuration % 60;
+            const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
             return { id: idStr, title: lecture.title, duration: durationStr, watched, amountWatched, type: "Lecture" };
         } else if (ci.itemType === "Quiz") {
             const quiz = quizMap[idStr];
             const watched = related.length;
-            const amountWatched = watched ? Math.round(related.reduce((sum, p) => sum + (p.progressPercent || 0), 0) / watched) : 0;
+            const amountWatched = watched ? Math.ceil(related.reduce((sum, p) => sum + (p.progressPercent || 0), 0) / watched) : 0;
             const duration = quiz.questions.length.toString();
             return { id: idStr, title: quiz.title, duration, watched, amountWatched, type: "Quiz" };
         }

@@ -30,6 +30,9 @@ export const progressApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: (result, error, data) => [{ type: 'Progress', id: data.courseId }],
         }),
+        getMyCoursesProgress: builder.query({
+            query: () => `${PROGRESS_URL}/my-courses`,
+        }),
     }),
 });
 
@@ -39,4 +42,5 @@ export const {
     useUpdateItemProgressMutation,
     useGetItemProgressQuery,
     useUpdateQuizProgressMutation,
+    useGetMyCoursesProgressQuery,
 } = progressApiSlice

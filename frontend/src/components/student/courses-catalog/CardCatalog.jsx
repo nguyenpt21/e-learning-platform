@@ -2,127 +2,139 @@
 
 import { useState } from "react"
 import { Star, Check, Heart } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 
 export function CardCatalog({ course, index, columns = 3 }) {
-  const [isHovered, setIsHovered] = useState(false)
+  const [popUp, setPopUp] = useState(false)
+  const [coords, setCoords] = useState({ x: 0, y: 0 })
+  const [width, setWidth] = useState(300)
 
   const formatPrice = (price) => `₫${price.toLocaleString()}`
 
-  // Kiểm tra xem card này có phải ở cột cuối không
+  // card nằm ở cột phải => popup mở sang trái
   const isRightEdge = (index + 1) % columns === 0
+
+  const onEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setCoords({
+      x: rect.left,
+      y: rect.top,
+    })
+    setWidth(rect.width)
+    setPopUp(true)
+  }
+
+  const onLeave = () => {
+    setPopUp(false)
+  }
 
   return (
     <div
-      className="relative  h-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="relative w-full h-full group cursor-pointer"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
-      {/* Main Card */}
-      <Card className="overflow-hidden border-border bg-card transition-all hover:border-primary/50 py-0 h-full flex flex-col">
-        <div className="relative aspect-video overflow-hidden border-b border-gray-200">
-          <img
-            src={course?.thumbnail?.publicURL || "/logo.png"}
-            alt={course.title}
-            className="object-cover w-full h-full"
-          />
-        </div>
-        <CardContent className="px-4 pb-4 flex flex-col flex-1">
-          <h3 className="mb-1 line-clamp-2 text-xl font-semibold leading-tight text-card-foreground">
+      {/* MAIN CARD */}
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg hover:scale-105 transition-transform duration-300 h-full flex flex-col">
+        <img
+          src={course?.thumbnail?.publicURL || "/logo.png"}
+          alt={course.title}
+          className="w-full h-36 object-cover rounded-t-lg"
+        />
+
+        <div className="px-5 py-3 flex flex-col flex-1 space-y-1">
+          <h3 className="text-base font-semibold line-clamp-2 group-hover:text-[#098be4]">
             {course.title}
           </h3>
-          <p className="mb-1 text-xs text-gray-600">
-            {course.description.replace(/<[^>]+>/g, '').slice(0, 120)}
-            {course.description.replace(/<[^>]+>/g, '').length > 120 && '...'}
+
+          <p className="text-xs text-gray-600">
+            {course.description.replace(/<[^>]+>/g, "").slice(0, 110)}
+            {course.description.replace(/<[^>]+>/g, "").length > 110 && "..."}
           </p>
-          <div className="mb-1 flex items-center gap-1">
-            <span className="text-sm font-bold text-yellow-500">
-              {course.averageRating}
-            </span>
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-4 w-4 ${i < Math.floor(course.averageRating)
-                    ? "fill-yellow-500 text-yellow-500"
-                    : "fill-muted text-muted"
-                    }`}
-                />
-              ))}
-            </div>
-            {/* <span className="text-xs text-muted-foreground">
-              ({course.reviews})
-            </span> */}
+
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-yellow-500">{course.averageRating}</span>
+            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
           </div>
+
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-card-foreground">
+            <span className="text-sm font-semibold group-hover:text-[#098be4]">
               {formatPrice(course.price)}
             </span>
-            {/* <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(course.originalPrice)}
-            </span> */}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Hover Popover */}
-      {isHovered && (
+      {/* POPUP */}
+      {popUp && (
         <div
-          className={`absolute -top-20 z-50 w-80 animate-in fade-in ${isRightEdge
-            ? "right-full mr-2 slide-in-from-right-2"
-            : "left-full ml-2 slide-in-from-left-2"
-            }`}
+          className="absolute top-0 z-50"
+          style={{
+            top: "-10px",
+            left: isRightEdge ? `calc(-100% - 25px)` : `calc(100% + 25px)`,
+            width: width,
+            background: "white",
+            padding: "1rem",
+            borderRadius: "0.5rem",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+          }}
         >
-          <Card className="border-border bg-popover shadow-2xl">
-            <CardContent className="p-6">
-              <h3 className="mb-3 text-xl font-bold leading-tight text-popover-foreground text-balance">
-                {course.title}
-              </h3>
-              <div className="mb-4 flex items-center gap-2 text-sm text-popover-foreground/80">
-                <span className="font-medium text-green-600">
-                  Updated {new Date(course.updatedAt).toLocaleDateString("vi-VN")}
-                </span>
-              </div>
-              <div className="mb-4 flex items-center gap-2 text-sm text-popover-foreground/70">
-                <span>{course.courseDuration}</span>
-                <span>•</span>
-                <span>{course.level}</span>
-                {course.category && (
-                  <>
-                    <span>•</span>
-                    <span>{course.category}</span>
-                  </>
-                )}
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-popover-foreground/90">
-                {course.description.replace(/<[^>]+>/g, '').slice(0, 300)}
-                {course.description.replace(/<[^>]+>/g, '').length > 300 && '...'}
-              </p>
-              <ul className="mb-6 space-y-2">
-                {course.learningOutcomes.map((point, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-popover-foreground/70" />
-                    <span className="leading-relaxed text-popover-foreground/80">
-                      {point}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-center gap-2">
-                <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                  Add to cart
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="shrink-0 border-popover-foreground/20 hover:bg-popover-foreground/10 bg-transparent"
-                >
-                  <Heart className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* MŨI TÊN */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 0,
+              height: 0,
+              ...(isRightEdge
+                ? {
+                  right: "-10px",
+                  borderTop: "10px solid transparent",
+                  borderBottom: "10px solid transparent",
+                  borderLeft: "10px solid white",
+                }
+                : {
+                  left: "-10px",
+                  borderTop: "10px solid transparent",
+                  borderBottom: "10px solid transparent",
+                  borderRight: "10px solid white",
+                }),
+            }}
+          />
+
+          <p className="text-sm xl:text-base font-semibold">{course.title}</p>
+
+          <div className="flex items-center space-x-2 h-6 my-2">
+            {course.badge && (
+              <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded">
+                {course.badge}
+              </span>
+            )}
+            <span className="text-xs py-1 italic max-w-1/2">
+              Cập nhật:{" "}
+              {(course.updatedAt
+                ? new Date(course.updatedAt)
+                : new Date()
+              ).toLocaleDateString("vi")}
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-700 leading-5">
+            {course.description.replace(/<[^>]+>/g, "").slice(0, 250)}
+            {course.description.replace(/<[^>]+>/g, "").length > 250 && "..."}
+          </p>
+
+          {course.learningOutcomes?.length > 0 && (
+            <ul className="list-disc text-xs/5 text-gray-800 space-y-2 px-5 mt-3">
+              {course.learningOutcomes.slice(0, 3).map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          )}
+
+          <button className="mt-4 w-full bg-[#098be4] text-white py-2 rounded hover:bg-[#087ac7] transition">
+            Thêm vào giỏ hàng
+          </button>
         </div>
       )}
     </div>
