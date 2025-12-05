@@ -29,7 +29,7 @@ export function CardCatalog({ course, index, columns = 3 }) {
 
   return (
     <div
-      className="relative w-full group cursor-pointer"
+      className="relative w-full h-full group cursor-pointer"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >

@@ -19,6 +19,22 @@ export const getCourseProgress = async (req, res) => {
     }
 };
 
+export const getAllUserCoursesProgress = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        if (!userId) {
+            return res.status(400).json({ message: "Missing userId" });
+        }
+        const progressList = await CourseProgress.find({ userId })
+            .populate("courseId", "title thumbnail")
+            .lean();
+        res.status(200).json(progressList || []);
+    } catch (error) {
+        console.error("Error getting all user courses progress:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
 export const getAllUserItemsProgress = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -131,42 +147,44 @@ export const updateItemProgress = async (req, res) => {
 
 const updateCourseProgress = async (userId, courseId) => {
     try {
-        let courseProgress = await CourseProgress.findOne({ userId, courseId });
+        const course = await Course.findById(courseId)
+            .populate({
+                path: "sections.sectionId",
+                select: "curriculumItems"
+            })
+            .lean();
 
-        let totalItems;
-        if (!courseProgress) {
-            const course = await Course.findById(courseId)
-                .populate({
-                    path: "sections.sectionId",
-                    select: "curriculumItems"
-                })
-                .lean();
-            if (!course) throw new Error("Course not found");
-            totalItems = course.sections.reduce((acc, section) => {
-                const items = section.sectionId?.curriculumItems || [];
-                return acc + items.length;
-            }, 0);
-        } else {
-            totalItems = courseProgress.totalItems;
-        }
+        if (!course) throw new Error("Course not found");
+
+        const totalItems = course.sections.reduce((acc, section) => {
+            const items = section.sectionId?.curriculumItems || [];
+            return acc + items.length;
+        }, 0);
 
         const completedItems = await Progress.countDocuments({
             userId, courseId, isCompleted: true,
         });
+
         const percentage = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+
         const updated = await CourseProgress.findOneAndUpdate(
             { userId, courseId },
             {
-                userId, courseId,
-                totalItems, completedItems, percentage,
+                userId,
+                courseId,
+                totalItems,
+                completedItems,
+                percentage,
                 isCompleted: percentage >= 100,
             },
             { upsert: true, new: true }
         );
+
         return updated;
+
     } catch (err) {
         console.error("Error updating course progress:", err);
-        res.status(500).json({ message: "Server error" });
+        throw err;
     }
 };
 

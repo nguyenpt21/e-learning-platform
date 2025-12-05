@@ -133,12 +133,3 @@ export const getTotalLearningItems = (data) => {
         { totalLectures: 0, totalQuizzes: 0 }
     );
 };
-
-export const toSlug = (str) => {
-    return str
-        .toLowerCase()
-        .normalize("NFD") // tách dấu
-        .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
-        .replace(/\s+/g, "-") // thay space bằng "-"
-        .replace(/[^\w-]+/g, ""); // loại bỏ ký tự đặc biệt
-};

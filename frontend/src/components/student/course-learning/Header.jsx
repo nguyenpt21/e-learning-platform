@@ -12,7 +12,7 @@ const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
     const dispatch = useDispatch();
     
     const handleGoBack = () => {
-        navigate(-1); 
+        navigate(`/`);
     };
     
     const handleOpenNotes = () => {

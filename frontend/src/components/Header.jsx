@@ -10,6 +10,7 @@ import { useGetCourseSearchSuggestionQuery } from "@/redux/api/coursePublicApiSl
 import { skipToken } from '@reduxjs/toolkit/query';
 import { LuDot } from "react-icons/lu";
 import { useLogoutMutation } from "@/redux/api/authSlice.js";
+import MyCourseDropdown from "@/components/student/home-page/MyCourseDropdown.jsx";
 
 export default function Header({ q }) {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function Header({ q }) {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const [openSearchSuggestion, setOpenSearchSuggestion] = useState(false);
+  const [openMycourseDropdown, setOpenMycourseDropdown] = useState(false);
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
@@ -141,7 +143,7 @@ export default function Header({ q }) {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-2 text-sm">
+        <div className="flex items-center text-sm">
           <Button variant="default" className="text-sm" onClick={handleCart}>
             <ShoppingCart className="text-lg cursor-pointer" />
           </Button>
@@ -163,21 +165,40 @@ export default function Header({ q }) {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-700">
-                Xin chào, {user.firstName || user.email}
-              </span>
-              <Button
-                variant="default"
-                className="rounded-full w-8 h-8 border-1 border-[#098be4]"
-                onClick={handleLogout}
+            <div className="flex items-center space-x-4">
+              <div
+                onMouseEnter={() => setOpenMycourseDropdown(true)}
+                onMouseLeave={() => setOpenMycourseDropdown(false)}
+                className="inline-block relative"
               >
-                <img
-                  src={"https://placehold.co/16x16"}
-                  alt="User Avatar"
-                  className="w-8 h-8 rounded-full"
-                />
-              </Button>
+                <Button className="text-gray-700">
+                  Học tập
+                </Button>
+
+                {openMycourseDropdown && (
+                  <div className="absolute right-0 border border-gray-100 mt-2 bg-white shadow-lg rounded-lg px-2">
+                    <div>
+                      <MyCourseDropdown/>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-700">
+                  Xin chào, {user.firstName || user.email}
+                </span>
+                <Button
+                  variant="default"
+                  className="rounded-full w-8 h-8 border border-[#098be4]"
+                  onClick={handleLogout}
+                >
+                  <img
+                    src={"https://placehold.co/16x16"}
+                    alt="User Avatar"
+                    className="w-8 h-8 rounded-full"
+                  />
+                </Button>
+              </div>
             </div>
           )}
         </div>

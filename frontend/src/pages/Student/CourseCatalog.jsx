@@ -28,7 +28,6 @@ import { useBreakpoint } from "@/hooks/tiptap/useBreakpoint";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
-import { toSlug } from "@/utils";
 
 
 const categories = [
@@ -84,7 +83,7 @@ export function CoursesCatalog() {
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
 
-  const { data: courses1 } = useGetCourseSearchResultsQuery({
+  const { data: courses } = useGetCourseSearchResultsQuery({
     q: q,
     courseDuration: selectedDurations,
     level: selectedLevels,
@@ -95,7 +94,7 @@ export function CoursesCatalog() {
     page: currentPage, limit: COURSES_PER_PAGE
   })
 
-  const totalPages = courses1?.totalPage;
+  const totalPages = courses?.totalPage;
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
   const endIndex = startIndex + COURSES_PER_PAGE;
 
@@ -171,11 +170,11 @@ export function CoursesCatalog() {
     );
   };
 
-  const onClickCourse = (courseId, courseTitle) => {
-    const slug = toSlug(courseTitle);
-    navigate(`/course/${slug}`, { state: { id: courseId } });
+  const onClickCourse = (courseId, courseAlias) => {
+    navigate(`/course/${courseAlias}`);
   }
 
+  console.log("courses", courses);
   return (
     <div className="min-h-screen bg-background">
       <Header q={q} />
@@ -340,7 +339,7 @@ export function CoursesCatalog() {
           <main className="px-10 flex-1 overflow-y-auto">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Hiển thị {startIndex + 1}-{Math.min(endIndex, courses1?.totalCourse)} trong tổng số {courses1?.results.length} kết quả
+                Hiển thị {startIndex + 1}-{Math.min(endIndex, courses?.totalCourse)} trong tổng số {courses?.results.length} kết quả
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
@@ -357,9 +356,11 @@ export function CoursesCatalog() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:grid-cols-3">
-              {courses1?.results.map((course, index) => (
+              {courses?.results.map((course, index) => (
                 <div
-                  onClick={() => onClickCourse(course._id, course.title)}
+                  key={course._id}
+                  className="h-full" 
+                  onClick={() => onClickCourse(course._id, course.alias)}
                 >
                   <CardCatalog
                     key={course._id}

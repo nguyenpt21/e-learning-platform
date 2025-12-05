@@ -22,7 +22,9 @@ const lambda = new LambdaClient({
 const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Course.findById(courseId).populate("sections.sectionId").lean();
+        const course = await Course.findOne({ alias: courseId })
+            .populate("sections.sectionId")
+            .lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
         if (course.status !== "published") {
@@ -87,7 +89,7 @@ const getCourseInfo = async (req, res) => {
     }
 };
 
-const getInstructorCourses = async(req, res)=>{
+const getInstructorCourses = async (req, res) => {
     try {
         const instructorId = req.user._id;
         const courses = await Course.find({
@@ -711,13 +713,12 @@ const getSearchCourseResults = async (req, res) => {
                         },
                     },
                 },
-                {
-                    $match: { status: "published" },
-                },
             ];
         }
 
-        let filterStage = { $match: {} };
+        let filterStage = {
+            $match: { status: "published" }
+        };
 
         if (selectedPrices) {
             const prices = selectedPrices.split(",");
@@ -801,6 +802,7 @@ const getSearchCourseResults = async (req, res) => {
                             $project: {
                                 _id: 1,
                                 title: 1,
+                                alias: 1,
                                 subtitle: 1,
                                 thumbnail: 1,
                                 description: 1,
@@ -842,8 +844,8 @@ const getSearchCourseResults = async (req, res) => {
 const getAllCoursesInfo = async (req, res) => {
     try {
         const courses = await Course.find(
-            { status: "published" }, 
-            { _id: 1, title: 1 }    
+            { status: "published" },
+            { _id: 1, title: 1 }
         );
         return res.status(200).json(courses);
     } catch (error) {
@@ -853,24 +855,24 @@ const getAllCoursesInfo = async (req, res) => {
 };
 
 const searchCourses = async (req, res) => {
-  try {
-    const keyword = (req.query.keyword || "").trim();
+    try {
+        const keyword = (req.query.keyword || "").trim();
 
-    if (!keyword) {
-      return res.json([]);
+        if (!keyword) {
+            return res.json([]);
+        }
+
+        const courses = await Course.find({
+            title: { $regex: keyword, $options: "i" }
+        })
+            .select("_id title")
+            .lean();
+
+        return res.json(courses);
+    } catch (err) {
+        console.error("Search Error:", err);
+        res.status(500).json({ message: "Server Error" });
     }
-
-    const courses = await Course.find({
-      title: { $regex: keyword, $options: "i" }
-    })
-      .select("_id title")
-      .lean();
-
-    return res.json(courses);
-  } catch (err) {
-    console.error("Search Error:", err);
-    res.status(500).json({ message: "Server Error" });
-  }
 };
 
 const generateCaption = async (req, res) => {

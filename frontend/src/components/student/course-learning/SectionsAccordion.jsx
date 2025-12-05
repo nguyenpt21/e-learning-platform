@@ -2,12 +2,10 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import React, { useMemo, useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
-import { useParams } from 'react-router-dom'
 import { Spinner } from '@/components/ui/spinner'
 import { MdOutlineOndemandVideo } from 'react-icons/md'
 import { PiPuzzlePieceBold } from 'react-icons/pi'
 import { IoDocumentTextOutline } from 'react-icons/io5'
-import { FaCircleCheck } from 'react-icons/fa6'
 import Resources from '@/components/student/course-learning/Resources'
 import {
     Tooltip,
@@ -21,10 +19,9 @@ const formatDuration = (s) => {
     return (h ? [h, m, sec] : [m, sec]).map(v => String(v).padStart(2, '0')).join(':')
 }
 
-const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) => {
-    const params = useParams()
+const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, isDone }) => {
     const { data: itemsProgress, isLoading: isProgressLoading, refetch } =
-        useGetItemsProgressQuery(params._id);
+        useGetItemsProgressQuery(courseId);
     const [openSections, setOpenSections] = useState([])
 
     useEffect(() => {

@@ -10,7 +10,7 @@ const StudentRoutes = () => {
             <Route
                 element={<ProtectedRoutes allowedRoles={["user"]} />}
             >
-                <Route path="/learning/:_id" element={<CourseLearning/>} />
+                <Route path="/learning/:courseAlias" element={<CourseLearning/>} />
                 <Route path="/profile" element={<ProfilePage />} />
             </Route>
         </Routes>
