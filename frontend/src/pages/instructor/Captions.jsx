@@ -6,22 +6,66 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useGetCaptionStatusQuery } from "@/redux/api/courseApiSlice";
+import {
+    useGenerateCaptionsMutation,
+    useGetCaptionStatusQuery,
+    useGetCourseInfoQuery,
+} from "@/redux/api/courseApiSlice";
 import { Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const LANGUAGE_OPTIONS = [
     { value: "en", label: "Tiếng Anh" },
     { value: "vi", label: "Tiếng Việt" },
 ];
 
+const isItemValid = (item) => {
+    if (!item.content) {
+        return true;
+    }
+
+    // Kiểm tra nếu content không có captions
+    if (!item.content.captions || !Array.isArray(item.content.captions)) {
+        return true; // Không có captions → hợp lệ
+    }
+
+    const captions = item.content.captions;
+
+    if (captions.length === 0) {
+        return true;
+    }
+
+    const hasVietnamese = captions.some((caption) => caption.language === "vi");
+    const hasOtherLanguages = captions.some((caption) => caption.language !== "vi");
+
+    return hasVietnamese && !hasOtherLanguages;
+};
+
+const getAllFilteredItems = (data) => {
+    const allFilteredItems = [];
+
+    data.forEach((section) => {
+        if (section.items && Array.isArray(section.items)) {
+            const filteredSectionItems = section.items.filter((item) => isItemValid(item));
+
+            allFilteredItems.push(...filteredSectionItems);
+        }
+    });
+
+    return allFilteredItems;
+};
+
 const Captions = () => {
     const { courseId } = useParams();
+    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseId);
     const { data, isLoading } = useGetCaptionStatusQuery(courseId);
 
     const [activeTab, setActiveTab] = useState("all");
-    const [captionLanguage, setCaptionLanguage] = useState();
+    const [captionLanguage, setCaptionLanguage] = useState("");
+
+    const [generateCaptions] = useGenerateCaptionsMutation();
 
     useEffect(() => {
         if (data?.defaultLanguage) {
@@ -32,11 +76,11 @@ const Captions = () => {
         }
     }, [data]);
 
-
-
-    if (isLoading) {
+    if (isLoading || isLoandingCourseInfo) {
         return <div></div>;
     }
+
+    console.log(data.captions);
 
     const getCaptionStatus = (captions, language) => {
         if (!captions || captions.length === 0) {
@@ -65,7 +109,6 @@ const Captions = () => {
         }
     };
 
-
     const captionsWithStatus = data.captions.map((section) => ({
         ...section,
         items: section.items.map((item) => ({
@@ -80,10 +123,37 @@ const Captions = () => {
             activeTab === "all" ? section.items : section.items.filter((i) => !i.content?.captions),
     }));
 
-    console.log(filtered)
+    console.log(filtered);
 
+    const handleAutoGeneretaCaption = async () => {
+        try {
+            const filteredItems = getAllFilteredItems(data.captions);
+            if (filteredItems.length === 0) {
+                toast.info("Các video đã có phụ đề.");
+            } else {
+                await generateCaptions(courseId).unwrap();
+                toast.info("Phụ đề đang được tạo.");
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Có lỗi xảy ra.");
+        }
+    };
     return (
         <div>
+            <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                <div className="container flex items-center justify-between text-white font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Link
+                            to="/instructor/courses"
+                            className="px-2 py-1 rounded hover:bg-gray-600"
+                        >
+                            Quay lại
+                        </Link>
+                        <p>{course.title}</p>
+                    </div>
+                </div>
+            </div>
             <div>
                 <div className="flex justify-between items-center p-5 border-b border-b-grayText/20">
                     <div className="flex gap-2">
@@ -107,8 +177,11 @@ const Captions = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <button className="text-sm px-3 py-2 border border-primary text-primary rounded hover:bg-primary/10 transition">
-                        Tạo caption tự động
+                    <button
+                        onClick={handleAutoGeneretaCaption}
+                        className="text-sm px-3 py-2 border cursor-pointer border-primary text-primary rounded hover:bg-primary/10 transition"
+                    >
+                        Tạo phụ đề tự động
                     </button>
                 </div>
 
@@ -116,7 +189,7 @@ const Captions = () => {
                     <div className="flex gap-2 mb-6">
                         <button
                             onClick={() => setActiveTab("all")}
-                            className={`px-3 py-1 cursor-pointer rounded border ${
+                            className={` px-3 py-1 cursor-pointer rounded border ${
                                 activeTab === "all" ? "bg-primary text-white" : "border-gray-300"
                             }`}
                         >
@@ -146,7 +219,12 @@ const Captions = () => {
                                             {section.items.map((item, i) => {
                                                 // console.log(item);
                                                 return (
-                                                    <CaptionItem key={i} item={item} courseId={courseId} language={captionLanguage}></CaptionItem>
+                                                    <CaptionItem
+                                                        key={i}
+                                                        item={item}
+                                                        courseId={courseId}
+                                                        language={captionLanguage}
+                                                    ></CaptionItem>
                                                 );
                                             })}
                                         </div>

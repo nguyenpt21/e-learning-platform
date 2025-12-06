@@ -35,7 +35,7 @@ const s3Client = new S3Client({
     },
 });
 
-const deleteS3File = async (s3Key) => {
+export const deleteS3File = async (s3Key) => {
     if (!s3Key) return;
 
     try {

@@ -55,7 +55,7 @@ const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
                     </button>
                 </div>
             </div>
-            {/* <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} /> */}
+            <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} />
         </div>
     );
 };

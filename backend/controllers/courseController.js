@@ -10,6 +10,9 @@ import { ObjectId } from "mongodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import VideoConversion from "../models/videoConvertion.js";
 import TranscriptionBatch from "../models/transcriptionBatch.js";
+import { deleteS3File } from "./uploadController.js";
+import slugify from "slugify";
+
 
 const lambda = new LambdaClient({
     region: process.env.AWS_REGION || "ap-southeast-1",
@@ -87,28 +90,33 @@ const getCourseInfo = async (req, res) => {
     }
 };
 
-const getInstructorCourses = async(req, res)=>{
+const getInstructorCourses = async (req, res) => {
     try {
-        const instructorId = req.user._id;
-        const courses = await Course.find({
-            instructor: instructorId,
-            status: "published",
-        })
-        res.status(200).json(courses)
+        const courses = await Course.find({});
+        res.status(200).json(courses);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Server Error" });
     }
-}
+};
 
 const createCourse = async (req, res) => {
     try {
         // const instructorId = req.user._id;
         const { title, category } = req.body;
 
+        const baseSlug = slugify(title, {
+            lower: true,
+            strict: true,
+            locale: "vi",
+        });
+
+        const alias = `${baseSlug}-${Date.now()}`;
+
         const course = await Course.create({
             title,
             category,
+            alias
         });
         res.status(201).json(course);
     } catch (error) {
@@ -248,7 +256,8 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${
+                        sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;
@@ -841,10 +850,7 @@ const getSearchCourseResults = async (req, res) => {
 
 const getAllCoursesInfo = async (req, res) => {
     try {
-        const courses = await Course.find(
-            { status: "published" }, 
-            { _id: 1, title: 1 }    
-        );
+        const courses = await Course.find({ status: "published" }, { _id: 1, title: 1 });
         return res.status(200).json(courses);
     } catch (error) {
         console.log(error);
@@ -853,24 +859,24 @@ const getAllCoursesInfo = async (req, res) => {
 };
 
 const searchCourses = async (req, res) => {
-  try {
-    const keyword = (req.query.keyword || "").trim();
+    try {
+        const keyword = (req.query.keyword || "").trim();
 
-    if (!keyword) {
-      return res.json([]);
+        if (!keyword) {
+            return res.json([]);
+        }
+
+        const courses = await Course.find({
+            title: { $regex: keyword, $options: "i" },
+        })
+            .select("_id title")
+            .lean();
+
+        return res.json(courses);
+    } catch (err) {
+        console.error("Search Error:", err);
+        res.status(500).json({ message: "Server Error" });
     }
-
-    const courses = await Course.find({
-      title: { $regex: keyword, $options: "i" }
-    })
-      .select("_id title")
-      .lean();
-
-    return res.json(courses);
-  } catch (err) {
-    console.error("Search Error:", err);
-    res.status(500).json({ message: "Server Error" });
-  }
 };
 
 const generateCaption = async (req, res) => {
@@ -880,7 +886,17 @@ const generateCaption = async (req, res) => {
         const videoLectures = await Lecture.find({
             courseId: courseId,
             type: "video",
-            $or: [{ "content.captions": { $exists: false } }, { "content.captions": null }],
+            $or: [
+                { "content.captions": { $exists: false } },
+                { "content.captions": null },
+                { "content.captions": { $eq: [] } },
+                {
+                    $and: [
+                        { "content.captions": { $size: 1 } },
+                        { "content.captions.language": "vi" },
+                    ],
+                },
+            ],
         });
 
         const course = await Course.findById(courseId, "promoVideo language");
@@ -1038,24 +1054,46 @@ const handleCaptionWebhook = async (req, res) => {
             return;
         }
 
-        const lecuture = await Lecture.findOne({ "content.s3Key": s3Key });
+        const lecture = await Lecture.findOne({ "content.s3Key": s3Key });
 
         const course = await Course.findOne({ "promoVideo.s3Key": s3Key });
 
-        if (!lecuture && !course) {
+        if (!lecture && !course) {
             console.error(`Video not found: ${s3Key}`);
             return;
         }
 
-        if (lecuture) {
-            lecuture.content.captions = captions;
-            await lecuture.save();
-            console.log(`Updated lecture ${lecuture._id}: ${status}`);
+        if (lecture) {
+            const existingLanguages = lecture.content.captions.map((caption) => caption.language);
+
+            const captionsToAdd = captions.filter((newCaption) => {
+                const isLanguageExists = existingLanguages.includes(newCaption.language);
+
+                return !isLanguageExists;
+            });
+
+            if (captionsToAdd.length > 0) {
+                lecture.content.captions.push(...captionsToAdd);
+                await lecture.save();
+            }
+
+            console.log(`Updated lecture ${lecture._id}: ${status}`);
         }
 
         if (course) {
-            course.promoVideo.captions = captions;
-            await course.save();
+            const existingLanguages = course.promoVideo.captions.map((caption) => caption.language);
+
+            const captionsToAdd = captions.filter((newCaption) => {
+                const isLanguageExists = existingLanguages.includes(newCaption.language);
+
+                return !isLanguageExists;
+            });
+
+            if (captionsToAdd.length > 0) {
+                course.promoVideo.captions.push(...captionsToAdd);
+                await course.save();
+            }
+
             console.log(`Updated course ${course._id}: ${status}`);
         }
 
@@ -1120,6 +1158,41 @@ const getCaptionVideoStatus = async (req, res) => {
                 },
             },
             {
+                $lookup: {
+                    from: "courses",
+                    let: { sectionId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                _id: new mongoose.Types.ObjectId(courseId),
+                            },
+                        },
+                        {
+                            $unwind: "$sections",
+                        },
+                        {
+                            $match: {
+                                $expr: {
+                                    $eq: ["$sections.sectionId", "$$sectionId"],
+                                },
+                            },
+                        },
+                        {
+                            $project: {
+                                order: "$sections.order",
+                            },
+                        },
+                    ],
+                    as: "orderInfo",
+                },
+            },
+            {
+                $unwind: {
+                    path: "$orderInfo",
+                    preserveNullAndEmptyArrays: true,
+                },
+            },
+            {
                 $unwind: "$curriculumItems",
             },
             {
@@ -1151,6 +1224,7 @@ const getCaptionVideoStatus = async (req, res) => {
                 $group: {
                     _id: "$_id",
                     sectionTitle: { $first: "$title" },
+                    order: { $first: "$orderInfo.order" },
                     items: {
                         $push: {
                             _id: "$lectureInfo._id",
@@ -1158,6 +1232,11 @@ const getCaptionVideoStatus = async (req, res) => {
                             content: "$lectureInfo.content",
                         },
                     },
+                },
+            },
+            {
+                $sort: {
+                    order: 1, // Sắp xếp sections theo order tăng dần
                 },
             },
             {
@@ -1194,8 +1273,53 @@ const addCaptionVideo = async (req, res) => {
         } else {
             const lecture = await Lecture.findById(itemId);
             if (!lecture) return res.status(404).json({ message: "Lecture not found" });
-            lecture.content.captions.push(caption);
 
+            if (!lecture.content.captions) {
+                lecture.content.captions = [];
+            }
+
+            const existingCaptionIndex = lecture.content.captions.findIndex(
+                (c) => c.language === caption.language
+            );
+
+            if (existingCaptionIndex !== -1) {
+                await deleteS3File(lecture.content.captions[existingCaptionIndex].s3Key);
+                lecture.content.captions[existingCaptionIndex] = caption;
+            } else {
+                lecture.content.captions.push(caption);
+            }
+            await lecture.save();
+        }
+        return res.json({
+            success: true,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
+const deleteCaptionVideo = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { videoType, itemId, caption } = req.body;
+        console.log(req.body);
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: "Course not found" });
+
+        if (videoType === "promoVideo") {
+            const deleteCaption = course.promoVideo.captions.id(caption._id);
+            if (!deleteCaption) return res.status(404).json({ message: "Caption not found" });
+            await deleteS3File(deleteCaption.s3Key);
+            deleteCaption.deleteOne();
+            await course.save();
+        } else {
+            const lecture = await Lecture.findById(itemId);
+            if (!lecture) return res.status(404).json({ message: "Lecture not found" });
+            const deleteCaption = lecture.content.captions.id(caption._id);
+            if (!deleteCaption) return res.status(404).json({ message: "Caption not found" });
+            await deleteS3File(deleteCaption.s3Key);
+            deleteCaption.deleteOne();
             await lecture.save();
         }
         return res.json({
@@ -1224,5 +1348,6 @@ export {
     getCaptionVideoStatus,
     addCaptionVideo,
     getInstructorCourses,
-    searchCourses
+    searchCourses,
+    deleteCaptionVideo,
 };

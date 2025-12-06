@@ -1,18 +1,38 @@
-import { useAddCaptionMutation } from "@/redux/api/courseApiSlice";
+import { useAddCaptionMutation, useDeleteCaptionMutation } from "@/redux/api/courseApiSlice";
 import { useGenerateUploadUrlMutation } from "@/redux/api/sectionApiSlice";
 import axios from "axios";
 import { Check } from "lucide-react";
 import { useState, useRef } from "react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "react-toastify";
 
 const CaptionItem = ({ item, courseId, language }) => {
     const [progress, setProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const controllerRef = useRef(null);
 
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
     const [generateUploadURL] = useGenerateUploadUrlMutation();
     const handleUploadFile = async (e, item) => {
         const selectedFile = e.target.files[0];
+        console.log(selectedFile);
         if (!selectedFile) return;
+
+        console.log("File selected:", selectedFile.name);
 
         const isValidFile = validateFile(selectedFile);
         if (!isValidFile) {
@@ -99,6 +119,35 @@ const CaptionItem = ({ item, courseId, language }) => {
     };
 
     const [addCaption] = useAddCaptionMutation();
+    const [deleteCaption, { isLoading: isDeletingCaption }] = useDeleteCaptionMutation();
+
+    const caption = item.content.captions.find((cap) => cap.language === language);
+
+    const handleConfirmDelete = async (item) => {
+        try {
+            const data = {
+                courseId,
+                videoType: item.itemType,
+                itemId: item._id,
+                caption,
+            };
+            console.log(data)
+            await deleteCaption({
+                courseId,
+                videoType: item.itemType,
+                itemId: item._id,
+                caption,
+            }).unwrap();
+
+            setIsDeleteModalOpen(false);
+        } catch (err) {
+            console.log(err);
+            toast.error("Lỗi khi xóa", {
+                position: "top-right",
+                autoClose: 2000,
+            });
+        }
+    };
 
     return (
         <div>
@@ -143,11 +192,64 @@ const CaptionItem = ({ item, courseId, language }) => {
                 <div className="flex items-center justify-between flex-1 gap-4 text text-gray-600">
                     {item.captionStatus}
                     {item.captionStatus !== "Chưa có phụ đề" ? (
-                        <button className="px-3 py-1 min-w-[84px] border border-primary text-primary rounded hover:bg-primary/10 transition">
-                            Sửa
-                        </button>
+                        <div className="flex gap-[2px]">
+                            <button className="px-3 py-1 min-w-[84px] cursor-pointer border border-primary text-primary rounded hover:bg-primary/10 transition">
+                                Sửa
+                            </button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="px-[1px] py-2 cursor-pointer text-primary/70 h-full hover:bg-primary/20 rounded">
+                                        <BsThreeDotsVertical />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <label className="cursor-pointer">
+                                            Tải lên
+                                            <input
+                                                type="file"
+                                                accept=".vtt,text/vtt,video/webvtt"
+                                                onChange={(e) => handleUploadFile(e, item)}
+                                                hidden
+                                            />
+                                        </label>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>Tải xuống</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsDeleteModalOpen(true)}>
+                                        Xóa
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                                <DialogContent className={"min-w-[500px] gap-1 p-0"}>
+                                    <DialogHeader className={"p-4 pb-0"}>
+                                        <DialogTitle className={"mb-0"}>Xác nhận</DialogTitle>
+                                    </DialogHeader>
+                                    <p className="px-4 mt-4">
+                                        Bạn sắp xóa một phụ đề. Bạn có chắc chắn muốn tiếp tục
+                                        không?
+                                    </p>
+                                    <DialogFooter className={"p-4"}>
+                                        <button
+                                            disabled={isDeletingCaption}
+                                            onClick={() => setIsDeleteModalOpen(false)}
+                                            className="px-4 py-1 border border-gray-300 rounded hover:bg-gray-50 "
+                                        >
+                                            Hủy
+                                        </button>
+                                        <button
+                                            disabled={isDeletingCaption}
+                                            onClick={() => handleConfirmDelete(item)}
+                                            className="px-4 py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium"
+                                        >
+                                            OK
+                                        </button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     ) : (
-                        <label className="px-3 py-1 text-center min-w-[84px] border border-primary text-primary rounded hover:bg-primary/10 transition">
+                        <label className="px-3 py-1 text-center min-w-[84px] border border-primary text-primary rounded hover:bg-primary/10 transition mr-5">
                             Tải lên
                             <input
                                 type="file"

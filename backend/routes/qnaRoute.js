@@ -6,7 +6,7 @@ const router = express.Router();
 router.post("/createQnA", protectRoute, createQNA)
 router.get("/", protectRoute, getQnAByPage)
 router.get("/course/:courseId", protectRoute, getQnAByCourseId)
-router.get("/instructor", protectRoute, getQnAByInstructor)
+router.get("/instructor", getQnAByInstructor)
 router.get("/:qnaId", protectRoute, getQnAById)
 router.put("/:qnaId", protectRoute, updateQnA)
 router.delete("/:qnaId", protectRoute, deleteQnA)

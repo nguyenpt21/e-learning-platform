@@ -181,9 +181,9 @@ const CourseAnnouncement = () => {
 
   // ------------------ VIEW ----------------------
   return (
-    <div className="p-10">
+    <div className="px-6 py-4">
       <div className="flex items-center justify-between mb-10">
-        <h1 className="text-3xl font-semibold">Tạo thông báo mới</h1>
+        <h1 className="text-2xl font-semibold">Tạo thông báo mới</h1>
       </div>
 
       <h2 className="text-lg font-semibold mb-2">Người nhận</h2>

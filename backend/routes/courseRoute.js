@@ -16,6 +16,7 @@ import {
     getAllCoursesInfo,
     searchCourses,
     getInstructorCourses,
+    deleteCaptionVideo,
 } from "../controllers/courseController.js";
 
 import {
@@ -46,7 +47,7 @@ router.route("/getAllCoursesInfo")
     .get(getAllCoursesInfo)
 router.route("/search")
     .get(searchCourses)
-router.get("/instructor", protectRoute, getInstructorCourses)
+router.get("/instructor", getInstructorCourses)
 
 //course
 router.route("/")
@@ -96,7 +97,10 @@ router.route("/quizzes/:quizId/questions/:questionId")
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
 router.post('/:courseId/generate-captions', generateCaption)
-router.get('/:courseId/captions', getCaptionVideoStatus)
-router.post('/:courseId/captions', addCaptionVideo)
+router.route('/:courseId/captions')
+    .get(getCaptionVideoStatus)
+    .post(addCaptionVideo)
+    .delete(deleteCaptionVideo)
+
 
 export default router;
