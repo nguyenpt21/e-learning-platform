@@ -143,7 +143,12 @@ const Curriculum = () => {
                     <div className="mt-3">
                         {isAddingSection ? (
                             <div className="">
-                                <button className="p-1 rounded hover:bg-gray-200 flex items-center justify-center">
+                                <button
+                                    onClick={() => {
+                                        setIsAddingSection(false);
+                                    }}
+                                    className="p-1 rounded hover:bg-gray-200 flex items-center justify-center"
+                                >
                                     <IoClose size={18} />
                                 </button>
 

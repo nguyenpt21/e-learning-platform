@@ -324,7 +324,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             </div>
           </div>
         )}
-        {/* <NoteModal /> */}
+        <NoteModal />
       </div>
 
       <footer className="w-full text-sm text-center py-5 flex items-center justify-center">

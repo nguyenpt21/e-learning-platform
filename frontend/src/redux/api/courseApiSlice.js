@@ -59,6 +59,20 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 url: `${COURSE_URL}/instructor`,
             }),
         }),
+        generateCaptions: builder.mutation({
+            query: (courseId) => ({
+                url: `${COURSE_URL}/${courseId}/generate-captions`,
+                method: "POST",
+            }),
+        }),
+        deleteCaption: builder.mutation({
+            query: ({ courseId, ...data }) => ({
+                url: `${COURSE_URL}/${courseId}/captions`,
+                method: "DELETE",
+                body: data,
+            }),
+            invalidatesTags: (result, error, { courseId }) => [{ type: "Caption", id: courseId }],
+        }),
     }),
 });
 
@@ -71,4 +85,6 @@ export const {
     useAddCaptionMutation,
     useSearchCoursesQuery,
     useGetInstructorCoursesQuery,
+    useGenerateCaptionsMutation,
+    useDeleteCaptionMutation
 } = courseApiSlice;

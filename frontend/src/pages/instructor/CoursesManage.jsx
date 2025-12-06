@@ -14,8 +14,10 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 
-import { useCreateCourseMutation } from "@/redux/api/courseApiSlice";
+import { useCreateCourseMutation, useGetInstructorCoursesQuery } from "@/redux/api/courseApiSlice";
 import { useAddSectionToCourseMutation } from "@/redux/api/sectionApiSlice";
+import { Spinner } from "@/components/ui/spinner";
+import InstructorCourseCard from "@/components/instructor/courses-manage/InstructorCourseCard";
 const CoursesManage = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOption, setSortOption] = useState("Mới nhất");
@@ -42,6 +44,8 @@ const CoursesManage = () => {
     const sortOptions = ["Mới nhất", "Cũ nhất", "A-Z", "Z-A"];
 
     const navigate = useNavigate();
+
+    const { data: courses, isLoading: isLoadingCourses } = useGetInstructorCoursesQuery();
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -87,9 +91,19 @@ const CoursesManage = () => {
         }
     };
 
+    if (isLoadingCourses) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <Spinner className="size-12" color="#098ce9" />
+            </div>
+        );
+    }
+
+    console.log(courses);
+
     return (
-        <div className="p-4">
-            <h2 className="text-lg font-bold">Khóa học</h2>
+        <div className="px-6 py-4">
+            <h2 className="font-bold text-2xl">Khóa học</h2>
             <div className=" mt-6">
                 <div className="flex justify-between">
                     <div className="flex gap-8">
@@ -285,6 +299,11 @@ const CoursesManage = () => {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                </div>
+                <div className="grid grid-cols-3 gap-6 mt-6">
+                    {courses.map((course, index) => (
+                        <InstructorCourseCard course={course} key={index}></InstructorCourseCard>
+                    ))}
                 </div>
             </div>
         </div>

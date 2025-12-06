@@ -450,11 +450,8 @@ export const getQnAByCourseId = async (req, res) => {
 
 export const getQnAByInstructor = async (req, res) => {
   try {
-    const instructorId = req.user._id;
-    const courses = await Course.find({
-      instructor: instructorId,
-      status: "published",
-    });
+    // const instructorId = req.user._id;
+    const courses = await Course.find({});
     if (!courses || courses.length === 0) {
       return res.status(404).json({ message: "No courses found" });
     }
