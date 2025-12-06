@@ -2,12 +2,10 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import React, { useMemo, useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
-import { useParams } from 'react-router-dom'
 import { Spinner } from '@/components/ui/spinner'
 import { MdOutlineOndemandVideo } from 'react-icons/md'
 import { PiPuzzlePieceBold } from 'react-icons/pi'
 import { IoDocumentTextOutline } from 'react-icons/io5'
-import { FaCircleCheck } from 'react-icons/fa6'
 import Resources from '@/components/student/course-learning/Resources'
 import {
     Tooltip,
@@ -16,15 +14,17 @@ import {
 } from "@/components/ui/tooltip"
 
 const formatDuration = (s) => {
-    if (!s || isNaN(s)) return '00:00'
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
-    return (h ? [h, m, sec] : [m, sec]).map(v => String(v).padStart(2, '0')).join(':')
-}
+    if (!s || isNaN(s)) return "00:00";
+    s = Math.round(s);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
 
-const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) => {
-    const params = useParams()
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+};
+
+const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, isDone }) => {
     const { data: itemsProgress, isLoading: isProgressLoading, refetch } =
-        useGetItemsProgressQuery(params._id);
+        useGetItemsProgressQuery(courseId);
     const [openSections, setOpenSections] = useState([])
 
     useEffect(() => {
@@ -78,6 +78,7 @@ const SectionsAccordion = ({ sections, handleChangeItem, currentItem, isDone }) 
     const handleChange = (itemId, itemType) => {
         handleChangeItem(itemId, itemType)
     }
+    console.log('sectionsWithComputedData', sectionsWithComputedData);
 
     return (
         <div className="border-t border-gray-200 lg:border-t-0 lg:border-l">

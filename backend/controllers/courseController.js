@@ -25,7 +25,9 @@ const lambda = new LambdaClient({
 const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Course.findById(courseId).populate("sections.sectionId").lean();
+        const course = await Course.findOne({ alias: courseId })
+            .populate("sections.sectionId")
+            .lean();
 
         if (!course) return res.status(404).json({ message: "Course not found" });
         if (course.status !== "published") {
@@ -720,13 +722,12 @@ const getSearchCourseResults = async (req, res) => {
                         },
                     },
                 },
-                {
-                    $match: { status: "published" },
-                },
             ];
         }
 
-        let filterStage = { $match: {} };
+        let filterStage = {
+            $match: { status: "published" }
+        };
 
         if (selectedPrices) {
             const prices = selectedPrices.split(",");
@@ -810,6 +811,7 @@ const getSearchCourseResults = async (req, res) => {
                             $project: {
                                 _id: 1,
                                 title: 1,
+                                alias: 1,
                                 subtitle: 1,
                                 thumbnail: 1,
                                 description: 1,
@@ -867,7 +869,7 @@ const searchCourses = async (req, res) => {
         }
 
         const courses = await Course.find({
-            title: { $regex: keyword, $options: "i" },
+            title: { $regex: keyword, $options: "i" }
         })
             .select("_id title")
             .lean();

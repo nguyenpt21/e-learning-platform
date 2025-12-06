@@ -81,7 +81,7 @@ export const calculateCourseStats = (courseData) => {
                 return sum + ci.content.duration;
             }
             if (ci.itemType === "Quiz") {
-                sectionQuizzes +=1
+                sectionQuizzes += 1
             }
             return sum;
         }, 0);
@@ -117,7 +117,7 @@ export const getTotals = (data) => {
     const totalMinutes = Number(
         data.reduce((sum, item) => sum + (Number(item.minutes) || 0), 0).toFixed(2)
     );
-    
+
     return { totalMinutes };
 };
 
