@@ -227,7 +227,7 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                     Thêm vào giỏ hàng
                 </button>
                 <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
-                    onClick={() => course?.price && navigate(`/course/${course._id}/payment`)}>
+                    onClick={() => course?.price && navigate(`/course/${course.alias}/payment`)}>
                     Mua ngay
                 </button>
                 <div className="text-gray-900 text-sm px-3">
