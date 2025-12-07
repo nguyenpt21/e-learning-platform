@@ -3,6 +3,17 @@ import Plyr from "plyr";
 import "plyr/dist/plyr.css";
 import Hls from "hls.js";
 
+const LANGUAGE_MAP = {
+    en: "English",
+    vi: "Vietnamese",
+    fr: "French",
+    ja: "Japanese",
+    ko: "Korean",
+    zh: "Chinese",
+    es: "Spanish",
+    de: "German",
+};
+
 const PromoVideoPlayer = ({ videoUrl, captions = [], poster }) => {
     const videoRef = useRef(null);
     const playerRef = useRef(null);
@@ -21,11 +32,11 @@ const PromoVideoPlayer = ({ videoUrl, captions = [], poster }) => {
         if (captions && captions.length > 0) {
             captions.forEach(track => {
                 const el = document.createElement('track');
-                el.kind = track.kind || 'subtitles';
-                el.label = track.label;
-                el.srclang = track.srclang;
-                el.src = track.src;
-                if (track.default) el.default = true;
+                el.kind = 'subtitles';
+                el.label = LANGUAGE_MAP[track.language] || track.language;
+                el.srclang = track.language;
+                el.src = track.publicURL;
+                if (track.language === "vi") el.default = true;
                 video.appendChild(el);
             });
         }
@@ -37,7 +48,7 @@ const PromoVideoPlayer = ({ videoUrl, captions = [], poster }) => {
                     "play-large", "play", "progress", "current-time", "mute",
                     "volume", "captions", "settings", "fullscreen",
                 ],
-                // settings: ["captions", "speed"],
+                settings: ["captions", "speed"],
             });
             playerRef.current = player;
 
@@ -95,12 +106,14 @@ const PromoVideoPlayer = ({ videoUrl, captions = [], poster }) => {
 
     return (
         <div className="w-full flex justify-center bg-black">
-            <video
-                ref={videoRef}
-                playsInline
-                poster={poster}
-            // crossOrigin="anonymous" 
-            />
+            <div className="relative w-full max-w-[900px] mx-auto promo-player">
+                <video
+                    ref={videoRef}
+                    playsInline
+                    poster={poster}
+                    className="w-full h-auto"
+                />
+            </div>
         </div>
     );
 };
