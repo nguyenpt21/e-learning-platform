@@ -1,12 +1,14 @@
+import Course from "../models/course.js";
+import Order from "../models/order.js";
 const environment = process.env.ENVIRONMENT;
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
 const endpoint_url =
   environment === "sandbox"
     ? "https://api-m.sandbox.paypal.com"
-    : "https://api-m.payapl.com";
+    : "https://api-m.paypal.com";
 
-function get_access_token() {
+async function get_access_token() {
   const auth = `${client_id}:${client_secret}`;
   const data = "grant_type=client_credentials";
   return fetch(endpoint_url + "/v1/oauth2/token", {
@@ -47,8 +49,8 @@ export const createOrder = async (req, res) => {
           },
         ],
         application_context: {
-            return_url: `http://localhost:5173/course/${req.body.courseId}/paypal-success?status=success`,
-            cancel_url: `http://localhost:5173/course/${req.body.courseId}/paypal-success?status=cancel`,
+            return_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=success`,
+            cancel_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=cancel`,
         },
       };
       const data = JSON.stringify(order_data_json);
@@ -74,30 +76,33 @@ export const createOrder = async (req, res) => {
 };
 
 export const completeOrder = async (req, res) => {
-  get_access_token()
-    .then((access_token) => {
-      fetch(
-        endpoint_url +
-          "/v2/checkout/orders/" +
-          req.body.order_id +
-          "/" +
-          req.body.intent,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-      )
-        .then((res) => res.json())
-        .then((json) => {
-          console.log(json);
-          res.send(json);
-        });
+  try {
+    const course = await Course.findOne({ alias: req.body.courseAlias });
+    if (!course) {
+      return res.status(404).send({ message: "Course not found" });
+    }
+    const access_token = await get_access_token();
+    const response = await fetch(`${endpoint_url}/v2/checkout/orders/${req.body.order_id}/${req.body.intent}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`,
+      },
     })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).send(err);
-    });
+  const json = await response.json();
+  if (json.status === "COMPLETED") {
+    await Order.create({
+      userId: req.user._id,
+      courseId: course._id,
+      isPaid: true,
+      totalPrice: course.price,
+      paymentMethod: "PayPal",
+    })
+  }
+  res.send(json);
+  } catch (err) {
+    console.log("Complete Order Error: ", err);
+    res.status(500).send(err);
+  }
 };

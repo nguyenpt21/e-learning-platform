@@ -16,6 +16,8 @@ import { PiPuzzlePieceBold } from "react-icons/pi";
 import Footer from "../../components/Footer";
 import PromoVideoPlayer from "@/components/student/course-learning/PromoVideoPlayer";
 import { calculateCourseStats } from "@/utils";
+import LogInRequire from "@/components/student/course-detail/LogInRequire";
+import { useSelector } from "react-redux";
 
 const CourseDetail = () => {
     const { courseAlias } = useParams();
@@ -198,77 +200,92 @@ const CourseDetail = () => {
 
 const RightCard = ({ course, courseWithDurations, formatDuration }) => {
     const navigate = useNavigate()
+    const { userInfo } = useSelector((state) => state.auth)
     return (
-        <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
-            <div className="w-full h-48 overflow-hidden">
-                {course?.promoVideo?.publicURL ? (
-                    <PromoVideoPlayer 
-                        videoUrl={course?.promoVideo?.publicURL} 
-                        captions={course?.promoVideo.captions || []}
-                        poster={course?.promoVideo?.thumbnailURL} 
-                    />
-                ) : course?.thumbnail?.publicURL ? (
-                    <img
-                        src={course?.thumbnail.publicURL || "/logo.png"}
-                        alt={course?.title}
-                        className="w-full h-full object-cover border border-gray-200"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-100">
-                        No Image
-                    </div>
-                )}
+      <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
+        <div className="w-full h-48 overflow-hidden">
+          {course?.promoVideo?.publicURL ? (
+            <PromoVideoPlayer
+              videoUrl={course?.promoVideo?.publicURL}
+              captions={course?.promoVideo.captions || []}
+              poster={course?.promoVideo?.thumbnailURL}
+            />
+          ) : course?.thumbnail?.publicURL ? (
+            <img
+              src={course?.thumbnail.publicURL || "/logo.png"}
+              alt={course?.title}
+              className="w-full h-full object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-100">
+              No Image
             </div>
-            <div className="p-6 space-y-4">
-                <p className="text-2xl font-semibold text-gray-900">
-                    {course?.price ? `${course.price.toLocaleString()} ₫` : "Miễn phí"}
-                </p>
-                <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
-                    Thêm vào giỏ hàng
-                </button>
-                <button className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
-                    onClick={() => course?.price && navigate(`/course/${course._id}/payment`)}>
-                    Mua ngay
-                </button>
-                <div className="text-gray-900 text-sm px-3">
-                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-                        <span className="flex items-center gap-1.5">
-                            <TbChartBarPopular className="text-[20px]" />
-                            Cấp độ:
-                        </span>
-                        <span className="font-semibold">{course?.level}</span>
-                    </div>
-                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-                        <span className="flex items-center gap-1.5">
-                            <FaRegClock className="text-[20px]" />
-                            Thời lượng:
-                        </span>
-                        <span className="font-semibold">{formatDuration(courseWithDurations?.courseDuration)}</span>
-                    </div>
-                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-                        <span className="flex items-center gap-1.5">
-                            <IoDocumentTextOutline className="text-[20px]" />
-                            Số bài học:
-                        </span>
-                        <span className="font-semibold">{courseWithDurations?.totalLectures}</span>
-                    </div>
-                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-                        <span className="flex items-center gap-1.5">
-                            <TbCategory className="text-[20px]" />
-                            Tài nguyên tải xuống:
-                        </span>
-                        <span className="font-semibold">{courseWithDurations?.totalResources}</span>
-                    </div>
-                    <div className="flex justify-between items-center my-4 pb-4">
-                        <span className="flex items-center gap-1.5">
-                            <TbWorld className="text-[20px]" />
-                            Ngôn ngữ:
-                        </span>
-                        <span className="font-semibold">{course?.language}</span>
-                    </div>
-                </div>
-            </div>
+          )}
         </div>
+        <div className="p-6 space-y-4">
+          <p className="text-2xl font-semibold text-gray-900">
+            {course?.price ? `${course.price.toLocaleString()} ₫` : "Miễn phí"}
+          </p>
+          <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
+            Thêm vào giỏ hàng
+          </button>
+          {userInfo ? (
+            <button
+              className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
+              onClick={() =>
+                course?.price && navigate(`/course/${course.alias}/payment`)
+              }
+            >
+              Mua ngay
+            </button>
+          ) : (
+            <LogInRequire course={course} />
+          )}
+          <div className="text-gray-900 text-sm px-3">
+            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+              <span className="flex items-center gap-1.5">
+                <TbChartBarPopular className="text-[20px]" />
+                Cấp độ:
+              </span>
+              <span className="font-semibold">{course?.level}</span>
+            </div>
+            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+              <span className="flex items-center gap-1.5">
+                <FaRegClock className="text-[20px]" />
+                Thời lượng:
+              </span>
+              <span className="font-semibold">
+                {formatDuration(courseWithDurations?.courseDuration)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+              <span className="flex items-center gap-1.5">
+                <IoDocumentTextOutline className="text-[20px]" />
+                Số bài học:
+              </span>
+              <span className="font-semibold">
+                {courseWithDurations?.totalLectures}
+              </span>
+            </div>
+            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+              <span className="flex items-center gap-1.5">
+                <TbCategory className="text-[20px]" />
+                Tài nguyên tải xuống:
+              </span>
+              <span className="font-semibold">
+                {courseWithDurations?.totalResources}
+              </span>
+            </div>
+            <div className="flex justify-between items-center my-4 pb-4">
+              <span className="flex items-center gap-1.5">
+                <TbWorld className="text-[20px]" />
+                Ngôn ngữ:
+              </span>
+              <span className="font-semibold">{course?.language}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     );
 }
 
