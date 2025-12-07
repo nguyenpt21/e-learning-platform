@@ -130,7 +130,7 @@ function Payment() {
         <Button
           variant="outline"
           className="flex space-x-2 mb-4"
-          onClick={() => navigate(`/course/${param._id}`)}
+          onClick={() => navigate(`/course/${param.courseAlias}`)}
         >
           <ArrowLeft className="w-6 h-6" />
           <p>Quay lại</p>
