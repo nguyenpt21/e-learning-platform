@@ -78,7 +78,6 @@ const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, 
     const handleChange = (itemId, itemType) => {
         handleChangeItem(itemId, itemType)
     }
-    console.log('sectionsWithComputedData', sectionsWithComputedData);
 
     return (
         <div className="border-t border-gray-200 lg:border-t-0 lg:border-l">

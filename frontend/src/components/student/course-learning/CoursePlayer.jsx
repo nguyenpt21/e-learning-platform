@@ -263,9 +263,10 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
                   <VideoPlayer
                     key={item._id + "_" + itemProgress?.watchedSeconds}
                     ref={videoRef}
-                    videoUrl={item.content.publicURL}
+                    videoUrl={item.content.hlsURL || item.content.publicURL}
                     onPlayStateChange={setIsPlaying}
                     startTime={itemProgress?.watchedSeconds}
+                    captions={item.content.captions || []}
                   />
                 ) : (
                   <Skeleton className="w-full h-full" />

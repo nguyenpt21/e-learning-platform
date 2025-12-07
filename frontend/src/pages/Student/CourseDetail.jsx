@@ -143,7 +143,7 @@ const CourseDetail = () => {
 
                         <div>
                             <p className="text-2xl font-semibold mb-5">Thể loại</p>
-                            <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-gray-50 inline-block px-3 py-2 rounded-md">
+                            <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-blue-50 inline-block px-3 py-2 rounded-md">
                                 <span>{course.category}</span>
                             </div>
                         </div>
@@ -202,7 +202,11 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
         <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
             <div className="w-full h-48 overflow-hidden">
                 {course?.promoVideo?.publicURL ? (
-                    <PromoVideoPlayer videoUrl={course?.promoVideo?.publicURL} poster={course?.promoVideo?.thumbnailURL} />
+                    <PromoVideoPlayer 
+                        videoUrl={course?.promoVideo?.publicURL} 
+                        captions={course?.promoVideo.captions || []}
+                        poster={course?.promoVideo?.thumbnailURL} 
+                    />
                 ) : course?.thumbnail?.publicURL ? (
                     <img
                         src={course?.thumbnail.publicURL || "/logo.png"}

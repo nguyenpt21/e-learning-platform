@@ -23,7 +23,7 @@ const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
     return (
         <div className="sticky top-0 z-50 flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
             <button 
-                className="px-5 hover:bg-[#2a364c] transition-colors duration-300"
+                className="px-5 hover:bg-[#2a364c] transition-colors duration-300 hover:cursor-pointer"
                 onClick={handleGoBack}
             >
                 <ChevronLeft size={24} />
