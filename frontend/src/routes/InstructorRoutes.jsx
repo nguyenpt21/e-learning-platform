@@ -10,6 +10,7 @@ import Captions from "@/pages/instructor/Captions";
 import CourseEngagement from "@/pages/instructor/CourseEngagement";
 import CourseAnnouncement from "@/pages/instructor/CourseAnnouncement";
 import CourseQA from "@/pages/instructor/CourseQA";
+import Review from "@/pages/instructor/Review";
 
 const InstructorRoutes = () => {
     return (
@@ -20,6 +21,7 @@ const InstructorRoutes = () => {
                 <Route path="communication/announcements" element={<CourseAnnouncement />} />
                 <Route path="communication/qa" element={<CourseQA />} />
                 <Route path="performance/engagement" element={<CourseEngagement/>} />
+                <Route path="reviews" element={<Review/>} />
             </Route>
 
             {/* Layout riêng cho quản lý course, không bị bọc bởi InstructorLayout */}

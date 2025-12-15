@@ -16,6 +16,7 @@ import profileRoute from "./routes/profileRoute.js"
 import qnaRoute from "./routes/qnaRoute.js"
 import performanceRoute from "./routes/performanceRoute.js"
 import announcementRoute from "./routes/announcement.js";
+import reviewRoute from "./routes/reviewRoute.js";
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use('/api/qna', qnaRoute)
 app.use('/api/performance', performanceRoute)
 
 app.use("/api/announcement", announcementRoute);
+app.use("/api/review", reviewRoute);
 
 
 app.listen(PORT, () => {

@@ -145,7 +145,7 @@ export const updateItemProgress = async (req, res) => {
     }
 };
 
-const updateCourseProgress = async (userId, courseId) => {
+export const updateCourseProgress = async (userId, courseId) => {
     try {
         const course = await Course.findById(courseId)
             .populate({
