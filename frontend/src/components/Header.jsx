@@ -167,19 +167,15 @@ export default function Header({ q }) {
           ) : (
             <div className="flex items-center space-x-4">
               <div
+                className="relative inline-block"
                 onMouseEnter={() => setOpenMycourseDropdown(true)}
                 onMouseLeave={() => setOpenMycourseDropdown(false)}
-                className="inline-block relative"
               >
-                <Button className="text-gray-700">
-                  Học tập
-                </Button>
+                <Button className="text-gray-700">Học tập</Button>
 
                 {openMycourseDropdown && (
-                  <div className="absolute right-0 border border-gray-100 mt-2 bg-white shadow-lg rounded-lg px-2">
-                    <div>
-                      <MyCourseDropdown/>
-                    </div>
+                  <div className="absolute right-0 border border-gray-100 bg-white shadow-lg rounded-lg px-2">
+                    <MyCourseDropdown />
                   </div>
                 )}
               </div>

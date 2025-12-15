@@ -1,5 +1,6 @@
 import Course from "../models/course.js";
 import Order from "../models/order.js";
+import { updateCourseProgress } from "./progressController.js";
 const environment = process.env.ENVIRONMENT;
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
@@ -49,8 +50,8 @@ export const createOrder = async (req, res) => {
           },
         ],
         application_context: {
-            return_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=success`,
-            cancel_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=cancel`,
+          return_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=success`,
+          cancel_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=cancel`,
         },
       };
       const data = JSON.stringify(order_data_json);
@@ -83,24 +84,26 @@ export const completeOrder = async (req, res) => {
     }
     const access_token = await get_access_token();
     const response = await fetch(`${endpoint_url}/v2/checkout/orders/${req.body.order_id}/${req.body.intent}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${access_token}`,
-      },
-    })
-  const json = await response.json();
-  if (json.status === "COMPLETED") {
-    await Order.create({
-      userId: req.user._id,
-      courseId: course._id,
-      isPaid: true,
-      totalPrice: course.price,
-      paymentMethod: "PayPal",
-    })
-  }
-  res.send(json);
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    const json = await response.json();
+    if (json.status === "COMPLETED") {
+      await Order.create({
+        userId: req.user._id,
+        courseId: course._id,
+        isPaid: true,
+        totalPrice: course.price,
+        paymentMethod: "PayPal",
+      })
+
+      updateCourseProgress(req.user._id, course._id);
+    }
+    res.send(json);
   } catch (err) {
     console.log("Complete Order Error: ", err);
     res.status(500).send(err);
