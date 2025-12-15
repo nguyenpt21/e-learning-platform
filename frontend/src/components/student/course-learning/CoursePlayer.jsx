@@ -229,7 +229,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       <div className="px-4 md:px-12 lg:px-24 mt-12 space-y-4">
         <Skeleton className="h-10 w-3/5" />
         <Skeleton className="h-5 w-1/4" />
-        <Skeleton className="h-[1px] w-full" />
+        <Skeleton className="h-px w-full" />
         <Skeleton className="h-5 w-full" />
         <Skeleton className="h-5 w-full" />
         <Skeleton className="h-5 w-4/5" />
@@ -248,7 +248,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="flex-grow">
+      <div className="grow">
         {itemType === "Lecture" ? (
           item.type === "article" ? (
             <ArticleRender
