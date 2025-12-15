@@ -55,7 +55,7 @@ const InstructorLayout = () => {
                 },
                 {
                     title: "Học viên",
-                    to: "/instructor/students",
+                    to: "/instructor/performance/students",
                 },
                 {
                     title: "Review",
