@@ -9,4 +9,5 @@ export const NOTES_URL = "/api/video-notes";
 export const PROFILE_URL = "/api/profile";
 export const PERFORMANCE_URL = "/api/performance"
 export const ANNOUNCEMENT_URL = "/api/announcement"
+export const STUDENT_URL = "/api/instructor/students"
 export const REVIEW_URL = "/api/review"

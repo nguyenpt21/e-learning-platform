@@ -10,7 +10,7 @@ import videoNoteRoute from "./routes/videoNoteRoute.js"
 import { deleteFileFromS3, downloadResources, generateUploadURL } from "./controllers/uploadController.js";
 import paymentRoute from "./routes/paymentRoute.js"
 import webwookRoute from "./routes/webhookRoute.js"
-
+import studentRoute from "./routes/studentRoute.js"
 import profileRoute from "./routes/profileRoute.js"
 
 import qnaRoute from "./routes/qnaRoute.js"
@@ -72,6 +72,7 @@ app.use('/api/performance', performanceRoute)
 app.use("/api/announcement", announcementRoute);
 app.use("/api/review", reviewRoute);
 
+app.use("/api/instructor/students", studentRoute);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
