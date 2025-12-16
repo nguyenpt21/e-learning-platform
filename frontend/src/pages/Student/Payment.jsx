@@ -82,7 +82,7 @@ function Payment() {
   const param = useParams();
   const navigate = useNavigate();
   const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(
-    param._id
+    param.courseAlias
   );
   const [payPalMessage, setPayPalMessage] = useState("");
   const [createOrder, { isLoading: isPayPalLoading }] =
@@ -95,6 +95,7 @@ function Payment() {
         intent: "CAPTURE",
         amount: (course.price/27000).toFixed(2), // VND => USD
         courseId: course._id,
+        courseAlias: course.alias
       }).unwrap();
 
       if (!orderData || !orderData.links) {
@@ -129,7 +130,7 @@ function Payment() {
         <Button
           variant="outline"
           className="flex space-x-2 mb-4"
-          onClick={() => navigate(`/course/${param._id}`)}
+          onClick={() => navigate(`/course/${param.courseAlias}`)}
         >
           <ArrowLeft className="w-6 h-6" />
           <p>Quay lại</p>

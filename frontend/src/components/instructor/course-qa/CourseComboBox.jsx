@@ -18,19 +18,24 @@ import {
 import { useGetInstructorCoursesQuery } from "@/redux/api/courseApiSlice";
 import { useEffect, useState } from "react";
 
-export function CourseComboBox({ value, setValue }) {
+export function CourseComboBox({ value, setValue, hasAll = true }) {
   const [open, setOpen] = useState(false);
   const [courses, setCourses] = useState([]);
   const { data, isLoading } = useGetInstructorCoursesQuery();
   useEffect(() => {
     if (!data) return;
+    if (!hasAll) {
+      setCourses(data);
+      setValue(data[0])
+      return;
+    }
     setCourses([
       {
         _id: "all",
         title: "Tất cả khóa học",
       },
       ...data,
-    ]);
+    ]);    
   }, [data]);
 
   return (
@@ -67,7 +72,7 @@ export function CourseComboBox({ value, setValue }) {
                   <Check
                     className={cn(
                       "ml-auto",
-                      value.title === c.title ? "opacity-100" : "opacity-0"
+                      value?.title === c.title ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

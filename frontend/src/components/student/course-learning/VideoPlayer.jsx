@@ -3,10 +3,16 @@ import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 import Hls from 'hls.js';
 
-// const captions = [
-//     { label: 'English', srclang: 'en', src: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.fr.vtt', default: true },
-//     { label: 'Vietnamese', srclang: 'vi', src: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.fr.vtt' }
-// ];
+const LANGUAGE_MAP = {
+    en: "English",
+    vi: "Vietnamese",
+    fr: "French",
+    ja: "Japanese",
+    ko: "Korean",
+    zh: "Chinese",
+    es: "Spanish",
+    de: "German",
+};
 
 const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, captions = [] }, ref) => {
     const videoRef = useRef(null);
@@ -36,21 +42,63 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
         if (captions && captions.length > 0) {
             captions.forEach(track => {
                 const el = document.createElement('track');
-                el.kind = track.kind || 'subtitles';
-                el.label = track.label;
-                el.srclang = track.srclang;
-                el.src = track.src;
-                if (track.default) el.default = true;
+                el.kind = 'subtitles';
+                el.label = LANGUAGE_MAP[track.language] || track.language;
+                el.srclang = track.language;
+                el.src = track.publicURL;
+                if (track.language === "vi") el.default = true;
                 video.appendChild(el);
             });
         }
 
-        const initPlayer = (qualityOptions) => {
+        const initPlayer = (hlsInstance) => {
             if (playerRef.current) return;
+
+            let qualityOptions = ['0'];
+            if (hlsInstance && hlsInstance.levels) {
+                const heights = hlsInstance.levels.map(l => String(l.height)); 
+                const unique = [...new Set(heights)].sort((a, b) => Number(b) - Number(a)); 
+                qualityOptions = ['0', ...unique];
+            }
+
             const player = new Plyr(video, {
                 controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'fullscreen'],
                 settings: ['quality', 'speed', 'captions'],
-                // quality: qualityOptions || undefined
+                i18n: {
+                    qualityLabel: 'Quality',
+                    qualityBadge: {
+                        '2160': '4K',
+                        '1440': 'HD',
+                        '1080': 'HD',
+                        '720': 'HD',
+                        '576': 'SD',
+                        '480': 'SD',
+                        '0': 'Auto',
+                    },
+                },
+                quality: {
+                    default: '0',
+                    options: qualityOptions,
+                    forced: true,
+                    onChange: (newQuality) => {
+                        console.log("Changing quality to:", newQuality);
+
+                        if (!hlsInstance) return;
+
+                        if (newQuality === '0') {
+                            hlsInstance.currentLevel = -1;
+                            return;
+                        }
+
+                        const levelIndex = hlsInstance.levels.findIndex(
+                            l => String(l.height) === newQuality
+                        );
+
+                        if (levelIndex !== -1) {
+                            hlsInstance.currentLevel = levelIndex;
+                        }
+                    }
+                }
             });
             playerRef.current = player;
 
@@ -84,12 +132,15 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
             hlsRef.current = hls;
             hls.loadSource(videoUrl);
             hls.attachMedia(video);
+            // hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            //     video.addEventListener("loadedmetadata", initPlayer, { once: true });
+            // });
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.addEventListener("loadedmetadata", initPlayer, { once: true });
+                initPlayer(hls);
             });
         } else {
             video.src = videoUrl;
-            video.addEventListener("loadedmetadata", initPlayer, { once: true });
+            video.addEventListener("loadedmetadata", () => initPlayer(null), { once: true });
         }
         return () => {
             if (playerRef.current) {
