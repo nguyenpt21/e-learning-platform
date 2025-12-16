@@ -87,7 +87,7 @@ const Lecture = ({
             let uploadedBytes = 0;
             let totalBytes = file.size;
 
-            const thumbnailBlob = await generateThumbnailFromVideo(file, 1.0);
+            const thumbnailBlob = await generateThumbnailFromVideo(file, 10.0);
             totalBytes += thumbnailBlob.size;
 
             const [videoUploadData, thumbnailUploadData] = await Promise.all([

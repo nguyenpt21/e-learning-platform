@@ -17,6 +17,8 @@ import {
     searchCourses,
     getInstructorCourses,
     deleteCaptionVideo,
+    getCaptionContent,
+    updateCaption,
 } from "../controllers/courseController.js";
 
 import {
@@ -101,6 +103,8 @@ router.route('/:courseId/captions')
     .get(getCaptionVideoStatus)
     .post(addCaptionVideo)
     .delete(deleteCaptionVideo)
-
+router.route('/:courseId/captions/:lectureId/:language/:itemType')
+    .get(getCaptionContent)
+    .put(updateCaption)
 
 export default router;

@@ -10,9 +10,10 @@ import { ObjectId } from "mongodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import VideoConversion from "../models/videoConvertion.js";
 import TranscriptionBatch from "../models/transcriptionBatch.js";
-import { deleteS3File } from "./uploadController.js";
+import { deleteS3File, s3Client } from "./uploadController.js";
 import slugify from "slugify";
-
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { generateVTT, parseVTT, streamToString } from "../utils/captionContent.js";
 
 const lambda = new LambdaClient({
     region: process.env.AWS_REGION || "ap-southeast-1",
@@ -118,7 +119,7 @@ const createCourse = async (req, res) => {
         const course = await Course.create({
             title,
             category,
-            alias
+            alias,
         });
         res.status(201).json(course);
     } catch (error) {
@@ -379,6 +380,48 @@ const processCourse = async (req, res) => {
             });
         }
 
+        await VideoConversion.deleteMany({ courseId: courseId });
+
+        // 2. Tạo batches
+        const BATCH_SIZE = 10;
+        const batchDocs = [];
+
+        for (let i = 0; i < s3Keys.length; i += BATCH_SIZE) {
+            const batchVideoS3Keys = s3Keys.slice(i, i + BATCH_SIZE);
+            const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+            console.log("s3Keys", batchVideoS3Keys);
+            const batch = new VideoConversion({
+                courseId: courseId,
+                batchNumber: batchNumber,
+                totalVideos: batchVideoS3Keys.length,
+                completedVideos: 0,
+                failedVideos: 0,
+                status: "pending",
+                videoS3Keys: batchVideoS3Keys,
+            });
+
+            await batch.save();
+
+            batchDocs.push(batch);
+
+            console.log(`📦 Created batch ${batchNumber} with ${batchVideoS3Keys.length} videos`);
+        }
+
+        console.log(`✅ Created ${batchDocs.length} batches`);
+
+        // 3. Launch batch đầu tiên
+        await launchNextVideoBatch(courseId);
+
+        course.status = "processing";
+        await course.save();
+
+        return res.json({
+            success: true,
+            state: "processing",
+            message: "Các video trong khóa học đang được xử lý",
+        });
+
         const videoConversion = await VideoConversion.create({
             courseId: courseId,
             s3Keys: s3Keys,
@@ -421,6 +464,126 @@ const processCourse = async (req, res) => {
             success: false,
             message: "Đã có lỗi xảy ra khi phát hành khóa học",
         });
+    }
+};
+
+const launchNextVideoBatch = async (courseId) => {
+    try {
+        const nextBatch = await VideoConversion.findOne({
+            courseId: courseId,
+            status: "pending",
+        }).sort({ batchNumber: 1 });
+
+        if (!nextBatch) {
+            console.log(`✅ No more batches for course ${courseId}`);
+            return null;
+        }
+
+        console.log(`🚀 Launching batch ${nextBatch.batchNumber}`);
+
+        const s3Keys = nextBatch.videoS3Keys;
+
+        const payload = {
+            s3Keys: s3Keys,
+            bucket: process.env.AWS_S3_BUCKET_NAME,
+            outputPrefix: "hls-output",
+            jobId: nextBatch._id.toString(),
+        };
+
+        const command = new InvokeCommand({
+            FunctionName: "video-hls-orchestrator",
+            InvocationType: "RequestResponse",
+            Payload: JSON.stringify(payload),
+        });
+
+        const lambdaResponse = await lambda.send(command);
+
+        const responsePayload = JSON.parse(Buffer.from(lambdaResponse.Payload).toString());
+
+        if (responsePayload.statusCode !== 200) {
+            throw new Error(`Lambda failed: ${responsePayload.body}`);
+        }
+
+        nextBatch.status = "processing";
+        await nextBatch.save();
+
+        console.log(`✅ Batch ${nextBatch.batchNumber} launched (${s3Keys.length} videos)`);
+
+        return nextBatch;
+    } catch (error) {
+        console.error(`❌ Error launching batch:`, error);
+        throw error;
+    }
+};
+
+const handleVideoWebhook = async (req, res) => {
+    const { jobId, s3Key, status, hlsURL, error } = req.body;
+
+    console.log("webhookData: ", req.body);
+    console.log(`Webhook: Job ${jobId}): ${status}`);
+
+    try {
+        const batch = await VideoConversion.findById(jobId);
+
+        if (!batch) {
+            console.error(`Job not found: ${jobId}`);
+            return res.status(404).json({
+                error: "Job not found",
+            });
+        }
+
+        const course = await Course.findById(batch.courseId);
+        if (!course) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy course" });
+        }
+
+        const lecture = await Lecture.findOne({ "content.s3Key": s3Key });
+
+        if (!lecture) {
+            console.error(`Lecture not found: ${s3Key}`);
+            return res.status(404).json({
+                error: "Video not found",
+            });
+        }
+
+        if (status === "success") {
+            await Lecture.findByIdAndUpdate(lecture._id, { "content.hlsURL": hlsURL });
+            console.log(`Video ${lecture._id} converted successfully`);
+            batch.completedVideos += 1;
+        } else if (status === "error") {
+            batch.failedVideos += 1;
+            console.log(error);
+        }
+
+        await batch.save();
+
+        const totalProcessed = batch.completedVideos + batch.failedVideos;
+        const progress = Math.round((totalProcessed / batch.totalVideos) * 100);
+
+        console.log(
+            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`
+        );
+
+        if (totalProcessed === batch.totalVideos) {
+            console.log(`🎉 Batch ${batch.batchNumber} completed!`);
+
+            batch.status = "completed";
+            await batch.save();
+
+            console.log(`Launching next batch...`);
+            const nextBatch = await launchNextVideoBatch(batch.courseId);
+
+            if (!nextBatch) {
+                console.log(`🎊 Course ${batch.courseId} completed!`);
+                course.status = "published";
+                await course.save();
+                return res.json({ success: true });
+            }
+        }
+        return res.json({ success: true });
+    } catch (error) {
+        console.error(`❌ Error handling webhook:`, error);
+        return res.status(500).json({ error: error.message });
     }
 };
 
@@ -698,8 +861,9 @@ const getSearchCourseResults = async (req, res) => {
     try {
         const { q, courseDuration, level, category, language, selectedPrices, sort, page, limit } =
             req.query;
+        console.log(q);
         const normalizedQuery = (q || "").trim().toLowerCase();
-
+        console.log(normalizedQuery);
         let matchStage = [];
         if (q) {
             matchStage = [
@@ -726,7 +890,7 @@ const getSearchCourseResults = async (req, res) => {
         }
 
         let filterStage = {
-            $match: { status: "published" }
+            $match: { status: "published" },
         };
 
         if (selectedPrices) {
@@ -869,7 +1033,7 @@ const searchCourses = async (req, res) => {
         }
 
         const courses = await Course.find({
-            title: { $regex: keyword, $options: "i" }
+            title: { $regex: keyword, $options: "i" },
         })
             .select("_id title")
             .lean();
@@ -959,7 +1123,7 @@ const generateCaption = async (req, res) => {
         console.log(`✅ Created ${batchDocs.length} batches`);
 
         // 3. Launch batch đầu tiên
-        await launchNextBatch(courseId, course.language);
+        await launchNextTranscriptionBatch(courseId, course.language);
 
         return res.json({
             success: true,
@@ -973,7 +1137,7 @@ const generateCaption = async (req, res) => {
     }
 };
 
-const launchNextBatch = async (courseId, language) => {
+const launchNextTranscriptionBatch = async (courseId, language) => {
     try {
         const languageMap = {
             vi: "Tiếng Việt",
@@ -1103,6 +1267,7 @@ const handleCaptionWebhook = async (req, res) => {
             batch.completedVideos += 1;
         } else if (status === "error") {
             batch.failedVideos += 1;
+            console.log(error);
         }
 
         await batch.save();
@@ -1122,10 +1287,10 @@ const handleCaptionWebhook = async (req, res) => {
 
             // 4. Launch next batch
             console.log(`Launching next batch...`);
-            const nextBatch = await launchNextBatch(batch.courseId, language);
+            const nextBatch = await launchNextTranscriptionBatch(batch.courseId, language);
 
             if (!nextBatch) {
-                console.log(`🎊 Course ${batch.courseId} completed!`);
+                console.log(` Course ${batch.courseId} completed!`);
                 return res.json({ success: true });
             }
         }
@@ -1232,6 +1397,7 @@ const getCaptionVideoStatus = async (req, res) => {
                             _id: "$lectureInfo._id",
                             title: "$lectureInfo.title",
                             content: "$lectureInfo.content",
+                            itemType: "lectureVideo",
                         },
                     },
                 },
@@ -1333,6 +1499,199 @@ const deleteCaptionVideo = async (req, res) => {
     }
 };
 
+const getCaptionContent = async (req, res) => {
+    try {
+        const { courseId, lectureId, language, itemType } = req.params;
+
+        let caption = null;
+        if (itemType === "lectureVideo") {
+            const lecture = await Lecture.findById(lectureId).select("content.captions");
+            if (!lecture) {
+                return res.status(404).json({ message: "Lecture not found" });
+            }
+            caption = lecture.content.captions.find((cap) => cap.language === language);
+        } else if (itemType === "promoVideo") {
+            const course = await Course.findById(courseId);
+            if (!course) {
+                return res.status(404).json({ message: "Course not found" });
+            }
+            caption = course.promoVideo.captions.find((cap) => cap.language === language);
+        }
+
+        if (!caption || !caption.s3Key) {
+            return res.status(404).json({ message: "Caption not found" });
+        }
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key: caption.s3Key,
+        });
+
+        const response = await s3Client.send(command);
+        const vttContent = await streamToString(response.Body);
+        const parsedCaptions = parseVTT(vttContent);
+
+        res.json({
+            parsed: parsedCaptions,
+        });
+    } catch (error) {
+        console.error("Error getting caption content:", error);
+        res.status(500).json({
+            error: error.message,
+        });
+    }
+};
+
+const updateCaption = async (req, res) => {
+    try {
+        const { courseId, lectureId, language, itemType } = req.params;
+        const { captions } = req.body;
+
+        if (!Array.isArray(captions) || captions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid captions format",
+            });
+        }
+
+        for (const caption of captions) {
+            if (
+                typeof caption.start !== "number" ||
+                typeof caption.end !== "number" ||
+                !caption.text
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Each caption must have start, end, and text fields",
+                });
+            }
+
+            if (caption.start >= caption.end) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Caption start time must be before end time",
+                });
+            }
+        }
+
+        let lecture = null;
+        let course = null;
+        let captionIndex = null;
+        let oldS3Key = null;
+        let oldCaption = null;
+        if (itemType === "lectureVideo") {
+            lecture = await Lecture.findById(lectureId);
+            if (!lecture) {
+                return res.status(404).json({ message: "Lecture not found" });
+            }
+
+            captionIndex = lecture.content.captions.findIndex((cap) => cap.language === language);
+
+            if (captionIndex === -1) {
+                return res.status(404).json({ message: "Caption not found" });
+            }
+
+            oldCaption = lecture.content.captions[captionIndex];
+            console.log(oldCaption)
+            oldS3Key = oldCaption.s3Key;
+        } else if (itemType === "promoVideo") {
+            course = await Course.findById(courseId);
+            if (!course) {
+                return res.status(404).json({ message: "Course not found" });
+            }
+
+            captionIndex = course.promoVideo.captions.findIndex((cap) => cap.language === language);
+
+            if (captionIndex === -1) {
+                return res.status(404).json({ message: "Caption not found" });
+            }
+
+            oldCaption = course.promoVideo.captions[captionIndex];
+            oldS3Key = oldCaption.s3Key;
+        }
+
+        const newVttContent = generateVTT(captions);
+
+        const timestamp = Date.now();
+        let newS3Key = "";
+        if (itemType === "lectureVideo") {
+            newS3Key = `${courseId}/lecture-video/captions/${language}/${lectureId}_${timestamp}.vtt`;
+        } else {
+            newS3Key = `${courseId}/course-promo-video/captions/${language}/${courseId}_${timestamp}.vtt`;
+        }
+
+        try {
+            const putCommand = new PutObjectCommand({
+                Bucket: process.env.AWS_S3_BUCKET_NAME,
+                Key: newS3Key,
+                Body: newVttContent,
+                ContentType: "text/vtt",
+            });
+
+            await s3Client.send(putCommand);
+
+            const newPublicURL = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${newS3Key}`;
+
+            if (itemType === "lectureVideo") {
+                console.log(1636, oldCaption.toObject())
+                lecture.content.captions[captionIndex] = {
+                    ...oldCaption.toObject(),
+                    s3Key: newS3Key,
+                    publicURL: newPublicURL,
+                    status: "edited",
+                };
+                await lecture.save();
+            } else {
+                course.promoVideo.captions[captionIndex] = {
+                    ...oldCaption.toObject(),
+                    s3Key: newS3Key,
+                    publicURL: newPublicURL,
+                    status: "edited",
+                };
+
+                await course.save();
+            }
+
+            if (oldS3Key) {
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: process.env.AWS_S3_BUCKET_NAME,
+                    Key: oldS3Key,
+                });
+
+                await s3Client.send(deleteCommand);
+                console.log(`Deleted old caption file: ${oldS3Key}`);
+            }
+
+            return res.json({ success: true });
+        } catch (error) {
+            console.error("Error updating caption:", error);
+
+            // Nếu có lỗi, cố gắng xóa file mới đã upload (cleanup)
+            try {
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: process.env.AWS_S3_BUCKET_NAME,
+                    Key: newS3Key,
+                });
+                await s3Client.send(deleteCommand);
+            } catch (cleanupError) {
+                console.error("Error cleaning up new file:", cleanupError);
+            }
+
+            res.status(500).json({
+                success: false,
+                message: "Failed to update caption",
+                error: error.message,
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to update caption",
+            error: error.message,
+        });
+    }
+};
+
 export {
     getCourseById,
     getCourses,
@@ -1352,4 +1711,7 @@ export {
     getInstructorCourses,
     searchCourses,
     deleteCaptionVideo,
+    handleVideoWebhook,
+    getCaptionContent,
+    updateCaption
 };

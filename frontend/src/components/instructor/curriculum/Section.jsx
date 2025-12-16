@@ -20,10 +20,33 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, MouseSensor } from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { toast } from "react-toastify";
 import SortableItem from "./SortableItem";
+
+class CustomPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown',
+      handler: ({ nativeEvent: event }) => {
+        // Bỏ qua nếu click vào input, textarea, button, select
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement ||
+          event.target instanceof HTMLButtonElement ||
+          event.target.closest('input, textarea, select, button')
+        ) {
+          return false;
+        }
+        
+        return true;
+      },
+    },
+  ];
+}
 
 const Section = ({ section, courseId, dragHandleProps, style }) => {
     const [sectionForm, setSectionForm] = useState({
@@ -55,7 +78,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
     }, [curriculumItems]);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(CustomPointerSensor, {
             activationConstraint: {
                 distance: 8,
             },
@@ -245,6 +268,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis]}
                     >
                         <SortableContext
                             items={items.map((item) => item.itemContent._id.toString())}

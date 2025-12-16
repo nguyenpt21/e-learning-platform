@@ -124,7 +124,11 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
         };
 
         if (videoUrl.endsWith('.m3u8') && Hls.isSupported()) {
-            const hls = new Hls();
+            const hls = new Hls({
+                maxBufferLength: 12,       // Buffer ngắn = chuyển đổi nhanh hơn
+                maxMaxBufferLength: 15,
+                abrEwmaFastLive: 2.0,
+            });
             hlsRef.current = hls;
             hls.loadSource(videoUrl);
             hls.attachMedia(video);

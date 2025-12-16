@@ -100,13 +100,9 @@ export default function Header({ q }) {
           <Button
             variant="default"
             className="h-full text-sm relative"
-            onMouseEnter={() => setOpenDropDown(true)}
-            onMouseLeave={() => setOpenDropDown(false)}
+            onClick={handleSearch}
           >
-            <a href="#">Khám Phá</a>
-            {openDropDown && (
-              <div className="absolute top-full left-0 mt-4 border border-gray-300 w-60 h-60 bg-white rounded-lg shadow-lg p-2 z-10"></div>
-            )}
+           Khám Phá
           </Button>
           {/* Search */}
           <div className="flex-1 mx-2">
@@ -174,8 +170,12 @@ export default function Header({ q }) {
                 <Button className="text-gray-700">Học tập</Button>
 
                 {openMycourseDropdown && (
-                  <div className="absolute right-0 border border-gray-100 bg-white shadow-lg rounded-lg px-2">
-                    <MyCourseDropdown />
+                  <div className="absolute right-0">
+                    <div className=" border border-gray-100 mt-2 bg-white shadow-lg rounded-lg px-2">
+                      <div>
+                        <MyCourseDropdown/>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
