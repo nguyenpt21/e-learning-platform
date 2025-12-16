@@ -109,7 +109,7 @@ const Overview = () => {
                     <CardContent>
                         <div className="h-96 w-full">
                             <ResponsiveContainer width="100%" height={384}>
-                                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 15 }}>
+                                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 65, bottom: 15 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#BDE4F9" />
                                     <XAxis
                                         dataKey="month"
@@ -126,7 +126,7 @@ const Overview = () => {
                                             position: "insideTopCenter",
                                             value: "Doanh thu (VNĐ)",
                                             angle: -90,
-                                            dx: -45,
+                                            dx: -75,
                                         }}
                                     />
                                     <Tooltip
