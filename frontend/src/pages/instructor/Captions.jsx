@@ -123,7 +123,6 @@ const Captions = () => {
             activeTab === "all" ? section.items : section.items.filter((i) => !i.content?.captions),
     }));
 
-    console.log(filtered);
 
     const handleAutoGeneretaCaption = async () => {
         try {

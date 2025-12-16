@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 const getCaptionStatus = (status) => {
     switch (status) {
         case "draft":
@@ -16,12 +16,10 @@ const getCaptionStatus = (status) => {
 const InstructorCourseCard = ({ course }) => {
     const [isHovered, setIsHovered] = useState(false);
 
-    const handleManageClick = () => {
-        // Điều hướng đến trang quản lý khóa học
-        window.location.href = `/manage-course/${id}`;
+    const navigate = useNavigate();
 
-        // Hoặc sử dụng router nếu dùng React Router
-        // history.push(`/manage-course/${id}`);
+    const handleManageClick = () => {
+        navigate(`/instructor/courses/${course._id}/manage`);
     };
 
     return (
@@ -50,19 +48,17 @@ const InstructorCourseCard = ({ course }) => {
 
                 <div className="flex items-center justify-between mt-auto text-primary">
                     <div className="font-semibold ">{getCaptionStatus(course.status)}</div>
-                    
                 </div>
             </div>
 
             {/* Overlay khi hover */}
             <div
+                onClick={handleManageClick}
                 className={`absolute inset-0 bg-white/60 flex items-center justify-center transition-all duration-500 ${
                     isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-full"
                 }`}
             >
-                <span onClick={handleManageClick} className=" text-primary font-bold text-lg">
-                    Quản lý / Chỉnh sửa
-                </span>
+                <span className=" text-primary font-bold text-lg">Quản lý / Chỉnh sửa</span>
             </div>
         </div>
     );

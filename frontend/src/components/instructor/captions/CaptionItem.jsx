@@ -18,13 +18,16 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
+import CaptionEditModal from "./CaptionEditModal";
 
 const CaptionItem = ({ item, courseId, language }) => {
+    console.log(item)
     const [progress, setProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const controllerRef = useRef(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
     const [generateUploadURL] = useGenerateUploadUrlMutation();
     const handleUploadFile = async (e, item) => {
@@ -121,10 +124,9 @@ const CaptionItem = ({ item, courseId, language }) => {
     const [addCaption] = useAddCaptionMutation();
     const [deleteCaption, { isLoading: isDeletingCaption }] = useDeleteCaptionMutation();
 
-    const caption = item.content.captions.find((cap) => cap.language === language);
-
     const handleConfirmDelete = async (item) => {
         try {
+            const caption = item.content.captions.find((cap) => cap.language === language);
             const data = {
                 courseId,
                 videoType: item.itemType,
@@ -177,25 +179,26 @@ const CaptionItem = ({ item, courseId, language }) => {
                     </div>
                 </div>
             )}
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between gap-3 border-b pb-3">
                 <div className="flex items-center gap-3 w-[50%]">
-                    {item.content?.captions ? (
+                    {item.captionStatus !== "Chưa có phụ đề" ? (
                         <span className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                             <Check size={12} className="text-white" />
                         </span>
                     ) : (
                         <span className="w-4 h-4 border border-gray-400 rounded-full"></span>
                     )}
-                    <span className="">{item.title}</span>
+                    <span className="line-clamp-1">{item.title}</span>
                 </div>
 
                 <div className="flex items-center justify-between flex-1 gap-4 text text-gray-600">
                     {item.captionStatus}
                     {item.captionStatus !== "Chưa có phụ đề" ? (
                         <div className="flex gap-[2px]">
-                            <button className="px-3 py-1 min-w-[84px] cursor-pointer border border-primary text-primary rounded hover:bg-primary/10 transition">
+                            <button onClick={() => setIsEditModalOpen(true)} className="px-3 py-1 min-w-[84px] cursor-pointer border border-primary text-primary rounded hover:bg-primary/10 transition">
                                 Sửa
                             </button>
+                            <CaptionEditModal courseId={courseId} language={language} caption={item} isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen} ></CaptionEditModal>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button className="px-[1px] py-2 cursor-pointer text-primary/70 h-full hover:bg-primary/20 rounded">

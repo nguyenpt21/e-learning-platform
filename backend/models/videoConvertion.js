@@ -6,13 +6,35 @@ const VideoConversionSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Course",
             required: true,
+            index: true,
         },
-        s3Keys: [String],
-        totalVideos: Number,
-        processedVideos: Number,
+        batchNumber: {
+            type: Number,
+            required: true,
+        },
+        totalVideos: {
+            type: Number,
+            required: true,
+        },
+        completedVideos: {
+            type: Number,
+            default: 0,
+        },
+        failedVideos: {
+            type: Number,
+            default: 0,
+        },
+        status: {
+            type: String,
+            enum: ["pending", "processing", "completed", "failed"],
+            default: "pending",
+            index: true,
+        },
+        videoS3Keys: [String],
+        startedAt: Date,
     },
     { timestamps: true }
 );
 
 const VideoConversion = mongoose.model("VideoConversion", VideoConversionSchema);
-export default VideoConversion
+export default VideoConversion;
