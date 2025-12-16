@@ -6,6 +6,8 @@ import Course from "../models/course.js"
 import Submission from "../models/submission.js";
 import mongoose from "mongoose";
 import Section from "../models/section.js";
+import Order from "../models/order.js";
+import Review from "../models/review.js";
 
 
 const getSectionStats = async (sectionId) => {
@@ -517,6 +519,171 @@ export const getLearningItemsCountStats = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Tổng quan doanh thu & đăng ký (overview)
+export const getRevenueOverview = async (req, res) => {
+    try {
+        const { range = "alltime" } = req.query;
+        const now = new Date();
+
+        let startDate = null;
+        let totalMonths = null;
+
+        if (range === "6months") totalMonths = 6;
+        else if (range === "12months") totalMonths = 12;
+
+        if (totalMonths) {
+            // tính từ đầu tháng cách đây (totalMonths - 1) tháng
+            startDate = new Date(now.getFullYear(), now.getMonth() - (totalMonths - 1), 1);
+        }
+
+        // Match cho toàn bộ đơn hàng trong khoảng range (hoặc mọi thời điểm)
+        const rangeMatchStage = {};
+        if (startDate) {
+            rangeMatchStage.createdAt = { $gte: startDate };
+        }
+
+        // Tổng doanh thu & lượt đăng ký trong range (ép kiểu totalPrice thành số, chống thiếu createdAt)
+        const totalAgg = await Order.aggregate([
+            { $match: rangeMatchStage },
+            {
+                $addFields: {
+                    createdAtSafe: { $ifNull: ["$createdAt", "$$NOW"] },
+                    priceNum: { $toDouble: "$totalPrice" },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$priceNum" },
+                    totalEnrollments: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const totalRevenue = totalAgg[0]?.totalRevenue || 0;
+        const totalEnrollments = totalAgg[0]?.totalEnrollments || 0;
+
+        // Rating giảng viên trong range
+        const ratingMatchStage = {};
+        if (startDate) {
+            ratingMatchStage.createdAt = { $gte: startDate };
+        }
+
+        const ratingAgg = await Review.aggregate([
+            {
+                $match: ratingMatchStage,
+            },
+            {
+                $group: {
+                    _id: null,
+                    avgRating: { $avg: "$rating" },
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const ratingInfo = ratingAgg[0] || { avgRating: 0, count: 0 };
+
+        // Dữ liệu biểu đồ theo tháng
+        const matchStage = {};
+        if (startDate) {
+            matchStage.createdAt = { $gte: startDate };
+        }
+
+        const rawMonthly = await Order.aggregate([
+            { $match: matchStage },
+            {
+                $addFields: {
+                    createdAtSafe: { $ifNull: ["$createdAt", "$$NOW"] },
+                    priceNum: { $toDouble: "$totalPrice" },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAtSafe" },
+                        month: { $month: "$createdAtSafe" },
+                    },
+                    revenue: { $sum: "$priceNum" },
+                },
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
+        ]);
+
+        if (rawMonthly.length === 0) {
+            return res.status(200).json({
+                summary: {
+                    totalRevenue,
+                    totalEnrollments,
+                    instructorRating: Number(ratingInfo.avgRating?.toFixed?.(2) || 0),
+                    ratingCount: ratingInfo.count || 0,
+                },
+                chart: [],
+            });
+        }
+
+        const monthMap = {};
+        rawMonthly.forEach((row) => {
+            const mm = row._id.month.toString().padStart(2, "0");
+            const yy = row._id.year.toString().slice(2);
+            const key = `${mm}/${yy}`;
+            monthMap[key] = row.revenue;
+        });
+
+        let result = [];
+
+        if (range === "alltime") {
+            const first = rawMonthly[0]._id;
+            const cursor = new Date(first.year, first.month - 1, 1);
+            const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            while (cursor <= end) {
+                const mm = (cursor.getMonth() + 1).toString().padStart(2, "0");
+                const yy = cursor.getFullYear().toString().slice(2);
+                const key = `${mm}/${yy}`;
+
+                result.push({
+                    month: key,
+                    revenue: monthMap[key] || 0,
+                    current:
+                        mm === (now.getMonth() + 1).toString().padStart(2, "0") &&
+                        yy === now.getFullYear().toString().slice(2),
+                });
+
+                cursor.setMonth(cursor.getMonth() + 1);
+            }
+        } else if (totalMonths) {
+            for (let i = totalMonths - 1; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+                const yy = d.getFullYear().toString().slice(2);
+                const key = `${mm}/${yy}`;
+
+                result.push({
+                    month: key,
+                    revenue: monthMap[key] || 0,
+                    current:
+                        mm === (now.getMonth() + 1).toString().padStart(2, "0") &&
+                        yy === now.getFullYear().toString().slice(2),
+                });
+            }
+        }
+
+        return res.status(200).json({
+            summary: {
+                totalRevenue,
+                totalEnrollments,
+                instructorRating: Number(ratingInfo.avgRating?.toFixed?.(2) || 0),
+                ratingCount: ratingInfo.count || 0,
+            },
+            chart: result,
+        });
+    } catch (error) {
+        console.error("Error getting revenue overview:", error);
         return res.status(500).json({ message: "Server error" });
     }
 };

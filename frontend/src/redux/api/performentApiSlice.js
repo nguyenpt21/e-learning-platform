@@ -27,7 +27,14 @@ export const performentApiSlice = apiSlice.injectEndpoints({
             query: (courseId) => ({
                 url: `${PERFORMANCE_URL}/course/${courseId}`
             })
-        })
+        }),
+        getRevenueOverview: builder.query({
+            query: ({ range = "alltime" } = {}) => {
+                const params = new URLSearchParams();
+                if (range) params.append("range", range);
+                return `${PERFORMANCE_URL}/revenue-overview?${params.toString()}`;
+            }
+        }),
     }),
 });
 
@@ -35,4 +42,5 @@ export const {
     useGetLearningMinutesStatsQuery,
     useGetLearningItemsCountStatsQuery,
     useGetCourseStatsQuery,
+    useGetRevenueOverviewQuery,
 } = performentApiSlice

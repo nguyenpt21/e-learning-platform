@@ -12,6 +12,7 @@ import CourseAnnouncement from "@/pages/instructor/CourseAnnouncement";
 import CourseQA from "@/pages/instructor/CourseQA";
 import Review from "@/pages/instructor/Review";
 import CourseStudents from "@/pages/instructor/CourseStudents";
+import Overview from "@/pages/instructor/Overview";
 
 const InstructorRoutes = () => {
     return (
@@ -19,6 +20,7 @@ const InstructorRoutes = () => {
             <Route element={<InstructorLayout />}>
                 <Route index element={<Navigate to="/instructor/courses" replace />} />
                 <Route path="courses" element={<CoursesManage />} />
+                <Route path="overview" element={<Overview />} />
                 <Route path="communication/announcements" element={<CourseAnnouncement />} />
                 <Route path="communication/qa" element={<CourseQA />} />
                 <Route path="performance/engagement" element={<CourseEngagement/>} />
