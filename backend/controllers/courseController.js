@@ -919,7 +919,8 @@ const getSearchCourseResults = async (req, res) => {
                 filterStage.$match.$or = priceFilters;
             }
         }
-        if (category) filterStage.$match.category = { $in: category.split(",") };
+        console.log("decoded:", decodeURIComponent(category).trim())
+        if (category) filterStage.$match.category = { $in: decodeURIComponent(category).trim().split(",") };
         if (language) filterStage.$match.language = { $in: language.split(",") };
         if (level) filterStage.$match.level = { $in: level.split(",") };
 

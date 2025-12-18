@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Slider from "react-slick";
 import Button from "./Button";
 import CourseCard from "./CourseCard";
+import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
 
 function NextArrow(props) {
   const { className, style, onClick } = props;
@@ -31,14 +32,16 @@ function PrevArrow(props) {
 }
 
 export default function CoursesList() {
-  const [activeTab, setActiveTab] = useState("Khoa Học Dữ Liệu");
+  const [activeTab, setActiveTab] = useState("Lập trình");
   const tabs = [
-    "Khoa Học Dữ Liệu",
-    "Chứng Chỉ CNTT",
-    "Khả Năng Lãnh Đạo",
-    "Phát Triển Web",
-    "Giao Tiếp",
-    "Phân Tích Nghiệp Vụ & Nghiệp Vụ Thông Minh",
+    "Lập trình",
+    "Kinh doanh",
+    "Thiết kế",
+    "Tiếp thị",
+    "CNTT & Phần mềm",
+    "Phát triển cá nhân",
+    "Nhiếp ảnh",
+    "Âm nhạc",
   ];
 
   const [popUp, setPopUp] = useState(-1);
@@ -66,199 +69,26 @@ export default function CoursesList() {
     setCardLeave(true); // Set to true when leaving the card
   };
 
-  const courses = [
-    {
-      id: 1,
-      category: "Khoa Học Dữ Liệu",
-      title: "The Complete AI Guide: Learn ChatGPT, Generative AI & More",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 2,
-      category: "Khoa Học Dữ Liệu",
-      title: "ChatGPT: Complete ChatGPT Course For Work 2025 (Ethically)!",
-      author: "Steve Ballinger, MBA",
-      rating: 4.5,
-      reviews: 120536,
-      price: "₫1,349,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5061666_b32b_6.jpg",
-    },
-    {
-      id: 3,
-      category: "Khoa Học Dữ Liệu",
-      title: "ChatGPT, DeepSeek, Grok and 30+ More AI Marketing Assistants",
-      author:
-        "Anton Voroniuk, Anton Voroniuk Support, Eugene Voroniuk, Eugene Vyborov, ",
-      rating: 4.4,
-      reviews: 978,
-      price: "₫399,000",
-      badge: null,
-      img: "https://img-c.udemycdn.com/course/480x270/5231088_b1e8_2.jpg",
-    },
-    {
-      id: 4,
-      category: "Khoa Học Dữ Liệu",
-      title: "ChatGPT & Generative AI - The Complete Guide",
-      author:
-        "Academind by Maximilian Schwarzmüller, Maximilian Schwarzmüller, Manuel Lorenz",
-      rating: 4.6,
-      reviews: 26716,
-      price: "₫1,679,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5291332_4a58_7.jpg",
-    },
-    {
-      id: 5,
-      category: "Khoa Học Dữ Liệu",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 6,
-      category: "Khoa Học Dữ Liệu",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 7,
-      category: "Khoa Học Dữ Liệu",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 8,
-      category: "Khoa Học Dữ Liệu",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 9,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 10,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 11,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 12,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 13,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 14,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 15,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-    {
-      id: 16,
-      category: "Chứng Chỉ CNTT",
-      title:
-        "Hướng dẫn AI đầy đủ: Tìm hiểu ChatGPT, AI tạo sinh và nhiều hơn nữa",
-      author: "Julian Melanson, Benza Maman, Leap Year Learning",
-      rating: 4.5,
-      reviews: 53435,
-      price: "₫1,779,000",
-      badge: "Bán chạy",
-      img: "https://img-c.udemycdn.com/course/480x270/5170404_d282_9.jpg",
-    },
-  ];
-  const filteredCourses = courses.filter((c) => c.category === activeTab);
+  const { data: result } = useGetCourseSearchResultsQuery({
+    q: "",
+    courseDuration: "",
+    level: "",
+    category: activeTab,
+    language: "",
+    selectedPrices: "",
+    sort: "default",
+    page: 0,
+    limit: 8,
+  });
+  const courses = result?.results || [];
+  const handleAllCourseByCategory = () =>{
+    window.location.href = `/courses?q=&category=${encodeURIComponent(activeTab)}`;
+  }
+
+  const filteredCourses =
+    Array.isArray(courses) && courses.length > 0
+      ? courses.filter((c) => c?.category === activeTab)
+      : [];
   const sliderRef = useRef(null);
   const settings = {
     dots: false,
@@ -301,23 +131,30 @@ export default function CoursesList() {
       </div>
 
       {/* Course Carousel*/}
-      <div className="py-12 px-20 bg-gray-100 ">
-        <Slider
-          className={"overflow-visible bg-none"}
-          ref={sliderRef}
-          {...settings}
-        >
-          {filteredCourses.map((course, index) => (
-            <Button
-              onMouseEnter={(e) => enterPopUp(e, index)}
-              onMouseLeave={leavePopUp}
-              key={course.id}
-              className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
-            >
-              <CourseCard course={course} isInSlider={true} />
-            </Button>
-          ))}
-        </Slider>
+      <div className="py-5 px-20 bg-gray-100 ">
+        {filteredCourses.length > 0 ? (
+          <Slider
+            className={"overflow-visible bg-none"}
+            ref={sliderRef}
+            {...settings}
+          >
+            {filteredCourses.map((course, index) => (
+              <Button
+                onMouseEnter={(e) => enterPopUp(e, index)}
+                onMouseLeave={leavePopUp}
+                key={course.id}
+                className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
+              >
+                <CourseCard course={course} isInSlider={true} />
+              </Button>
+            ))}
+          </Slider>
+        ) : (
+          <div className="w-full items-center justify-center flex flex-col gap-2 h-[300px]">
+            <img src="/empty-course.png" alt="No courses" className="w-20 h-20 opacity-50" />
+            <p className="text-[1.1rem] text-gray-500">Không có khóa học nào.</p>
+          </div>
+        )}
 
         {popUp !== -1 && (
           <div
@@ -373,9 +210,9 @@ export default function CoursesList() {
                 {coursePopUp.title}
               </p>
               <div className="flex space-x-2 w-full items-center h-8 ">
-                {coursePopUp.badge && (
+                {coursePopUp.level && (
                   <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded max-w-1/2">
-                    {coursePopUp.badge}
+                    {coursePopUp.level}
                   </span>
                 )}
                 <p className="text-xs py-1 italic max-w-1/2">
@@ -388,20 +225,11 @@ export default function CoursesList() {
               </div>
 
               <div className="text-xs/5 text-gray-800 py-2 space-y-2">
-                <p>
-                  Master Data Science and AI: Learn Python, EDA, Stats, SQL,
-                  Machine Learning, NLP, Deep Learning and Gen AI
-                </p>
+                <p>{coursePopUp?.subtitle}</p>
                 <ul className="list-disc  px-6 ">
-                  <li>
-                    Xây dựng nền tảng vững chắc về lập trình Python để triển
-                    khai hiệu quả các khái niệm và ứng dụng AI.
-                  </li>
-                  <li>Tìm hiểu cách thức hoạt động của Học máy và Học sâu</li>
-                  <li>
-                    Tìm hiểu cách các mô hình biến đổi cách mạng hóa các tác vụ
-                    NLP và cách tận dụng chúng cho nhiều ứng dụng khác nhau.
-                  </li>
+                  {coursePopUp?.learningOutcomes?.map((outcome, idx) => {return(
+                    <li key={idx}>{outcome}</li>
+                  )})}
                 </ul>
               </div>
 
@@ -412,7 +240,7 @@ export default function CoursesList() {
           </div>
         )}
 
-        <Button variant="outline" className="mt-5 mx-2">
+        <Button variant="outline" className="mt-5 mx-2" onClick={handleAllCourseByCategory}>
           Hiển thị toàn bộ khóa học {activeTab}
         </Button>
       </div>

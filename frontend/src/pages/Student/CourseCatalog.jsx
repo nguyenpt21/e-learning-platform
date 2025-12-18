@@ -71,9 +71,10 @@ export function CoursesCatalog() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const q = searchParams.get("q")
+  let categoryParam = searchParams.get("category") ? [decodeURIComponent(searchParams.get("category"))] : null
 
   const [sortBy, setSortBy] = useState("default");
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState(categoryParam?categoryParam:[]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedDurations, setSelectedDurations] = useState([]);
@@ -110,6 +111,9 @@ export function CoursesCatalog() {
           : 1;
 
   const toggleCategory = (category) => {
+    searchParams.delete("category");
+    categoryParam = null
+    navigate("/courses?q=")
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
