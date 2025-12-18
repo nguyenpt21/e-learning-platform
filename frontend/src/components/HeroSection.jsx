@@ -1,6 +1,6 @@
 // Hero.jsx
 import { Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import Button from "./Button";
@@ -8,11 +8,18 @@ import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 
 export default function HeroSection() {
-    const user = useSelector((state) => state.auth.user);
+    const user = useSelector((state) => state.auth.userInfo);
+    const navigate = useNavigate()
     const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
     const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
     
-    const handleExploreCourses = () => {}
+    const handleExploreCourses = () => {
+      navigate('/courses?q=');
+    }
+
+    const handleMyCourses = () => {
+      navigate('/student/my-courses');
+    }
     
     const handleOpenSignIn = () => {
       setIsSignInModalOpen(true);
@@ -52,11 +59,11 @@ export default function HeroSection() {
                 Chào mừng trở lại, {user.firstName || user.email}!
               </p>
               <h1 className="text-3xl lg:text-4xl font-bold leading-tight">
-                Tiếp tục hành trình học tập của bạn{" "}
-                <span className="text-[#098be4] font-extrabold">hôm nay</span>
+                Hãy tiếp tục hành trình học tập của bạn{" "}
+                <span className="text-[#098be4] font-extrabold">ngay hôm nay</span>
               </h1>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="reverse" onClick={handleExploreCourses}>
+                <Button variant="reverse" onClick={handleMyCourses}>
                   Tiếp tục học tập
                 </Button>
                 <Button variant="default" onClick={handleExploreCourses}>

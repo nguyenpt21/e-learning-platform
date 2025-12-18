@@ -2,20 +2,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Search } from "lucide-react";
 import Button from "./Button.jsx";
 import { useState, useEffect, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/features/authSlice";
+import { useSelector } from "react-redux";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import { useGetCourseSearchSuggestionQuery } from "@/redux/api/coursePublicApiSlice.js";
 import { skipToken } from '@reduxjs/toolkit/query';
 import { LuDot } from "react-icons/lu";
-import { useLogoutMutation } from "@/redux/api/authSlice.js";
 import MyCourseDropdown from "@/components/student/home-page/MyCourseDropdown.jsx";
+import UserDropDown from "./UserDropDown.jsx";
 
 export default function Header({ q }) {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.userInfo);
-  const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState(q || "");
   const [openDropDown, setOpenDropDown] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -25,18 +23,6 @@ export default function Header({ q }) {
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
-  const [logoutApi] = useLogoutMutation();
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi().unwrap();
-      dispatch(logout());
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      alert("Logout thất bại, thử lại");
-    }
-  };
 
   const handleSearch = () => {
     const param = new URLSearchParams()
@@ -183,17 +169,7 @@ export default function Header({ q }) {
                 <span className="text-gray-700">
                   Xin chào, {user.firstName || user.email}
                 </span>
-                <Button
-                  variant="default"
-                  className="rounded-full w-8 h-8 border border-[#098be4]"
-                  onClick={handleLogout}
-                >
-                  <img
-                    src={"https://placehold.co/16x16"}
-                    alt="User Avatar"
-                    className="w-8 h-8 rounded-full"
-                  />
-                </Button>
+                <UserDropDown />
               </div>
             </div>
           )}
