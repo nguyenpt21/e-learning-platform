@@ -5,6 +5,7 @@ import StudentRoutes from "./routes/StudentRoutes";
 import PublicRoutes from "./routes/PublicRoutes";
 import { useDispatch, useSelector } from "react-redux";
 import ScrollToTop from "./components/ScrollToTop";
+import VideoPlayer from "@/components/student/course-detail/VideoPlayer";
 
 function App() {
     const { userInfo } = useSelector((state) => state.auth);
@@ -18,6 +19,7 @@ function App() {
                     <Route path="/student/*" element={<StudentRoutes />} />
                     <Route path="/instructor/*" element={<InstructorRoutes />} />
                     <Route path="*" element={<PublicRoutes />} />
+                    <Route path="test" element={<VideoPlayer/>}/>
                 </Routes>
             </BrowserRouter>
         </>

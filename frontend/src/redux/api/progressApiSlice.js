@@ -32,6 +32,7 @@ export const progressApiSlice = apiSlice.injectEndpoints({
         }),
         getMyCoursesProgress: builder.query({
             query: () => `${PROGRESS_URL}/my-courses`,
+            keepUnusedDataFor: 0,
         }),
     }),
 });

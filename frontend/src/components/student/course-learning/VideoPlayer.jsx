@@ -22,6 +22,8 @@ const VideoPlayer = forwardRef(({ videoUrl, onPlayStateChange, startTime = 0, ca
     const hasSeekedOnce = useRef(false);
     const [isPlaying, setIsPlaying] = useState(false);
 
+    console.log(videoUrl)
+
     const isYouTube = useMemo(() =>
         videoUrl?.includes("youtube.com") || videoUrl?.includes("youtu.be"),
         [videoUrl]

@@ -2,11 +2,27 @@ import { useGetMyCoursesProgressQuery } from "@/redux/api/progressApiSlice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { setMyCoursesId } from "@/redux/features/authSlice";
 
 const MyCourseDropdown = () => {
-    const navigate = useNavigate()
-    const { data: myCourses, isLoading: isMyCoursesLoading } =
-        useGetMyCoursesProgressQuery();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const {
+        data: myCourses,
+        isLoading: isMyCoursesLoading,
+    } = useGetMyCoursesProgressQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+    });
+
+    useEffect(() => {
+        if (!myCourses) return;
+
+        const courseIds = myCourses.map(c => c.courseId._id);
+        dispatch(setMyCoursesId(courseIds));
+    }, [myCourses, dispatch]);
+
 
     if (isMyCoursesLoading) {
         return (
@@ -26,7 +42,7 @@ const MyCourseDropdown = () => {
     }
 
     return (
-        <div className="w-80">
+        <div className="w-80 z-50">
             <div className="px-2 pt-2 font-semibold text-lg">Khóa học của tôi</div>
             {myCourses && myCourses.length > 0 ? (
                 <div className="py-1">

@@ -5,13 +5,13 @@ import CoursePlayer from '@/components/student/course-learning/CoursePlayer'
 import Header from '@/components/student/course-learning/Header'
 import { QnASheet } from '@/components/student/qna/QnASheet'
 import SectionsAccordion from '@/components/student/course-learning/SectionsAccordion'
-import { useGetCourseByIdQuery } from '@/redux/api/coursePublicApiSlice'
+import { useGetCourseByAliasQuery } from '@/redux/api/coursePublicApiSlice'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
 import { skipToken } from '@reduxjs/toolkit/query'
 
 const CourseLearning = () => {
     const params = useParams()
-    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(params.courseAlias)
+    const { data: course, isLoading: isCourseLoading } = useGetCourseByAliasQuery(params.courseAlias)
     const { data: itemsProgress, isLoading: isProgressLoading } = useGetItemsProgressQuery(course?._id ?? skipToken);
     const latestProgress = useMemo(() => {
         if (!course) return null
@@ -68,7 +68,7 @@ const CourseLearning = () => {
                 lectureId={currentItem?.itemId}
                 sectionId={currentSectionId}
             />
-            <div className="flex-grow lg:grid lg:grid-cols-7">
+            <div className="grow lg:grid lg:grid-cols-7">
                 <div className='fixed bottom-5 left-5 z-50'>
                     <QnASheet courseId={course?._id} lectureId={currentItem?.itemId}/>
                 </div>

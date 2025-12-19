@@ -128,7 +128,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
         };
         try {
             const res = await updateQuizProgress(submissionProcessData).unwrap();
-            console.log("Tiến trình lưu thành công:", res);
+            // console.log("Tiến trình lưu thành công:", res);
         } catch (error) {
             console.error("Lỗi khi lưu tiến trình làm bài quiz:", error);
         }
@@ -151,7 +151,7 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
             try {
                 const res = await updateQuizProgress(submissionData).unwrap();
                 setIsDone(true);
-                console.log("Nộp bài thành công:", res);
+                // console.log("Nộp bài thành công:", res);
             } catch (error) {
                 console.error("Lỗi khi nộp bài quiz:", error);
             }

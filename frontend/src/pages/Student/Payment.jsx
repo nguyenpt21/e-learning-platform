@@ -1,6 +1,6 @@
 import Button from "@/components/Button";
 import { Spinner } from "@/components/ui/spinner";
-import { useGetCourseByIdQuery } from "@/redux/api/coursePublicApiSlice";
+import { useGetCourseByAliasQuery } from "@/redux/api/coursePublicApiSlice";
 import { useCreatePaypalOrderMutation } from "@/redux/api/paymentApiSlice";
 import { ArrowLeft } from "lucide-react";
 import React, { useState } from "react";
@@ -81,7 +81,7 @@ const RightCard = ({ course }) => {
 function Payment() {
   const param = useParams();
   const navigate = useNavigate();
-  const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(
+  const { data: course, isLoading: isCourseLoading } = useGetCourseByAliasQuery(
     param.courseAlias
   );
   const [payPalMessage, setPayPalMessage] = useState("");

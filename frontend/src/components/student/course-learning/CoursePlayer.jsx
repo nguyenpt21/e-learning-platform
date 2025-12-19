@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import parse, { domToReact } from "html-react-parser";
 import { IoBook } from "react-icons/io5";
 import { MdAdd } from "react-icons/md";
-import VideoPlayer from "@/components/student/course-learning/VideoPlayer";
 import Quiz from "@/components/student/course-learning/Quiz";
 import NoteModal from "@/components/student/course-learning/NoteModal";
 import {
@@ -13,6 +12,7 @@ import {
 } from "@/redux/api/progressApiSlice";
 import { useDispatch } from "react-redux";
 import { openAddNoteModal } from "@/redux/features/notesSlice";
+import VideoPlayer from "@/components/student/course-detail/VideoPlayer";
 
 const quillToText = (quillContent) => {
   if (!quillContent) return null;
@@ -155,6 +155,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  //lưu progress
   useEffect(() => {
     if (!item || !videoRef.current) return;
 
@@ -167,7 +168,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       const watchedSeconds =
         currentVideo.getCurrentTime?.() || itemProgress?.watchedSeconds || 0;
       if (watchedSeconds < (itemProgress?.watchedSeconds || 0)) return;
-      const totalSeconds =
+      const totalSeconds = item?.content.duration ||
         currentVideo.getDuration?.() || itemProgress?.totalSeconds || 0;
       const progressPercent = totalSeconds
         ? Math.round((watchedSeconds / totalSeconds) * 100)
@@ -182,7 +183,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
           totalSeconds,
           progressPercent,
         }).unwrap();
-        console.log("Progress video saved:", res);
+        // console.log("Progress video saved:", res);
       } catch (err) {
         console.error("Update video failed:", err);
       }
@@ -265,8 +266,9 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
                     ref={videoRef}
                     videoUrl={item.content.hlsURL || item.content.publicURL}
                     onPlayStateChange={setIsPlaying}
-                    startTime={itemProgress?.watchedSeconds}
+                    startTime={itemProgress?.isCompleted? 0 : itemProgress?.watchedSeconds}
                     captions={item.content.captions || []}
+                    videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
                   />
                 ) : (
                   <Skeleton className="w-full h-full" />

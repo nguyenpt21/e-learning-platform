@@ -41,7 +41,7 @@ function getFileTypeFromName(filename) {
 }
 
 const Resources = ({ resources }) => {
-    console.log(resources)
+    // console.log(resources)
 
     const handleDownload = async (s3Key, fileName) => {
         try {
@@ -68,8 +68,8 @@ const Resources = ({ resources }) => {
         <div>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <p className='py-1 px-2 border border-blue-600 hover:bg-blue-100 rounded-sm text-sm flex items-center gap-1 text-blue-600'>
-                        <FaRegFolderOpen className='text-base text-blue-600' /> Tài nguyên <IoIosArrowDown className='text-blue-600' />
+                    <p className='py-0.5 px-2 border border-blue-600 hover:bg-blue-100 rounded-sm text-sm flex items-center gap-1 text-blue-600'>
+                        <FaRegFolderOpen className='text-sm text-blue-600' /> Tài nguyên <IoIosArrowDown className='text-blue-600' />
                     </p>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="" side="bottom" align="start">

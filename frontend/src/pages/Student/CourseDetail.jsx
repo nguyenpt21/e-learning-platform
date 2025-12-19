@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Header from "../../components/Header";
-import { useGetCourseByIdQuery } from '../../redux/api/coursePublicApiSlice';
+import { useGetCourseByAliasQuery } from '../../redux/api/coursePublicApiSlice';
 import { Spinner } from "@/components/ui/spinner"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Link } from "react-router-dom";
@@ -21,7 +21,7 @@ import { useSelector } from "react-redux";
 
 const CourseDetail = () => {
     const { courseAlias } = useParams();
-    const { data: course, isLoading: isCourseLoading } = useGetCourseByIdQuery(courseAlias);
+    const { data: course, isLoading: isCourseLoading } = useGetCourseByAliasQuery(courseAlias);
     const [courseWithDurations, setCourseWithDurations] = useState(null);
     const [showStickyHeader, setShowStickyHeader] = useState(false);
     const [showSticky, setShowSticky] = useState(false);
@@ -72,7 +72,7 @@ const CourseDetail = () => {
                 className={`fixed left-0 w-full transition-all duration-500
                     ${showStickyHeader ? "opacity-100 pointer-events-auto"
                         : "opacity-0 pointer-events-none"} 
-                    bg-[#002040]/95 backdrop-blur-sm border-b border-gray-700 z-50`}
+                    bg-[#002040]/95 backdrop-blur-sm border-b border-gray-700 z-40`}
             >
                 <div className="mx-auto py-2 px-8 text-white">
                     <p className="text-[16px] font-semibold truncate max-w-[60%] mb-2">{course?.title}</p>
@@ -112,7 +112,7 @@ const CourseDetail = () => {
                                     ${reachedFooter
                                         ? "absolute bottom-96"
                                         : showSticky
-                                            ? "fixed top-[12%] z-50"
+                                            ? "fixed top-[12%] z-40"
                                             : "absolute top-30 "
                                     } right-[clamp(0.5rem,4vw,7rem)]`}
                             >
@@ -146,7 +146,7 @@ const CourseDetail = () => {
                         <div>
                             <p className="text-2xl font-semibold mb-5">Thể loại</p>
                             <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-blue-50 inline-block px-3 py-2 rounded-md">
-                                <span>{course.category}</span>
+                                <span>{course?.category}</span>
                             </div>
                         </div>
 
@@ -200,92 +200,110 @@ const CourseDetail = () => {
 
 const RightCard = ({ course, courseWithDurations, formatDuration }) => {
     const navigate = useNavigate()
-    const { userInfo } = useSelector((state) => state.auth)
+    const { userInfo, myCoursesId } = useSelector((state) => state.auth)
+    const isPurchased = myCoursesId?.includes(course?._id);
+    console.log(myCoursesId)
     return (
-      <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
-        <div className="w-full h-48 overflow-hidden">
-          {course?.promoVideo?.publicURL ? (
-            <PromoVideoPlayer
-              videoUrl={course?.promoVideo?.publicURL}
-              captions={course?.promoVideo.captions || []}
-              poster={course?.promoVideo?.thumbnailURL}
-            />
-          ) : course?.thumbnail?.publicURL ? (
-            <img
-              src={course?.thumbnail.publicURL || "/logo.png"}
-              alt={course?.title}
-              className="w-full h-full object-cover border border-gray-200"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-100">
-              No Image
+        <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
+            <div className="w-full h-48 overflow-hidden">
+                {(course?.promoVideo?.hlsURL || course?.promoVideo?.publicURL) ? (
+                    <PromoVideoPlayer
+                        videoUrl={course?.promoVideo?.hlsURL || course?.promoVideo?.publicURL}
+                        captions={course?.promoVideo.captions || []}
+                        poster={course?.promoVideo?.thumbnailURL}
+                    />
+                ) : course?.thumbnail?.publicURL ? (
+                    <img
+                        src={course?.thumbnail.publicURL || "/logo.png"}
+                        alt={course?.title}
+                        className="w-full h-full object-cover border border-gray-200"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-100">
+                        No Image
+                    </div>
+                )}
             </div>
-          )}
+            <div className="p-6 space-y-4">
+                <p className="text-2xl font-semibold text-gray-900">
+                    {course?.price ? `${course.price.toLocaleString()} ₫` : "Miễn phí"}
+                </p>
+                {/* <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
+                    Thêm vào giỏ hàng
+                </button> */}
+                {userInfo ? (
+                    <button
+                        disabled={isPurchased}
+                        className={`w-full font-semibold py-3 rounded-sm transition duration-200 cursor-pointer
+                                ${isPurchased
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-[#098ce9] text-white hover:bg-[#0a7ad1]"
+                            }`}
+                        onClick={() =>
+                            !isPurchased &&
+                            course?.price &&
+                            navigate(`/course/${course.alias}/payment`)
+                        }
+                    >
+                        {isPurchased ? "Đã mua" : "Mua ngay"}
+                    </button>
+                ) : (
+                    <LogInRequire course={course} />
+                )}
+                <div className="text-gray-900 text-sm px-3">
+                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <TbChartBarPopular className="text-[20px]" />
+                            Cấp độ:
+                        </span>
+                        <span className="font-semibold">{course?.level}</span>
+                    </div>
+                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <FaRegClock className="text-[20px]" />
+                            Thời lượng:
+                        </span>
+                        <span className="font-semibold">
+                            {formatDuration(courseWithDurations?.courseDuration)}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <IoDocumentTextOutline className="text-[20px]" />
+                            Số bài học:
+                        </span>
+                        <span className="font-semibold">
+                            {courseWithDurations?.totalLectures}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <IoDocumentTextOutline className="text-[20px]" />
+                            Số bài trắc nghiệm:
+                        </span>
+                        <span className="font-semibold">
+                            {courseWithDurations?.totalQuizzes}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <TbCategory className="text-[20px]" />
+                            Tài nguyên tải xuống:
+                        </span>
+                        <span className="font-semibold">
+                            {courseWithDurations?.totalResources}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center my-4 pb-4">
+                        <span className="flex items-center gap-1.5">
+                            <TbWorld className="text-[20px]" />
+                            Ngôn ngữ:
+                        </span>
+                        <span className="font-semibold">{course?.language}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div className="p-6 space-y-4">
-          <p className="text-2xl font-semibold text-gray-900">
-            {course?.price ? `${course.price.toLocaleString()} ₫` : "Miễn phí"}
-          </p>
-          <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
-            Thêm vào giỏ hàng
-          </button>
-          {userInfo ? (
-            <button
-              className="w-full text-[#098ce9] border-2 border-[#098ce9] hover:bg-sky-50 font-semibold py-3 rounded-sm transition duration-200"
-              onClick={() =>
-                course?.price && navigate(`/course/${course.alias}/payment`)
-              }
-            >
-              Mua ngay
-            </button>
-          ) : (
-            <LogInRequire course={course} />
-          )}
-          <div className="text-gray-900 text-sm px-3">
-            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-              <span className="flex items-center gap-1.5">
-                <TbChartBarPopular className="text-[20px]" />
-                Cấp độ:
-              </span>
-              <span className="font-semibold">{course?.level}</span>
-            </div>
-            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-              <span className="flex items-center gap-1.5">
-                <FaRegClock className="text-[20px]" />
-                Thời lượng:
-              </span>
-              <span className="font-semibold">
-                {formatDuration(courseWithDurations?.courseDuration)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-              <span className="flex items-center gap-1.5">
-                <IoDocumentTextOutline className="text-[20px]" />
-                Số bài học:
-              </span>
-              <span className="font-semibold">
-                {courseWithDurations?.totalLectures}
-              </span>
-            </div>
-            <div className="flex justify-between items-center my-4 border-b border-dashed border-gray-400 pb-4">
-              <span className="flex items-center gap-1.5">
-                <TbCategory className="text-[20px]" />
-                Tài nguyên tải xuống:
-              </span>
-              <span className="font-semibold">
-                {courseWithDurations?.totalResources}
-              </span>
-            </div>
-            <div className="flex justify-between items-center my-4 pb-4">
-              <span className="flex items-center gap-1.5">
-                <TbWorld className="text-[20px]" />
-                Ngôn ngữ:
-              </span>
-              <span className="font-semibold">{course?.language}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     );
 }
 
@@ -336,7 +354,7 @@ const CourseContent = ({ course, courseWithDurations, formatDuration }) => {
                 value={openSections}
                 onValueChange={(vals) => setOpenSections(vals)}
             >
-                {displayedSections.map((section) => {
+                {displayedSections?.map((section) => {
                     const foundSection = courseWithDurations?.sections.find(
                         s => s.sectionId === section._id
                     );

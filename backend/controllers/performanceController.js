@@ -35,7 +35,7 @@ const getSectionStats = async (sectionId) => {
 
         if (ci.itemType === "Lecture") {
             const lecture = lectureMap[idStr];
-            const watched = related.length;
+            const watched = related.length; //số lượt xem item
             const amountWatched = watched ? Math.ceil(related.reduce((sum, p) => sum + (p.totalSeconds ? p.watchedSeconds / p.totalSeconds : 0), 0) / watched * 100) : 0;
             const rawDuration = Math.round(lecture.content?.duration || 0);
             const minutes = Math.floor(rawDuration / 60);
@@ -53,6 +53,78 @@ const getSectionStats = async (sectionId) => {
         return null;
     }).filter(Boolean);
 };
+
+const getItemCompletionRate = async (sectionId, totalStudents) => {
+    const section = await Section.findById(sectionId).select("curriculumItems").lean();
+    if (!section) return [];
+    const itemIds = section.curriculumItems.map(ci => ci.itemId);
+
+    const lectures = await Lecture.find({ _id: { $in: itemIds } }).select("_id title content.duration").lean();
+    const quizzes = await Quiz.find({ _id: { $in: itemIds } }).select("_id title questions").lean();
+
+    const lectureMap = Object.fromEntries(lectures.map(l => [l._id.toString(), l]));
+    const quizMap = Object.fromEntries(quizzes.map(q => [q._id.toString(), q]));
+
+    const progressStats = await Progress.aggregate([
+        { $match: { itemId: { $in: itemIds }, } },
+        {
+            $group: {
+                _id: {
+                    itemId: "$itemId",
+                    itemType: "$itemType"
+                },
+                completedCount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$isCompleted", true] }, 1, 0]
+                    }
+                }
+            }
+        }
+    ]);
+
+    const progressMap = Object.fromEntries(
+        progressStats.map(p => [
+            p._id.itemId.toString(),
+            p.completedCount
+        ])
+    );
+
+    const items = section.curriculumItems.map(ci => {
+        const idStr = ci.itemId.toString();
+        // Lecture
+        if (lectureMap[idStr]) {
+            const lecture = lectureMap[idStr];
+            const duration = lecture.content?.duration || 0;
+
+            return {
+                id: idStr,
+                title: lecture.title,
+                duration: duration
+                    ? `${Math.floor(Math.round(duration) / 60)}:${String(Math.round(duration) % 60).padStart(2, "0")}`
+                    : "0:00",
+                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
+                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                type: "Lecture"
+            };
+        }
+
+        if (quizMap[idStr]) {
+            const quiz = quizMap[idStr];
+            return {
+                id: idStr,
+                title: quiz.title,
+                duration: quiz.questions.length.toString(),
+                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
+                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                type: "Quiz"
+            };
+        }
+
+        return null;
+    }).filter(Boolean);
+
+    return items;
+}
 
 export const getCourseStats = async (req, res) => {
     try {
@@ -73,20 +145,23 @@ export const getCourseStats = async (req, res) => {
             .select("_id title sections").lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
 
+        const totalStudentsSet = new Set(
+            await Order.distinct("userId", { courseId: courseId })
+        );
+
         const sectionsStats = [];
         for (const section of course.sections) {
-            const sectionStats = await getSectionStats(section.sectionId);
+            // const sectionStats = await getSectionStats(section.sectionId);
+            const itemCompletionRate = await getItemCompletionRate(section.sectionId, totalStudentsSet.size);
             sectionsStats.push({
                 sectionId: section.sectionId,
                 sectionTitle: section.sectionId.title,
                 sectionOrder: section.order,
-                items: sectionStats
+                items: itemCompletionRate
             });
         }
 
-        const totalStudentsSet = new Set(
-            await Progress.distinct("userId", { courseId: courseId })
-        );
+
 
         return res.status(200).json({
             courseId: course._id,
