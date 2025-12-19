@@ -23,10 +23,66 @@ const lambda = new LambdaClient({
     },
 });
 
+const getCourseByAlias = async (req, res) => {
+    try {
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({ alias: courseAlias })
+            .populate("sections.sectionId")
+            .lean();
+
+        if (!course) return res.status(404).json({ message: "Course not found" });
+        if (course.status !== "published") {
+            return res.status(403).json({ message: "Course is not published" });
+        }
+
+        const lectureIds = [];
+        const quizIds = [];
+        course.sections.forEach(({ sectionId }) => {
+            sectionId?.curriculumItems?.forEach(({ itemType, itemId }) => {
+                if (itemType === "Lecture") lectureIds.push(itemId);
+                else if (itemType === "Quiz") quizIds.push(itemId);
+            });
+        });
+        const [lectures, quizzes] = await Promise.all([
+            Lecture.find({ _id: { $in: lectureIds } }).lean(),
+            Quiz.find({ _id: { $in: quizIds } }).lean(),
+        ]);
+
+        const lectureMap = Object.fromEntries(lectures.map((l) => [l._id.toString(), l]));
+        const quizMap = Object.fromEntries(quizzes.map((q) => [q._id.toString(), q]));
+
+        const sections = course.sections
+            .filter((s) => s.sectionId)
+            .map(({ sectionId, order }) => ({
+                ...sectionId,
+                order,
+                curriculumItems:
+                    sectionId.curriculumItems
+                        ?.map(({ itemType, itemId }) => {
+                            const itemData =
+                                itemType === "Lecture"
+                                    ? lectureMap[itemId.toString()]
+                                    : quizMap[itemId.toString()];
+                            if (!itemData) return null;
+                            return {
+                                itemType,
+                                ...itemData,
+                            };
+                        })
+                        .filter(Boolean) || [],
+            }));
+
+        res.status(200).json({ ...course, sections });
+    } catch (error) {
+        console.error("getCourseById error:", error);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
 const getCourseById = async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Course.findOne({ alias: courseId })
+        const course = await Course.findById(courseId)
             .populate("sections.sectionId")
             .lean();
 
@@ -778,6 +834,7 @@ const getSearchCourseSuggestion = async (req, res) => {
                 $project: {
                     _id: 1,
                     title: 1,
+                    alias: 1,
                     thumbnail: 1,
                     language: 1,
                     level: 1,
@@ -1693,6 +1750,7 @@ const updateCaption = async (req, res) => {
 };
 
 export {
+    getCourseByAlias,
     getCourseById,
     getCourses,
     getAllCourses,

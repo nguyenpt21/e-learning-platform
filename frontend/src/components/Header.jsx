@@ -173,7 +173,7 @@ export default function Header({ q }) {
                   <div className="absolute right-0">
                     <div className=" border border-gray-100 mt-2 bg-white shadow-lg rounded-lg px-2">
                       <div>
-                        <MyCourseDropdown/>
+                        <MyCourseDropdown key={user?._id}/>
                       </div>
                     </div>
                   </div>
@@ -226,10 +226,10 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
     navigate(`/courses?${param.toString()}`)
   }
 
-  const onClickCourse = (courseId) => {
-    navigate(`/course/${courseId}`)
+  const onClickCourse = (courseAlias) => {
+    navigate(`/course/${courseAlias}`)
   }
-
+  console.log(searchSuggestions?.courses)
   return (
     <div>
       {searchSuggestions?.keywords.length > 0 && (
@@ -237,7 +237,7 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
           {searchSuggestions?.keywords.map((keyword, index) => (
             <div
               key={index}
-              className='hover:bg-gray-100 font-semibold py-3 px-4 duration-300 text-base flex items-center gap-3'
+              className='hover:bg-gray-100 font-semibold py-3 px-4 duration-300 text-base flex items-center gap-3 cursor-pointer'
               onClick={() => {
                 onClickKeyword(keyword);
               }}
@@ -252,9 +252,9 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
           {searchSuggestions?.courses.map((course, index) => (
             <div
               key={index}
-              className='hover:bg-gray-100 py-3 px-4 duration-300 text-base flex items-center gap-3'
+              className='hover:bg-gray-100 py-3 px-4 duration-300 text-base flex items-center gap-3 cursor-pointer'
               onClick={() => {
-                onClickCourse(course._id);
+                onClickCourse(course?.alias);
               }}
             >
               <div className="flex items-center gap-3">

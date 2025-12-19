@@ -19,6 +19,7 @@ import {
     deleteCaptionVideo,
     getCaptionContent,
     updateCaption,
+    getCourseByAlias
 } from "../controllers/courseController.js";
 
 import {
@@ -52,6 +53,8 @@ router.route("/search")
 router.get("/instructor", getInstructorCourses)
 
 //course
+router.route("/alias/:courseAlias")
+    .get(getCourseByAlias)
 router.route("/")
     .get(getAllCourses)
     .post(createCourse);
