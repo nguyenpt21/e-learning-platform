@@ -269,6 +269,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
                     startTime={itemProgress?.isCompleted? 0 : itemProgress?.watchedSeconds}
                     captions={item.content.captions || []}
                     videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
+                    poster={item?.content.thumbnailURL || "/logo.png"}
                   />
                 ) : (
                   <Skeleton className="w-full h-full" />
