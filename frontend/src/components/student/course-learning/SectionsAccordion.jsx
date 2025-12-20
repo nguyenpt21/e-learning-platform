@@ -162,13 +162,25 @@ const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, 
                                                         {indx + 1}. {item.title}
                                                     </span>
                                                     {item.itemType === 'Lecture' ? (
-                                                        <span className="flex items-center gap-2 text-xs text-gray-400 mt-3">
-                                                            {item.type === 'video' ? (
-                                                                <MdOutlineOndemandVideo className="w-4 h-4" />
-                                                            ) : (
-                                                                <IoDocumentTextOutline className="w-4 h-4" />
+                                                        <span className="flex items-center justify-between gap-2 text-xs text-gray-400 mt-3">
+                                                            <div className='flex items-center gap-2'>
+                                                                {item.type === 'video' ? (
+                                                                    <MdOutlineOndemandVideo className="w-4 h-4" />
+                                                                ) : (
+                                                                    <IoDocumentTextOutline className="w-4 h-4" />
+                                                                )}
+                                                                {formatDuration(item?.content?.duration)}
+                                                            </div>
+
+                                                            {item?.resources && item?.resources.length > 0 && (
+                                                                <div
+                                                                    className='shrink-0 pr-4 self-end'
+                                                                    onMouseEnter={(e) => e.stopPropagation()}
+                                                                    onMouseLeave={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <Resources resources={item?.resources} />
+                                                                </div>
                                                             )}
-                                                            {formatDuration(item?.content?.duration)}
                                                         </span>
                                                     ) : (
                                                         <span className="flex items-center gap-2 text-xs text-gray-400 mt-3">
@@ -179,15 +191,7 @@ const SectionsAccordion = ({ courseId, sections, handleChangeItem, currentItem, 
                                                 </div>
                                             </div>
                                         </div>
-                                        {item?.resources && item?.resources.length > 0 && (
-                                            <div
-                                                className='shrink-0 pr-4 self-end'
-                                                onMouseEnter={(e) => e.stopPropagation()}
-                                                onMouseLeave={(e) => e.stopPropagation()}
-                                            >
-                                                <Resources resources={item?.resources} />
-                                            </div>
-                                        )}
+
                                     </div>
                                 )
                             })}

@@ -27,7 +27,7 @@ const CourseStats = ({ selectedCourse }) => {
         <div className='px-3'>
             <p className='font-bold text-2xl mb-3'>Thống kê theo khoá học</p>
             {selectedCourse == "all" ? (
-                <p className='text-gray-500 text-sm font-medium'>Chọn một khoá học để xem thống kê chi tiết</p>
+                <p className='text-gray-500 text-sm font-medium pb-8'>Chọn một khoá học để xem thống kê chi tiết</p>
             ) : (
                 <div>
                     <p className='text-gray-500 text-sm font-medium mb-5'>
@@ -45,8 +45,8 @@ const CourseStats = ({ selectedCourse }) => {
                         <MetricCard
                             title="Số học viên"
                             value={data?.totalStudents}
-                            description="tổng số học viên đã học các bài học của khoá học đã chọn."
-                            tooltip="Tổng số học viên đã học ít nhất 1 bài học"
+                            description="tổng số học viên đã đăng ký khoá học đã chọn."
+                            tooltip="Tổng số học viên đã đăng ký khoá học này"
                             unit="học viên"
                         />
                     </div>
@@ -81,12 +81,12 @@ const SectionStats = ({ section, id }) => {
                         <table className="w-full table-fixed">
                             <thead>
                                 <tr className="border-b bg-muted/30">
-                                    <th className="text-left p-4 font-medium text-sm w-2/4">
+                                    <th className="text-left p-4 font-medium text-sm w-3/5">
                                         <div className="flex items-center gap-2">
                                             Tên bài học
                                         </div>
                                     </th>
-                                    <th className="text-left p-4 font-medium text-sm w-1/4">
+                                    <th className="text-left p-4 font-medium text-sm w-1/5">
                                         <div className="flex items-center gap-2">
                                             Đã xem
                                             <TooltipProvider>
@@ -95,13 +95,13 @@ const SectionStats = ({ section, id }) => {
                                                         <Info className="h-4 w-4 text-muted-foreground" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Số học viên đã xem bài giảng này</p>
+                                                        <p>Số học viên đã hoàn thành bài học / tổng số học viên khoá học</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </div>
                                     </th>
-                                    <th className="text-left p-4 font-medium text-sm w-1/4 min-w-[300px]">
+                                    <th className="text-left p-4 font-medium text-sm w-1/5">
                                         <div className="flex items-center gap-2">
                                             Tỉ lệ hoàn thành
                                             <TooltipProvider>
@@ -110,7 +110,7 @@ const SectionStats = ({ section, id }) => {
                                                         <Info className="h-4 w-4 text-muted-foreground" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Tỷ lệ % trung bình đã xem</p>
+                                                        <p>Tỷ lệ học viên hoàn thành bài học</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -124,7 +124,7 @@ const SectionStats = ({ section, id }) => {
                                         {item?.type === "Lecture" ? (
                                             <>
                                                 <td className="p-4">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-start gap-2">
                                                         <PlayCircle className="h-5 w-5 text-muted-foreground" />
                                                         <span className="font-medium">{item.title}</span>
                                                         <span className="text-muted-foreground text-sm">({item.duration})</span>
@@ -132,9 +132,9 @@ const SectionStats = ({ section, id }) => {
                                                 </td>
                                                 <td className="p-4 text-foreground">{item.watched} học viên</td>
                                                 <td className="p-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-sm font-medium min-w-10">{item.amountWatched}%</span>
-                                                        <Progress value={item.amountWatched} className="flex-1" />
+                                                    <div className="flex items-center justify-start gap-3">
+                                                        <span className="text-sm font-medium">{item.watchedPercent}%</span>
+                                                        <Progress value={item.watchedPercent} className="flex-1" />
                                                     </div>
                                                 </td>
                                             </>
@@ -150,8 +150,8 @@ const SectionStats = ({ section, id }) => {
                                                 <td className="p-4 text-foreground">{item.watched} học viên</td>
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-sm font-medium min-w-10">{item.amountWatched}%</span>
-                                                        <Progress value={item.amountWatched} className="flex-1" />
+                                                        <span className="text-sm font-medium">{item.watchedPercent}%</span>
+                                                        <Progress value={item.watchedPercent} className="flex-1" />
                                                     </div>
                                                 </td>
                                             </>

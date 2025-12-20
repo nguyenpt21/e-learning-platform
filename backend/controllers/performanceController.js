@@ -6,6 +6,8 @@ import Course from "../models/course.js"
 import Submission from "../models/submission.js";
 import mongoose from "mongoose";
 import Section from "../models/section.js";
+import Order from "../models/order.js";
+import Review from "../models/review.js";
 
 
 const getSectionStats = async (sectionId) => {
@@ -33,7 +35,7 @@ const getSectionStats = async (sectionId) => {
 
         if (ci.itemType === "Lecture") {
             const lecture = lectureMap[idStr];
-            const watched = related.length;
+            const watched = related.length; //số lượt xem item
             const amountWatched = watched ? Math.ceil(related.reduce((sum, p) => sum + (p.totalSeconds ? p.watchedSeconds / p.totalSeconds : 0), 0) / watched * 100) : 0;
             const rawDuration = Math.round(lecture.content?.duration || 0);
             const minutes = Math.floor(rawDuration / 60);
@@ -51,6 +53,78 @@ const getSectionStats = async (sectionId) => {
         return null;
     }).filter(Boolean);
 };
+
+const getItemCompletionRate = async (sectionId, totalStudents) => {
+    const section = await Section.findById(sectionId).select("curriculumItems").lean();
+    if (!section) return [];
+    const itemIds = section.curriculumItems.map(ci => ci.itemId);
+
+    const lectures = await Lecture.find({ _id: { $in: itemIds } }).select("_id title content.duration").lean();
+    const quizzes = await Quiz.find({ _id: { $in: itemIds } }).select("_id title questions").lean();
+
+    const lectureMap = Object.fromEntries(lectures.map(l => [l._id.toString(), l]));
+    const quizMap = Object.fromEntries(quizzes.map(q => [q._id.toString(), q]));
+
+    const progressStats = await Progress.aggregate([
+        { $match: { itemId: { $in: itemIds }, } },
+        {
+            $group: {
+                _id: {
+                    itemId: "$itemId",
+                    itemType: "$itemType"
+                },
+                completedCount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$isCompleted", true] }, 1, 0]
+                    }
+                }
+            }
+        }
+    ]);
+
+    const progressMap = Object.fromEntries(
+        progressStats.map(p => [
+            p._id.itemId.toString(),
+            p.completedCount
+        ])
+    );
+
+    const items = section.curriculumItems.map(ci => {
+        const idStr = ci.itemId.toString();
+        // Lecture
+        if (lectureMap[idStr]) {
+            const lecture = lectureMap[idStr];
+            const duration = lecture.content?.duration || 0;
+
+            return {
+                id: idStr,
+                title: lecture.title,
+                duration: duration
+                    ? `${Math.floor(Math.round(duration) / 60)}:${String(Math.round(duration) % 60).padStart(2, "0")}`
+                    : "0:00",
+                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
+                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                type: "Lecture"
+            };
+        }
+
+        if (quizMap[idStr]) {
+            const quiz = quizMap[idStr];
+            return {
+                id: idStr,
+                title: quiz.title,
+                duration: quiz.questions.length.toString(),
+                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
+                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                type: "Quiz"
+            };
+        }
+
+        return null;
+    }).filter(Boolean);
+
+    return items;
+}
 
 export const getCourseStats = async (req, res) => {
     try {
@@ -71,20 +145,23 @@ export const getCourseStats = async (req, res) => {
             .select("_id title sections").lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
 
+        const totalStudentsSet = new Set(
+            await Order.distinct("userId", { courseId: courseId })
+        );
+
         const sectionsStats = [];
         for (const section of course.sections) {
-            const sectionStats = await getSectionStats(section.sectionId);
+            // const sectionStats = await getSectionStats(section.sectionId);
+            const itemCompletionRate = await getItemCompletionRate(section.sectionId, totalStudentsSet.size);
             sectionsStats.push({
                 sectionId: section.sectionId,
                 sectionTitle: section.sectionId.title,
                 sectionOrder: section.order,
-                items: sectionStats
+                items: itemCompletionRate
             });
         }
 
-        const totalStudentsSet = new Set(
-            await Progress.distinct("userId", { courseId: courseId })
-        );
+
 
         return res.status(200).json({
             courseId: course._id,
@@ -517,6 +594,171 @@ export const getLearningItemsCountStats = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Tổng quan doanh thu & đăng ký (overview)
+export const getRevenueOverview = async (req, res) => {
+    try {
+        const { range = "alltime" } = req.query;
+        const now = new Date();
+
+        let startDate = null;
+        let totalMonths = null;
+
+        if (range === "6months") totalMonths = 6;
+        else if (range === "12months") totalMonths = 12;
+
+        if (totalMonths) {
+            // tính từ đầu tháng cách đây (totalMonths - 1) tháng
+            startDate = new Date(now.getFullYear(), now.getMonth() - (totalMonths - 1), 1);
+        }
+
+        // Match cho toàn bộ đơn hàng trong khoảng range (hoặc mọi thời điểm)
+        const rangeMatchStage = {};
+        if (startDate) {
+            rangeMatchStage.createdAt = { $gte: startDate };
+        }
+
+        // Tổng doanh thu & lượt đăng ký trong range (ép kiểu totalPrice thành số, chống thiếu createdAt)
+        const totalAgg = await Order.aggregate([
+            { $match: rangeMatchStage },
+            {
+                $addFields: {
+                    createdAtSafe: { $ifNull: ["$createdAt", "$$NOW"] },
+                    priceNum: { $toDouble: "$totalPrice" },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$priceNum" },
+                    totalEnrollments: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const totalRevenue = totalAgg[0]?.totalRevenue || 0;
+        const totalEnrollments = totalAgg[0]?.totalEnrollments || 0;
+
+        // Rating giảng viên trong range
+        const ratingMatchStage = {};
+        if (startDate) {
+            ratingMatchStage.createdAt = { $gte: startDate };
+        }
+
+        const ratingAgg = await Review.aggregate([
+            {
+                $match: ratingMatchStage,
+            },
+            {
+                $group: {
+                    _id: null,
+                    avgRating: { $avg: "$rating" },
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const ratingInfo = ratingAgg[0] || { avgRating: 0, count: 0 };
+
+        // Dữ liệu biểu đồ theo tháng
+        const matchStage = {};
+        if (startDate) {
+            matchStage.createdAt = { $gte: startDate };
+        }
+
+        const rawMonthly = await Order.aggregate([
+            { $match: matchStage },
+            {
+                $addFields: {
+                    createdAtSafe: { $ifNull: ["$createdAt", "$$NOW"] },
+                    priceNum: { $toDouble: "$totalPrice" },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAtSafe" },
+                        month: { $month: "$createdAtSafe" },
+                    },
+                    revenue: { $sum: "$priceNum" },
+                },
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
+        ]);
+
+        if (rawMonthly.length === 0) {
+            return res.status(200).json({
+                summary: {
+                    totalRevenue,
+                    totalEnrollments,
+                    instructorRating: Number(ratingInfo.avgRating?.toFixed?.(2) || 0),
+                    ratingCount: ratingInfo.count || 0,
+                },
+                chart: [],
+            });
+        }
+
+        const monthMap = {};
+        rawMonthly.forEach((row) => {
+            const mm = row._id.month.toString().padStart(2, "0");
+            const yy = row._id.year.toString().slice(2);
+            const key = `${mm}/${yy}`;
+            monthMap[key] = row.revenue;
+        });
+
+        let result = [];
+
+        if (range === "alltime") {
+            const first = rawMonthly[0]._id;
+            const cursor = new Date(first.year, first.month - 1, 1);
+            const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            while (cursor <= end) {
+                const mm = (cursor.getMonth() + 1).toString().padStart(2, "0");
+                const yy = cursor.getFullYear().toString().slice(2);
+                const key = `${mm}/${yy}`;
+
+                result.push({
+                    month: key,
+                    revenue: monthMap[key] || 0,
+                    current:
+                        mm === (now.getMonth() + 1).toString().padStart(2, "0") &&
+                        yy === now.getFullYear().toString().slice(2),
+                });
+
+                cursor.setMonth(cursor.getMonth() + 1);
+            }
+        } else if (totalMonths) {
+            for (let i = totalMonths - 1; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+                const yy = d.getFullYear().toString().slice(2);
+                const key = `${mm}/${yy}`;
+
+                result.push({
+                    month: key,
+                    revenue: monthMap[key] || 0,
+                    current:
+                        mm === (now.getMonth() + 1).toString().padStart(2, "0") &&
+                        yy === now.getFullYear().toString().slice(2),
+                });
+            }
+        }
+
+        return res.status(200).json({
+            summary: {
+                totalRevenue,
+                totalEnrollments,
+                instructorRating: Number(ratingInfo.avgRating?.toFixed?.(2) || 0),
+                ratingCount: ratingInfo.count || 0,
+            },
+            chart: result,
+        });
+    } catch (error) {
+        console.error("Error getting revenue overview:", error);
         return res.status(500).json({ message: "Server error" });
     }
 };

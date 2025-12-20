@@ -776,6 +776,7 @@ const getSearchCourseSuggestion = async (req, res) => {
                 $project: {
                     _id: 1,
                     title: 1,
+                    alias: 1,
                     thumbnail: 1,
                     language: 1,
                     level: 1,
@@ -917,7 +918,8 @@ const getSearchCourseResults = async (req, res) => {
                 filterStage.$match.$or = priceFilters;
             }
         }
-        if (category) filterStage.$match.category = { $in: category.split(",") };
+        console.log("decoded:", decodeURIComponent(category).trim())
+        if (category) filterStage.$match.category = { $in: decodeURIComponent(category).trim().split(",") };
         if (language) filterStage.$match.language = { $in: language.split(",") };
         if (level) filterStage.$match.level = { $in: level.split(",") };
 

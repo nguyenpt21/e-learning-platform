@@ -5,6 +5,9 @@ const initialState = {
         ? JSON.parse(localStorage.getItem("userInfo"))
         : null,
     onlineUsers: [],
+    myCoursesId: localStorage.getItem("myCoursesId")
+        ? JSON.parse(localStorage.getItem("myCoursesId"))
+        : [],
 };
 
 const authSlice = createSlice({
@@ -26,8 +29,12 @@ const authSlice = createSlice({
         setOnlineUsers: (state, action) => {
             state.onlineUsers = action.payload;
         },
+        setMyCoursesId: (state, action) => {
+            state.myCoursesId = action.payload;
+            localStorage.setItem("myCoursesId", JSON.stringify(action.payload));
+        },
     },
 });
 
-export const { setCredentials, logout, setOnlineUsers } = authSlice.actions;
+export const { setCredentials, logout, setOnlineUsers, setMyCoursesId } = authSlice.actions;
 export default authSlice.reducer;

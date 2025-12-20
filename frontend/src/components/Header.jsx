@@ -9,13 +9,12 @@ import SignUpModal from "./SignUpModal";
 import { useGetCourseSearchSuggestionQuery } from "@/redux/api/coursePublicApiSlice.js";
 import { skipToken } from '@reduxjs/toolkit/query';
 import { LuDot } from "react-icons/lu";
-import { useLogoutMutation } from "@/redux/api/authSlice.js";
 import MyCourseDropdown from "@/components/student/home-page/MyCourseDropdown.jsx";
+import UserDropDown from "./UserDropDown.jsx";
 
 export default function Header({ q }) {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.userInfo);
-  const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState(q || "");
   const [openDropDown, setOpenDropDown] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -26,7 +25,6 @@ export default function Header({ q }) {
     searchQuery ? { q: searchQuery } : skipToken,
   );
   const [logoutApi] = useLogoutMutation();
-  console.log(user)
 
   const handleLogout = async () => {
     try {
@@ -171,7 +169,7 @@ export default function Header({ q }) {
                   <div className="absolute right-0">
                     <div className=" border border-gray-100 mt-2 bg-white shadow-lg rounded-lg px-2">
                       <div>
-                        <MyCourseDropdown/>
+                        <MyCourseDropdown key={user?._id}/>
                       </div>
                     </div>
                   </div>
@@ -184,17 +182,7 @@ export default function Header({ q }) {
                 <span className="text-gray-700">
                   Xin chào, {user.firstName || user.email}
                 </span>
-                <Button
-                  variant="default"
-                  className="rounded-full w-8 h-8 border border-[#098be4]"
-                  onClick={handleLogout}
-                >
-                  <img
-                    src={"https://placehold.co/16x16"}
-                    alt="User Avatar"
-                    className="w-8 h-8 rounded-full"
-                  />
-                </Button>
+                <UserDropDown />
               </div>
             </div>
           )}
@@ -227,10 +215,10 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
     navigate(`/courses?${param.toString()}`)
   }
 
-  const onClickCourse = (courseId) => {
-    navigate(`/course/${courseId}`)
+  const onClickCourse = (courseAlias) => {
+    navigate(`/course/${courseAlias}`)
   }
-
+  console.log(searchSuggestions?.courses)
   return (
     <div>
       {searchSuggestions?.keywords.length > 0 && (
@@ -238,7 +226,7 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
           {searchSuggestions?.keywords.map((keyword, index) => (
             <div
               key={index}
-              className='hover:bg-gray-100 font-semibold py-3 px-4 duration-300 text-base flex items-center gap-3'
+              className='hover:bg-gray-100 font-semibold py-3 px-4 duration-300 text-base flex items-center gap-3 cursor-pointer'
               onClick={() => {
                 onClickKeyword(keyword);
               }}
@@ -253,9 +241,9 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
           {searchSuggestions?.courses.map((course, index) => (
             <div
               key={index}
-              className='hover:bg-gray-100 py-3 px-4 duration-300 text-base flex items-center gap-3'
+              className='hover:bg-gray-100 py-3 px-4 duration-300 text-base flex items-center gap-3 cursor-pointer'
               onClick={() => {
-                onClickCourse(course._id);
+                onClickCourse(course?.alias);
               }}
             >
               <div className="flex items-center gap-3">

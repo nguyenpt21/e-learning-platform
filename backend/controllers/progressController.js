@@ -67,7 +67,31 @@ export const getItemProgress = async (req, res) => {
             return res.json(progressWithQuiz);
         }
 
+        await updateItemPr(progress);
+
         res.json(progress);
+    } catch (error) {
+        console.error("Error getting item progress:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+const updateItemPr = async (progress) => {
+    try {
+        const item = await Lecture.findById(progress.itemId);
+        if (!item?.content?.duration) return;
+
+        const newTotalSeconds = item.content.duration;
+
+        if (progress.totalSeconds !== newTotalSeconds) {
+            progress.totalSeconds = newTotalSeconds;
+            progress.watchedSeconds = 0;
+            progress.progressPercent = 0;
+            progress.isCompleted = false;
+        }
+
+        await progress.save();
+        return;
     } catch (error) {
         console.error("Error getting item progress:", error);
         res.status(500).json({ message: "Server error" });
@@ -92,7 +116,7 @@ export const updateItemProgress = async (req, res) => {
         const watched = Number(watchedSeconds) || 0;
         const total = Number(totalSeconds) || 0;
         const percent = Math.min(Number(progressPercent) || 0, 100);
-        let ws = 0;
+        let ws = 0; //watchedSeconds
         if (type === "article") {
             ws = Math.floor((percent / 100) * total)
         }
@@ -107,6 +131,7 @@ export const updateItemProgress = async (req, res) => {
                 { _id: existingProgress._id },
                 {
                     $set: {
+                        totalSeconds: total,
                         watchedSeconds: ws,
                         progressPercent: percent,
                         updatedAt: new Date()
