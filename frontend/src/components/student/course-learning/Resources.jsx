@@ -15,6 +15,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { TbFileTypePdf, TbFileTypeDoc, TbFileTypePng } from "react-icons/tb";
 import { LuFile } from "react-icons/lu";
 import axios from 'axios';
+import { BASE_URL } from '@/redux/constants';
 
 const getFileIcon = (type) => {
     switch (type) {
@@ -45,7 +46,7 @@ const Resources = ({ resources }) => {
 
     const handleDownload = async (s3Key, fileName) => {
         try {
-            const res = await axios.get(`/api/files/download`, {
+            const res = await axios.get(`${BASE_URL}/api/downloadResources`, {
                 params: { key: s3Key }
             });
 

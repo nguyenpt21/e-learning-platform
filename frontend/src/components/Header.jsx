@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Search } from "lucide-react";
 import Button from "./Button.jsx";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/features/authSlice";
 import SignInModal from "./SignInModal";
@@ -26,6 +26,7 @@ export default function Header({ q }) {
     searchQuery ? { q: searchQuery } : skipToken,
   );
   const [logoutApi] = useLogoutMutation();
+  console.log(user)
 
   const handleLogout = async () => {
     try {
@@ -140,9 +141,6 @@ export default function Header({ q }) {
 
         {/* Right side */}
         <div className="flex items-center text-sm">
-          <Button variant="default" className="text-sm" onClick={handleCart}>
-            <ShoppingCart className="text-lg cursor-pointer" />
-          </Button>
           {!user ? (
             <div className="flex space-x-2">
               <Button
@@ -162,7 +160,7 @@ export default function Header({ q }) {
             </div>
           ) : (
             <div className="flex items-center space-x-4">
-              <div
+              {user.role === 'user' ? <div
                 className="relative inline-block"
                 onMouseEnter={() => setOpenMycourseDropdown(true)}
                 onMouseLeave={() => setOpenMycourseDropdown(false)}
@@ -178,7 +176,10 @@ export default function Header({ q }) {
                     </div>
                   </div>
                 )}
-              </div>
+              </div> : 
+              <Link to={"/instructor"}>
+                <Button className="text-gray-700">Giảng dạy</Button>
+              </Link>}
               <div className="flex items-center space-x-2">
                 <span className="text-gray-700">
                   Xin chào, {user.firstName || user.email}

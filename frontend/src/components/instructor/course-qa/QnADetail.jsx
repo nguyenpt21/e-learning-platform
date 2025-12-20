@@ -66,10 +66,17 @@ function QnADetail({ selectedId }) {
       </div>
       <div className="w-full flex justify-between items-center gap-2 p-2">
         <div className="flex space-x-2 items-center">
-          <img
-            src={data?.author.profilePicture.url || "/placeholder.svg"}
-            className="w-10 h-10 rounded-full border-1 border-[#098be4]"
-          />
+          {data?.author?.profilePicture?.url ? (
+            <img
+                className="w-10 h-10 rounded-full border-1 border-[#098be4]"
+                src={data?.author?.profilePicture.url}
+                alt={data?.author?.firstName + " " + data?.author?.lastName}
+            />) : (
+            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm">
+              {data?.author?.firstName[0].toUpperCase()}
+              {data?.author?.lastName[0].toUpperCase()}
+            </div>
+          )}
           <p className="font-semibold">
             {data?.author.firstName} {data?.author.lastName}
           </p>

@@ -1,6 +1,6 @@
 import express from "express";
 import {
-    getCourseById,
+    getCourseByAlias,
     getAllCourses,
     getCourses,
     createCourse,
@@ -55,17 +55,17 @@ router.get("/instructor", getInstructorCourses)
 router.route("/")
     .get(getAllCourses)
     .post(createCourse);
-router.route("/:courseId")
-    .get(getCourseById)
+router.route("/:courseAlias")
+    .get(getCourseByAlias)
     .put(updateCourse)
     .delete(deleteCourse);
 router.get("/manage", getCourses);
-router.get("/:courseId/info", getCourseInfo)
-router.post("/:courseId/process", processCourse)
+router.get("/:courseAlias/info", getCourseInfo)
+router.post("/:courseAlias/process", processCourse)
 // section
-router.route("/:courseId/sections")
+router.route("/:courseAlias/sections")
     .get(getAllSectionsByCourse)
-    .post(addSectionToCourse);
+router.post("/:courseId/sections", addSectionToCourse);
 //.post("/:courseId/sections", addSectionToCourse);
 router.route("/:courseId/sections/:sectionId")
     .put(updateSection)
@@ -99,7 +99,7 @@ router.route("/quizzes/:quizId/questions/:questionId")
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
 router.post('/:courseId/generate-captions', generateCaption)
-router.route('/:courseId/captions')
+router.route('/:courseAlias/captions')
     .get(getCaptionVideoStatus)
     .post(addCaptionVideo)
     .delete(deleteCaptionVideo)

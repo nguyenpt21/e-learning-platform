@@ -19,15 +19,16 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
 import CaptionEditModal from "./CaptionEditModal";
+import { nanoid } from "nanoid";
+import { BASE_URL } from "@/redux/constants";
 
-const CaptionItem = ({ item, courseId, language }) => {
-    console.log(item)
+const CaptionItem = ({ item, courseId, courseAlias, language }) => {
     const [progress, setProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const controllerRef = useRef(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [generateUploadURL] = useGenerateUploadUrlMutation();
     const handleUploadFile = async (e, item) => {
@@ -105,7 +106,7 @@ const CaptionItem = ({ item, courseId, language }) => {
                 },
             };
 
-            await addCaption({ courseId, caption: captionData });
+            await addCaption({ courseAlias, caption: captionData });
         } catch (error) {
             if (axios.isCancel(error)) {
                 console.error("Hủy upload");
@@ -121,21 +122,37 @@ const CaptionItem = ({ item, courseId, language }) => {
         }
     };
 
+    const handleDownload = async (item) => {
+        try {
+            const caption = item.content.captions.find((cap) => cap.language === language);
+            const res = await axios.get(`${BASE_URL}/api/downloadResources`, {
+                params: { key: caption.s3Key },
+            });
+
+            const { downloadURL } = res.data;
+            const response = await fetch(downloadURL);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `${nanoid(10)}.vtt`;
+            link.click();
+
+            URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Download error:", error);
+        }
+    };
+
     const [addCaption] = useAddCaptionMutation();
     const [deleteCaption, { isLoading: isDeletingCaption }] = useDeleteCaptionMutation();
 
     const handleConfirmDelete = async (item) => {
         try {
             const caption = item.content.captions.find((cap) => cap.language === language);
-            const data = {
-                courseId,
-                videoType: item.itemType,
-                itemId: item._id,
-                caption,
-            };
-            console.log(data)
             await deleteCaption({
-                courseId,
+                courseAlias,
                 videoType: item.itemType,
                 itemId: item._id,
                 caption,
@@ -195,10 +212,19 @@ const CaptionItem = ({ item, courseId, language }) => {
                     {item.captionStatus}
                     {item.captionStatus !== "Chưa có phụ đề" ? (
                         <div className="flex gap-[2px]">
-                            <button onClick={() => setIsEditModalOpen(true)} className="px-3 py-1 min-w-[84px] cursor-pointer border border-primary text-primary rounded hover:bg-primary/10 transition">
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="px-3 py-1 min-w-[84px] cursor-pointer border border-primary text-primary rounded hover:bg-primary/10 transition"
+                            >
                                 Sửa
                             </button>
-                            <CaptionEditModal courseId={courseId} language={language} caption={item} isOpen={isEditModalOpen} onOpenChange={setIsEditModalOpen} ></CaptionEditModal>
+                            <CaptionEditModal
+                                courseId={courseId}
+                                language={language}
+                                caption={item}
+                                isOpen={isEditModalOpen}
+                                onOpenChange={setIsEditModalOpen}
+                            ></CaptionEditModal>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button className="px-[1px] py-2 cursor-pointer text-primary/70 h-full hover:bg-primary/20 rounded">
@@ -217,7 +243,7 @@ const CaptionItem = ({ item, courseId, language }) => {
                                             />
                                         </label>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>Tải xuống</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDownload(item)}>Tải xuống</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setIsDeleteModalOpen(true)}>
                                         Xóa
                                     </DropdownMenuItem>

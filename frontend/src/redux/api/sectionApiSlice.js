@@ -12,8 +12,8 @@ export const sectionApiSlice = apiSlice.injectEndpoints({
             invalidatesTags: ["Section"],
         }),
         getAllSectionsByCourse: builder.query({
-            query: (courseId) => ({
-                url: `${COURSE_URL}/${courseId}/sections`,
+            query: (courseAlias) => ({
+                url: `${COURSE_URL}/${courseAlias}/sections`,
             }),
             providesTags: ["Section"],
         }),

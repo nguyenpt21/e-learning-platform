@@ -3,12 +3,12 @@ import Course from "../models/course.js";
 import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Section from "../models/section.js";
-import { deleteMultipleS3Files } from "./uploadController.js";
+import { deleteMultipleS3Files, uploadBase64ImagesInContent } from "./uploadController.js";
 
 const getAllSectionsByCourse = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId).populate("sections.sectionId");
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({ alias: courseAlias }).populate("sections.sectionId");
         if (!course) return res.status(404).json({ message: "Course not found" });
         const sortedSections = course.sections
             .sort((a, b) => a.order - b.order)
@@ -232,6 +232,11 @@ const addLectureToSection = async (req, res) => {
             });
         } else if (type === "article") {
             const { text, duration } = req.body;
+            const processText = await uploadBase64ImagesInContent(
+                courseId,
+                text,
+                "lecture-article-image"
+            );
             newLecture = new Lecture({
                 type,
                 courseId,
@@ -239,7 +244,7 @@ const addLectureToSection = async (req, res) => {
                 title,
                 ...(description && { description }),
                 content: {
-                    text,
+                    text: processText,
                     duration,
                 },
             });
@@ -341,6 +346,13 @@ const updateCurriculumItem = async (req, res) => {
             item.description = description;
             item.type = type || item.type;
             if (content) {
+                if ("text" in content) {
+                    content.text = await uploadBase64ImagesInContent(
+                        courseId,
+                        content.text,
+                        "lecture-article-image"
+                    );
+                }
                 course.courseDuration -= item.content.duration;
                 item.content = content;
                 course.courseDuration += content.duration;
@@ -396,7 +408,7 @@ const deleteCurriculumItem = async (req, res) => {
             const lecture = await Lecture.findById(itemId);
             if (!lecture) return;
 
-            course.courseDuration -= lecture.content.duration
+            course.courseDuration -= lecture.content.duration;
             const s3KeysToDelete = [];
 
             if (lecture.content?.s3Key) {
@@ -420,7 +432,7 @@ const deleteCurriculumItem = async (req, res) => {
             }
 
             await Lecture.findByIdAndDelete(itemId);
-            await course.save()
+            await course.save();
         } else if (itemToDelete.itemType === "Quiz") {
             await Quiz.findByIdAndDelete(itemId);
         }
