@@ -33,6 +33,7 @@ const VideoPlayer = forwardRef(({
     const [availableLanguages, setAvailableLanguages] = useState([]);
     const [qualities, setQualities] = useState([]);
     const [currentQuality, setCurrentQuality] = useState(-1);
+    const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
 
 
     useImperativeHandle(ref, () => ({
@@ -135,7 +136,10 @@ const VideoPlayer = forwardRef(({
         const video = videoRef.current;
         if (!video) return;
 
-        const onLoaded = () => setDuration(video.duration);
+        const onLoadedMetadata = () => {
+            setDuration(video.duration);
+            setIsMetadataLoaded(true);
+        };
 
         const onTimeUpdate = () => {
             setCurrentTime(video.currentTime);
@@ -163,7 +167,7 @@ const VideoPlayer = forwardRef(({
             }
         };
 
-        video.addEventListener("loadedmetadata", onLoaded);
+        video.addEventListener("loadedmetadata", onLoadedMetadata);
         video.addEventListener("timeupdate", onTimeUpdate);
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
@@ -171,7 +175,7 @@ const VideoPlayer = forwardRef(({
         video.addEventListener("progress", handleProgress);
 
         return () => {
-            video.removeEventListener("loadedmetadata", onLoaded);
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
             video.removeEventListener("timeupdate", onTimeUpdate);
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
@@ -266,6 +270,12 @@ const VideoPlayer = forwardRef(({
                         aspect-video
                     `}
                 >
+                    <Poster 
+                        poster={poster} 
+                        isPlaying={isPlaying} 
+                        currentTime={currentTime}  
+                    />
+
                     <video
                         ref={videoRef}
                         className="w-full h-full object-cover"
@@ -305,5 +315,22 @@ const VideoPlayer = forwardRef(({
         </div>
     )
 })
+
+const Poster = ({ poster, isPlaying, currentTime }) => {
+    console.log(poster)
+    return (
+        <>
+            {poster && !isPlaying && currentTime === 0 && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <img
+                        src={poster}
+                        alt="Video Poster"
+                        className="w-full h-full object-cover transition-opacity duration-500"
+                    />
+                </div>
+            )}
+        </>
+    );
+}
 
 export default VideoPlayer
