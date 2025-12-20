@@ -59,10 +59,17 @@ const CommentCard = ({ ques, comment, courseId }) => {
     <div className="w-full rounded-lg p-2 space-y-2">
       <div className="w-full flex justify-between items-center gap-2">
         <div className="flex space-x-2 items-center">
-          <img
-            src={comment?.user.profilePicture.url || "/placeholder.svg"}
-            className="w-10 h-10 rounded-full border-1 border-[#098be4]"
-          />
+          {comment?.user?.profilePicture?.url ? (
+            <img
+                className="w-10 h-10 rounded-full border-1 border-[#098be4]"
+                src={comment?.user?.profilePicture.url}
+                alt={comment?.user?.firstName + " " + comment?.user?.lastName}
+            /> ) : (
+            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm">
+              {comment?.user?.firstName[0].toUpperCase()}
+              {comment?.user?.lastName[0].toUpperCase()}
+            </div>
+          )}
           <p className="font-semibold">
             {comment?.user.firstName} {comment?.user.lastName}
           </p>

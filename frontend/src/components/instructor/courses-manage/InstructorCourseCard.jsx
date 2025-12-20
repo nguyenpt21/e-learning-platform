@@ -19,7 +19,7 @@ const InstructorCourseCard = ({ course }) => {
     const navigate = useNavigate();
 
     const handleManageClick = () => {
-        navigate(`/instructor/courses/${course._id}/manage`);
+        navigate(`/instructor/courses/${course.alias}/manage`);
     };
 
     return (

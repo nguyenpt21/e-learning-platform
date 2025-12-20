@@ -58,9 +58,9 @@ const getAllFilteredItems = (data) => {
 };
 
 const Captions = () => {
-    const { courseId } = useParams();
-    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseId);
-    const { data, isLoading } = useGetCaptionStatusQuery(courseId);
+    const { courseAlias } = useParams();
+    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseAlias);
+    const { data, isLoading } = useGetCaptionStatusQuery(courseAlias);
 
     const [activeTab, setActiveTab] = useState("all");
     const [captionLanguage, setCaptionLanguage] = useState("");
@@ -77,7 +77,22 @@ const Captions = () => {
     }, [data]);
 
     if (isLoading || isLoandingCourseInfo) {
-        return <div></div>;
+        return (
+            <div>
+                <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                    <div className="container flex items-center justify-between text-white font-semibold">
+                        <div className="flex items-center gap-2">
+                            <Link
+                                to="/instructor/courses"
+                                className="px-2 py-1 rounded hover:bg-gray-600"
+                            >
+                                Quay lại
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     console.log(data.captions);
@@ -123,14 +138,13 @@ const Captions = () => {
             activeTab === "all" ? section.items : section.items.filter((i) => !i.content?.captions),
     }));
 
-
     const handleAutoGeneretaCaption = async () => {
         try {
             const filteredItems = getAllFilteredItems(data.captions);
             if (filteredItems.length === 0) {
                 toast.info("Các video đã có phụ đề.");
             } else {
-                await generateCaptions(courseId).unwrap();
+                await generateCaptions(course?.courseId).unwrap();
                 toast.info("Phụ đề đang được tạo.");
             }
         } catch (error) {
@@ -221,8 +235,9 @@ const Captions = () => {
                                                     <CaptionItem
                                                         key={i}
                                                         item={item}
-                                                        courseId={courseId}
+                                                        courseId={course?._id}
                                                         language={captionLanguage}
+                                                        courseAlias={courseAlias}
                                                     ></CaptionItem>
                                                 );
                                             })}

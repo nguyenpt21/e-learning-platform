@@ -180,7 +180,7 @@ const CourseGoal = ({ course }) => {
         }
 
         await updateCourse({
-            courseId: course._id,
+            courseAlias: course.alias,
             data: {
                 learningOutcomes: learningOutcomes.map((outcome) => outcome.value),
                 ...(requirements.filter((i) => i.value.trim() !== "").length > 0 && {

@@ -13,7 +13,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useProcessCourseMutation } from "@/redux/api/courseApiSlice";
 const CourseManageLayout = () => {
     const location = useLocation();
-    const { courseId } = useParams();
+    const { courseAlias } = useParams();
     const MENU_ITEMS = [
         {
             title: "Đối tượng học viên",
@@ -39,7 +39,7 @@ const CourseManageLayout = () => {
 
     const handlePublish = async () => {
         try {
-            const result = await processCourse(courseId).unwrap();
+            const result = await processCourse(courseAlias).unwrap();
 
             console.log(result);
             if (!result.success) {

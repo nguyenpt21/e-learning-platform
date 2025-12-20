@@ -54,7 +54,7 @@ body,
 .simple-editor-wrapper {
   width: 100%;
   height: 100%;
-  border: 1px solid #eef0f2;
+  border: 1px solid oklch(87.2% 0.01 258.338);
   border-radius: 8px;
   background-color: #fff;
   display: flex;
@@ -74,7 +74,7 @@ body,
   display: flex;
   align-items: center;
   gap: 4px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid oklch(87.2% 0.01 258.338) !important;
   flex-shrink: 0;
   background-color: #252525;
 }

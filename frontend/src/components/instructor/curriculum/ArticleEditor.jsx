@@ -9,6 +9,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 
 const ArticleEditor = ({ content, setContent }) => {
    
@@ -53,16 +54,8 @@ const ArticleEditor = ({ content, setContent }) => {
     }
 
     return (
-        <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-            <ReactQuillNew
-                ref={quillRef}
-                className="article-lecture-editor"
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={modules}
-                placeholder="Nhập nội dung..."
-            />
+        <div className="">
+            <SimpleEditor value={content} onChange={setContent} placeholder={"Nhập bài giảng"} mention={null}></SimpleEditor>
         </div>
     );
 };

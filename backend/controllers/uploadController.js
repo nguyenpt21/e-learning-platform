@@ -146,7 +146,7 @@ const generateURLFunction = async ({ courseId, type, fileName, fileType }) => {
         console.error(error);
     }
 };
-const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
+const uploadBase64ImagesInContent = async (courseId, htmlContent, type="qna") => {
   if (!htmlContent) return htmlContent;
 
   const regex = /<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/g;
@@ -168,7 +168,7 @@ const uploadBase64ImagesInContent = async (courseId, htmlContent) => {
     // ✅ Gọi trực tiếp hàm generateUploadURL
     const { uploadURL, publicURL } = await generateURLFunction({
         courseId,
-        type:"qna",
+        type: type,
         fileName,
         fileType
     });

@@ -43,13 +43,19 @@ function QuestionCard({ qna, selected, setSelected }) {
     >
       <CardHeader className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3">
-          <div className="rounded-full ring-ring ring-2">
-            <img
-              className="w-6 h-6 xl:w-8 xl:h-8"
-              src={qna?.author?.profilePicture}
-              alt={qna?.author?.firstName + " " + qna?.author?.lastName}
-            />
-          </div>
+          {qna?.author?.profilePicture?.url ? (
+            <div className="rounded-full ring-ring ring-2">
+              <img
+                className="w-6 h-6 xl:w-8 xl:h-8"
+                src={qna?.author?.profilePicture.url}
+                alt={qna?.author?.firstName + " " + qna?.author?.lastName}
+              /> 
+            </div>) : (
+            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs">
+              {qna?.author?.firstName[0].toUpperCase()}
+              {qna?.author?.lastName[0].toUpperCase()}
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <CardTitle className="text-[1rem] flex flex-col xl:flex-row items-start xl:items-center gap-1 text-nowrap">
               {qna?.author?.firstName} {qna?.author?.lastName}

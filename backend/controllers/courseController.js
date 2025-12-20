@@ -74,77 +74,21 @@ const getCourseByAlias = async (req, res) => {
 
         res.status(200).json({ ...course, sections });
     } catch (error) {
-        console.error("getCourseById error:", error);
-        res.status(500).json({ message: "Server Error" });
-    }
-};
-
-const getCourseById = async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId)
-            .populate("sections.sectionId")
-            .lean();
-
-        if (!course) return res.status(404).json({ message: "Course not found" });
-        if (course.status !== "published") {
-            return res.status(403).json({ message: "Course is not published" });
-        }
-
-        const lectureIds = [];
-        const quizIds = [];
-        course.sections.forEach(({ sectionId }) => {
-            sectionId?.curriculumItems?.forEach(({ itemType, itemId }) => {
-                if (itemType === "Lecture") lectureIds.push(itemId);
-                else if (itemType === "Quiz") quizIds.push(itemId);
-            });
-        });
-        const [lectures, quizzes] = await Promise.all([
-            Lecture.find({ _id: { $in: lectureIds } }).lean(),
-            Quiz.find({ _id: { $in: quizIds } }).lean(),
-        ]);
-
-        const lectureMap = Object.fromEntries(lectures.map((l) => [l._id.toString(), l]));
-        const quizMap = Object.fromEntries(quizzes.map((q) => [q._id.toString(), q]));
-
-        const sections = course.sections
-            .filter((s) => s.sectionId)
-            .map(({ sectionId, order }) => ({
-                ...sectionId,
-                order,
-                curriculumItems:
-                    sectionId.curriculumItems
-                        ?.map(({ itemType, itemId }) => {
-                            const itemData =
-                                itemType === "Lecture"
-                                    ? lectureMap[itemId.toString()]
-                                    : quizMap[itemId.toString()];
-                            if (!itemData) return null;
-                            return {
-                                itemType,
-                                ...itemData,
-                            };
-                        })
-                        .filter(Boolean) || [],
-            }));
-
-        res.status(200).json({ ...course, sections });
-    } catch (error) {
-        console.error("getCourseById error:", error);
+        console.error("getCourseByAlias error:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };
 
 const getCourseInfo = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId);
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({ alias: courseAlias });
 
         if (!course) return res.status(404).json({ message: "Course not found" });
 
         res.status(200).json(course);
     } catch (error) {
-        console.error("getCourseById error:", error);
+        console.error("getCourseByAlias error:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -186,11 +130,14 @@ const createCourse = async (req, res) => {
 
 const updateCourse = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId);
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({alias: courseAlias});
+        
         if (!course) {
             return res.status(404).json({ message: "Course not found" });
         }
+
+        const courseId = course._id
         const fields = [
             "learningOutcomes",
             "requirements",
@@ -230,8 +177,8 @@ const updateCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId).populate("sections");
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({alias: courseAlias}).populate("sections.sectionId").lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
         for (const section of course.sections) {
             for (const item of section.curriculumItems) {
@@ -404,8 +351,8 @@ const getAllVideoS3KeysByCourse = async (courseId) => {
 
 const processCourse = async (req, res) => {
     try {
-        const courseId = req.params.courseId;
-        const course = await Course.findById(courseId).populate("sections.sectionId");
+        const courseAlias = req.params.courseId;
+        const course = await Course.findOne({ alias: courseAlias });
 
         if (!course) {
             return res.json({
@@ -414,6 +361,7 @@ const processCourse = async (req, res) => {
             });
         }
 
+        const courseId = course._id;
         const checkResult = await checkCoursePublishRequirements(course);
 
         if (!checkResult.isValid) {
@@ -471,12 +419,6 @@ const processCourse = async (req, res) => {
 
         course.status = "processing";
         await course.save();
-
-        return res.json({
-            success: true,
-            state: "processing",
-            message: "Các video trong khóa học đang được xử lý",
-        });
 
         const videoConversion = await VideoConversion.create({
             courseId: courseId,
@@ -1361,9 +1303,11 @@ const handleCaptionWebhook = async (req, res) => {
 
 const getCaptionVideoStatus = async (req, res) => {
     try {
-        const { courseId } = req.params;
-        const course = await Course.findById(courseId);
+        const { courseAlias } = req.params;
+        const course = await Course.findOne({ alias: courseAlias });
         if (!course) return res.status(404).json({ message: "Course not found" });
+
+        const courseId = course._id;
 
         const promoVideoSection = {
             sectionTitle: "Video giới thiệu",
@@ -1486,10 +1430,10 @@ const getCaptionVideoStatus = async (req, res) => {
 
 const addCaptionVideo = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const { courseAlias } = req.params;
         const { videoType, itemId, caption } = req.body;
 
-        const course = await Course.findById(courseId);
+        const course = await Course.findOne({ alias: courseAlias });
         if (!course) return res.status(404).json({ message: "Course not found" });
 
         if (videoType === "promoVideo") {
@@ -1527,10 +1471,10 @@ const addCaptionVideo = async (req, res) => {
 
 const deleteCaptionVideo = async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const { courseAlias } = req.params;
         const { videoType, itemId, caption } = req.body;
         console.log(req.body);
-        const course = await Course.findById(courseId);
+        const course = await Course.findOne({ alias: courseAlias });
         if (!course) return res.status(404).json({ message: "Course not found" });
 
         if (videoType === "promoVideo") {
@@ -1650,7 +1594,7 @@ const updateCaption = async (req, res) => {
             }
 
             oldCaption = lecture.content.captions[captionIndex];
-            console.log(oldCaption)
+            console.log(oldCaption);
             oldS3Key = oldCaption.s3Key;
         } else if (itemType === "promoVideo") {
             course = await Course.findById(courseId);
@@ -1691,7 +1635,7 @@ const updateCaption = async (req, res) => {
             const newPublicURL = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${newS3Key}`;
 
             if (itemType === "lectureVideo") {
-                console.log(1636, oldCaption.toObject())
+                console.log(1636, oldCaption.toObject());
                 lecture.content.captions[captionIndex] = {
                     ...oldCaption.toObject(),
                     s3Key: newS3Key,
@@ -1752,7 +1696,6 @@ const updateCaption = async (req, res) => {
 
 export {
     getCourseByAlias,
-    getCourseById,
     getCourses,
     getAllCourses,
     createCourse,
@@ -1772,5 +1715,5 @@ export {
     deleteCaptionVideo,
     handleVideoWebhook,
     getCaptionContent,
-    updateCaption
+    updateCaption,
 };
