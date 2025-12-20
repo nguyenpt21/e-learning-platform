@@ -317,6 +317,7 @@ const updateCurriculumItem = async (req, res) => {
             type,
             content,
             resource, // for Lecture
+            question
         } = req.body;
 
         const course = await Course.findById(courseId);
@@ -343,7 +344,7 @@ const updateCurriculumItem = async (req, res) => {
         if (itemType === "Lecture") {
             item = await Lecture.findById(itemId);
             item.title = title || item.title;
-            item.description = description;
+            item.description = description || item.description;
             item.type = type || item.type;
             if (content) {
                 if ("text" in content) {

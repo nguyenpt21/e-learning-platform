@@ -19,7 +19,6 @@ import {
     deleteCaptionVideo,
     getCaptionContent,
     updateCaption,
-    getCourseByAlias
 } from "../controllers/courseController.js";
 
 import {
