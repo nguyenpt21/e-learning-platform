@@ -80,6 +80,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
     const [items, setItems] = useState([]);
 
     useEffect(() => {
+        if(!curriculumItems) return
         if (curriculumItems) {
             setItems(curriculumItems);
         }
@@ -268,7 +269,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
                 </div>
             )}
             <div className="mt-2 pl-12 pr-5 space-y-4">
-                {items && items.length > 0 ? (
+                {!isLoading ? (
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}

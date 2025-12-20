@@ -351,7 +351,7 @@ const getAllVideoS3KeysByCourse = async (courseId) => {
 
 const processCourse = async (req, res) => {
     try {
-        const courseAlias = req.params.courseId;
+        const courseAlias = req.params.courseAlias;
         const course = await Course.findOne({ alias: courseAlias });
 
         if (!course) {
@@ -416,37 +416,6 @@ const processCourse = async (req, res) => {
 
         // 3. Launch batch đầu tiên
         await launchNextVideoBatch(courseId);
-
-        course.status = "processing";
-        await course.save();
-
-        const videoConversion = await VideoConversion.create({
-            courseId: courseId,
-            s3Keys: s3Keys,
-            totalVideos: s3Keys.length,
-            processedVideos: 0,
-        });
-
-        const payload = {
-            s3Keys: s3Keys,
-            bucket: process.env.AWS_S3_BUCKET_NAME,
-            outputPrefix: "hls-output",
-            jobId: videoConversion._id,
-        };
-
-        const command = new InvokeCommand({
-            FunctionName: process.env.LAMBDA_FUNCTION_NAME || "video-hls-orchestrator",
-            InvocationType: "RequestResponse",
-            Payload: JSON.stringify(payload),
-        });
-
-        const lambdaResponse = await lambda.send(command);
-
-        const responsePayload = JSON.parse(Buffer.from(lambdaResponse.Payload).toString());
-
-        if (responsePayload.statusCode !== 200) {
-            throw new Error(`Lambda failed: ${responsePayload.body}`);
-        }
 
         course.status = "processing";
         await course.save();

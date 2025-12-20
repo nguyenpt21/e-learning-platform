@@ -6,8 +6,9 @@ import { useLogoutMutation } from "@/redux/api/authSlice";
 import { useNavigate } from "react-router-dom";
 import { logout } from "@/redux/features/authSlice";
 import { LogOut, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-function UserDropDown() {
+function UserDropDown({user}) {
   const [logoutApi] = useLogoutMutation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -24,15 +25,11 @@ function UserDropDown() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="default"
-          className="rounded-full w-8 h-8 border border-[#098be4]"
-        >
-          <img
-            src={"https://placehold.co/16x16"}
-            alt="User Avatar"
-            className="w-8 h-8 rounded-full"
-          />
+        <Button variant="ghost" className="p-0 rounded-full">
+          <Avatar className="w-8 h-8 border border-[#098be4]">
+            <AvatarImage src={user.profilePicture?.url} />
+            <AvatarFallback>{user.firstName[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
         </Button>
       </PopoverTrigger>
       <PopoverContent className={"max-w-md w-auto p-2"}>

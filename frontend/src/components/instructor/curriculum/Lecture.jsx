@@ -324,8 +324,8 @@ const Lecture = ({
                                 Hủy
                             </button>
                             <button
-                                onClick={() => {
-                                    updateLecture({
+                                onClick={async () => {
+                                    await updateLecture({
                                         courseId,
                                         sectionId,
                                         itemId: item._id,
@@ -333,7 +333,7 @@ const Lecture = ({
                                             itemType: "Lecture",
                                             title: lectureTitle,
                                         },
-                                    });
+                                    }).unwrap();
                                     setIsEditingTitle(false);
                                 }}
                                 className="bg-primary text-white px-4 py-1 rounded hover:bg-primary/70"
@@ -504,8 +504,8 @@ const Lecture = ({
                     ></ArticleEditor>
                     <div className="flex justify-end gap-3 mt-3">
                         <button
-                            onClick={() => {
-                                updateLecture({
+                            onClick={async () => {
+                                await updateLecture({
                                     courseId,
                                     sectionId,
                                     itemId: item._id,
@@ -516,7 +516,7 @@ const Lecture = ({
                                             duration: estimateReadingTime(textArticle),
                                         },
                                     },
-                                });
+                                }).unwrap();
                                 setIsEditingArticleLecture(false);
                                 setIsCourseInfoOpen(!isCourseInfoOpen);
                             }}

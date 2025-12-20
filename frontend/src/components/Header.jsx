@@ -24,18 +24,6 @@ export default function Header({ q }) {
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
-  const [logoutApi] = useLogoutMutation();
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi().unwrap();
-      dispatch(logout());
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      alert("Logout thất bại, thử lại");
-    }
-  };
 
   const handleSearch = () => {
     const param = new URLSearchParams()
@@ -182,7 +170,7 @@ export default function Header({ q }) {
                 <span className="text-gray-700">
                   Xin chào, {user.firstName || user.email}
                 </span>
-                <UserDropDown />
+                <UserDropDown user={user} />
               </div>
             </div>
           )}

@@ -76,8 +76,8 @@ const CoursesManage = () => {
                 title: courseName,
                 category: selectedCourseCategory,
             }).unwrap();
-            const courseId = courseResponse.alias;
-
+            const courseAlias = courseResponse.alias;
+            const courseId = courseResponse._id
             const sectionResponse = await createSection({
                 courseId,
                 sectionData: {
@@ -85,7 +85,7 @@ const CoursesManage = () => {
                 },
             });
 
-            navigate(`/instructor/courses/${alias}/manage`);
+            navigate(`/instructor/courses/${courseAlias}/manage`);
         } catch (error) {
             console.error("Lỗi khi tạo khóa học:", error);
         }
