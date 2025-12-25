@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/pagination";
 
 import { Star } from "lucide-react";
-import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
+import {  CardCatalog} from "@/components/student/courses-catalog/CardCatalog";
 import { useBreakpoint } from "@/hooks/tiptap/useBreakpoint";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";

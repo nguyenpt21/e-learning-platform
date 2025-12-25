@@ -51,7 +51,7 @@ const InstructorLayout = () => {
             submenu: [
                 {
                     title: "Tổng quan",
-                    to: "/instructor/overview",
+                    to: "/instructor/performance/overview",
                 },
                 {
                     title: "Học viên",
@@ -130,7 +130,7 @@ const InstructorLayout = () => {
                                                         <li key={subIdx}>
                                                             <Link
                                                                 to={sub.to}
-                                                                className={`block  pl-[48px] py-[10px] hover:bg-[#dff1fe] ${
+                                                                className={`block  pl-12 py-2.5 hover:bg-[#dff1fe] ${
                                                                     location.pathname === sub.to
                                                                         ? "bg-[#dff1fe]"
                                                                         : "text-gray-700"

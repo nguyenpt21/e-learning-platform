@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, Heart } from "lucide-react";
 import Button from "./Button.jsx";
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
@@ -126,6 +126,9 @@ export default function Header({ q }) {
 
         {/* Right side */}
         <div className="flex items-center text-sm">
+           <Button variant="default" className="text-sm" >
+            <Heart className="text-lg cursor-pointer" />
+          </Button>
           <Button variant="default" className="text-sm" onClick={handleCart}>
             <ShoppingCart className="text-lg cursor-pointer" />
           </Button>

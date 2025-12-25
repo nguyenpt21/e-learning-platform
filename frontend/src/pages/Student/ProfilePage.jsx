@@ -56,8 +56,8 @@ export default function ProfilePage() {
 
   // Load profile data khi component mount hoặc khi data thay đổi
   useEffect(() => {
-    if (profileData?.data) {
-      const userData = profileData.data;
+    if (profileData) {
+      const userData = profileData;
       setProfile({
         firstName: userData.firstName || "",
         lastName: userData.lastName || "",
@@ -70,6 +70,10 @@ export default function ProfilePage() {
       setNewProfilePicturePreview(null);
     }
   }, [profileData]);
+
+  useEffect(() => {
+  console.log("profileData:", profileData);
+}, [profileData]);
 
   // --- HANDLERS ---
   const handleInputChange = (e) => {

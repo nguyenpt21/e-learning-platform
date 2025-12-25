@@ -20,7 +20,7 @@ const InstructorRoutes = () => {
             <Route element={<InstructorLayout />}>
                 <Route index element={<Navigate to="/instructor/courses" replace />} />
                 <Route path="courses" element={<CoursesManage />} />
-                <Route path="overview" element={<Overview />} />
+                <Route path="performance/overview" element={<Overview />} />
                 <Route path="communication/announcements" element={<CourseAnnouncement />} />
                 <Route path="communication/qa" element={<CourseQA />} />
                 <Route path="performance/engagement" element={<CourseEngagement/>} />
