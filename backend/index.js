@@ -17,6 +17,7 @@ import qnaRoute from "./routes/qnaRoute.js"
 import performanceRoute from "./routes/performanceRoute.js"
 import announcementRoute from "./routes/announcement.js";
 import reviewRoute from "./routes/reviewRoute.js";
+import favoriteRoute from "./routes/favoriteRoute.js";
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.use('/api/performance', performanceRoute)
 
 app.use("/api/announcement", announcementRoute);
 app.use("/api/review", reviewRoute);
+app.use("/api/favorites", favoriteRoute);
 
 app.use("/api/instructor/students", studentRoute);
 

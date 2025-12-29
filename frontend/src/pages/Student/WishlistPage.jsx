@@ -3,67 +3,20 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FavoriteCourseCard from "@/components/student/courses-catalog/FavoriteCourseCard";
-import { useState } from "react";
 import { HeartOff } from "lucide-react";
+import { useGetMyFavoritesQuery, useRemoveFromFavoritesMutation } from "@/redux/api/favoriteApiSlice";
 
 export default function WishlistPage() {
-  const [favorites, setFavorites] = useState([
-    {
-      _id: "1",
-      title: "React từ cơ bản đến nâng cao",
-      subtitle: "Học React bài bản",
-      price: 499000,
-      level: "Beginner",
-      averageRating: 4.8,
-      reviews: 120,
-      thumbnail: {
-        publicURL:
-          "https://images.unsplash.com/photo-1587620962725-abab7fe55159",
-      },
-    },
-    {
-      _id: "2",
-      title: "Node.js & Express Backend",
-      subtitle: "Xây dựng REST API",
-      price: 399000,
-      level: "Intermediate",
-      averageRating: 4.6,
-      reviews: 90,
-      thumbnail: {
-        publicURL:
-          "https://images.unsplash.com/photo-1518770660439-4636190af475",
-      },
-    },
-     {
-      _id: "3",
-      title: "Node.js & Express Backend",
-      subtitle: "Xây dựng REST API",
-      price: 399000,
-      level: "Intermediate",
-      averageRating: 4.6,
-      reviews: 90,
-      thumbnail: {
-        publicURL:
-          "https://images.unsplash.com/photo-1518770660439-4636190af475",
-      },
-    },
-     {
-      _id: "4",
-      title: "Node.js & Express Backend",
-      subtitle: "Xây dựng REST API",
-      price: 399000,
-      level: "Intermediate",
-      averageRating: 4.6,
-      reviews: 90,
-      thumbnail: {
-        publicURL:
-          "https://images.unsplash.com/photo-1518770660439-4636190af475",
-      },
-    },
-  ]);
+  const { data: favorites = [], isLoading, error } = useGetMyFavoritesQuery();
+  const [removeFromFavorites, { isLoading: isRemoving }] = useRemoveFromFavoritesMutation();
 
-  const removeFavorite = (id) => {
-    setFavorites((prev) => prev.filter((c) => c._id !== id));
+  const removeFavorite = async (courseId) => {
+    try {
+      await removeFromFavorites(courseId).unwrap();
+      toast.success("Đã xóa khỏi yêu thích");
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+    }
   };
 
   return (
@@ -82,8 +35,19 @@ export default function WishlistPage() {
             </span>
           </div>
 
-          {/* EMPTY STATE */}
-          {favorites.length === 0 ? (
+          {/* LOADING STATE */}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#098be4] mb-4"></div>
+              <p className="text-gray-500 text-lg">Đang tải danh sách yêu thích...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <HeartOff className="w-12 h-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-lg">Có lỗi xảy ra khi tải danh sách yêu thích</p>
+            </div>
+          ) : favorites.length === 0 ? (
+            /* EMPTY STATE */
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <HeartOff className="w-12 h-12 text-gray-400 mb-4" />
               <p className="text-gray-500 text-lg">
