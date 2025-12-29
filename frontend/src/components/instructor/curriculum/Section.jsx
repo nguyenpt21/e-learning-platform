@@ -20,32 +20,40 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, MouseSensor } from "@dnd-kit/core";
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    MouseSensor,
+} from "@dnd-kit/core";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { toast } from "react-toastify";
 import SortableItem from "./SortableItem";
+import { Skeleton } from "@/components/ui/skeleton";
 
 class CustomPointerSensor extends PointerSensor {
-  static activators = [
-    {
-      eventName: 'onPointerDown',
-      handler: ({ nativeEvent: event }) => {
-        // Bỏ qua nếu click vào input, textarea, button, select
-        if (
-          event.target instanceof HTMLInputElement ||
-          event.target instanceof HTMLTextAreaElement ||
-          event.target instanceof HTMLSelectElement ||
-          event.target instanceof HTMLButtonElement ||
-          event.target.closest('input, textarea, select, button')
-        ) {
-          return false;
-        }
-        
-        return true;
-      },
-    },
-  ];
+    static activators = [
+        {
+            eventName: "onPointerDown",
+            handler: ({ nativeEvent: event }) => {
+                // Bỏ qua nếu click vào input, textarea, button, select
+                if (
+                    event.target instanceof HTMLInputElement ||
+                    event.target instanceof HTMLTextAreaElement ||
+                    event.target instanceof HTMLSelectElement ||
+                    event.target instanceof HTMLButtonElement ||
+                    event.target.closest("input, textarea, select, button")
+                ) {
+                    return false;
+                }
+
+                return true;
+            },
+        },
+    ];
 }
 
 const Section = ({ section, courseId, dragHandleProps, style }) => {
@@ -72,6 +80,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
     const [items, setItems] = useState([]);
 
     useEffect(() => {
+        if(!curriculumItems) return
         if (curriculumItems) {
             setItems(curriculumItems);
         }
@@ -159,9 +168,6 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
             console.error("Lỗi khi xóa chương: ", error);
         }
     };
-    if (isLoading) {
-        return <></>;
-    }
 
     return (
         <div style={style} className="border rounded-md bg-primary/2 pb-4 border-gray-200 ">
@@ -263,7 +269,7 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
                 </div>
             )}
             <div className="mt-2 pl-12 pr-5 space-y-4">
-                {items.length > 0 && (
+                {!isLoading ? (
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -304,6 +310,12 @@ const Section = ({ section, courseId, dragHandleProps, style }) => {
                             </div>
                         </SortableContext>
                     </DndContext>
+                ) : (
+                    <div className="space-y-4">
+                        <Skeleton className="h-[49.33px] rounded"></Skeleton>
+                        <Skeleton className="h-[49.33px] rounded"></Skeleton>
+                        <Skeleton className="h-[49.33px] rounded"></Skeleton>
+                    </div>
                 )}
                 {isOpenItemType ? (
                     <div className="flex gap-3 mt-4 text-[14px]">

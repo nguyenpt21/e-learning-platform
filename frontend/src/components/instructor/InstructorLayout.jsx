@@ -13,7 +13,7 @@ const NavItem = ({ buttonContennt, linkTo, Dropdown }) => {
                 onMouseEnter={() => setShowDropdown(true)}
                 onMouseLeave={() => setShowDropdown(false)}
             >
-                <Link to={linkTo} className="p-2 rounded-lg hover:bg-[#dff1fe] block">
+                <Link to={linkTo} className="px-3 h-10 flex items-center justify-between  rounded-lg hover:bg-[#dff1fe]">
                     {buttonContennt}
                 </Link>
                 {showDropdown && <div className="absolute top-[52px] right-0">{Dropdown}</div>}
@@ -91,7 +91,7 @@ const InstructorLayout = () => {
                         </div>}
                     ></NavItem>
                     <NavItem
-                        buttonContennt={<span className="text-grayText">Học viên</span>}
+                        buttonContennt={<div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">A</div>}
                         linkTo={"/"}
                         Dropdown={<div className="w-[280px] px-3 py-4 border rounded-lg bg-white border-gray-100 shadow shadow-primary/20">
                             <p className="text-center text-[14px] text-grayText">Chuyển sang chế độ ở đây để - Quay trở lại các khóa học mà bạn đang tham gia.</p>

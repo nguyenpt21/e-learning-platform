@@ -249,6 +249,7 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
         <Toolbar
+          className="simple-editor-toolbar"
           ref={toolbarRef}
           style={{
             ...(isMobile

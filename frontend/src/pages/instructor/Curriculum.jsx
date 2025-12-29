@@ -13,11 +13,12 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useGetCourseInfoQuery, useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
 import SortableItem from "@/components/instructor/curriculum/SortableItem";
+import { Spinner } from "@/components/ui/spinner";
 
 const Curriculum = () => {
-    const { courseId } = useParams();
-    const { data: sectionsData, isLoading } = useGetAllSectionsByCourseQuery(courseId);
-    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseId);
+    const { courseAlias } = useParams();
+    const { data: sectionsData, isLoading } = useGetAllSectionsByCourseQuery(courseAlias);
+    const { data: course, isLoading: isLoandingCourseInfo } = useGetCourseInfoQuery(courseAlias);
 
     const [sectionForm, setSectionForm] = useState({
         title: "",
@@ -34,7 +35,7 @@ const Curriculum = () => {
         }
 
         try {
-            await addSection({ courseId, sectionData: sectionForm });
+            await addSection({ courseId: course?._id, sectionData: sectionForm });
             setIsAddingSection(false);
         } catch (error) {
             console.error("ỗi khi thêm chương:", error);
@@ -78,7 +79,7 @@ const Curriculum = () => {
 
         try {
             await updateSectionOrder({
-                courseId,
+                courseId: course?._id,
                 data: {
                     sections: sectionsWithNewOrder.map((item) => ({
                         sectionId: item._id,
@@ -94,7 +95,26 @@ const Curriculum = () => {
         }
     };
 
-    if (isLoading || isLoandingCourseInfo) return <></>;
+    if (isLoading || isLoandingCourseInfo)
+        return (
+            <div className="h-full">
+                <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
+                    <div className="container flex items-center justify-between text-white font-semibold">
+                        <div className="flex items-center gap-2">
+                            <Link
+                                to="/instructor/courses"
+                                className="px-2 py-1 rounded hover:bg-gray-600"
+                            >
+                                Quay lại
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+                <div className="h-full w-full flex items-center justify-center">
+                    <Spinner className="size-12" color="#098ce9" />
+                </div>
+            </div>
+        );
 
     return (
         <div>
@@ -132,7 +152,7 @@ const Curriculum = () => {
                                         <Section
                                             index={index}
                                             section={section}
-                                            courseId={courseId}
+                                            courseId={course?._id}
                                         ></Section>
                                     </SortableItem>
                                 ))}

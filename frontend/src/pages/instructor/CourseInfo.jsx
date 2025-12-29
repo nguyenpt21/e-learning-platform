@@ -351,7 +351,7 @@ const CourseInfo = ({ course }) => {
         }
 
         await updateCourse({
-            courseId: course._id,
+            courseAlias: course.alias,
             data: {
                 ...formData,
                 ...(promoVideo && {
@@ -470,7 +470,7 @@ const CourseInfo = ({ course }) => {
                     </div>
                 </div>
                 <div>
-                    <p className="font-semibold">Mô tả bài giảng</p>
+                    <p className="font-semibold">Mô tả khóa học</p>
                     <div className="rounded-[6px] mt-1 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
                         <ReactQuillNew
                             className="article-lecture-editor description-lecture-editor"

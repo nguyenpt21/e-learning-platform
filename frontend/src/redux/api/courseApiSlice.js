@@ -11,41 +11,46 @@ export const courseApiSlice = apiSlice.injectEndpoints({
             }),
         }),
         updateCourse: builder.mutation({
-            query: ({ courseId, data }) => ({
-                url: `${COURSE_URL}/${courseId}`,
+            query: ({ courseAlias, data }) => ({
+                url: `${COURSE_URL}/${courseAlias}`,
                 method: "PUT",
                 body: data,
             }),
-            invalidatesTags: (result, error, { courseId }) => [{ type: "Course", id: courseId }],
+            invalidatesTags: (result, error, { courseAlias }) => [
+                { type: "Course", id: courseAlias },
+            ],
         }),
         getCourseInfo: builder.query({
-            query: (courseId) => ({
-                url: `${COURSE_URL}/${courseId}/info`,
+            query: (courseAlias) => ({
+                url: `${COURSE_URL}/${courseAlias}/info`,
             }),
-            providesTags: (result, error, courseId) => [{ type: "Course", id: courseId }],
+            providesTags: (result, error, courseAlias) => [{ type: "Course", id: courseAlias }],
         }),
         processCourse: builder.mutation({
-            query: (courseId) => ({
-                url: `${COURSE_URL}/${courseId}/process`,
+            query: (courseAlias) => ({
+                url: `${COURSE_URL}/${courseAlias}/process`,
                 method: "POST",
             }),
         }),
         getCaptionStatus: builder.query({
-            query: (courseId) => ({
-                url: `${COURSE_URL}/${courseId}/captions`,
+            query: (courseAlias) => ({
+                url: `${COURSE_URL}/${courseAlias}/captions`,
             }),
-            providesTags: (result, error, courseId) => [
-                { type: "Caption", id: courseId },
-                { type: "Course", id: courseId },
+            providesTags: (result, error, courseAlias) => [
+                { type: "Caption", id: courseAlias },
+                { type: "Course", id: courseAlias },
+                { type: "Caption" },
             ],
         }),
         addCaption: builder.mutation({
-            query: ({ courseId, caption }) => ({
-                url: `${COURSE_URL}/${courseId}/captions`,
+            query: ({ courseAlias, caption }) => ({
+                url: `${COURSE_URL}/${courseAlias}/captions`,
                 method: "POST",
                 body: caption,
             }),
-            invalidatesTags: (result, error, { courseId }) => [{ type: "Caption", id: courseId }],
+            invalidatesTags: (result, error, { courseAlias }) => [
+                { type: "Caption", id: courseAlias },
+            ],
         }),
         searchCourses: builder.query({
             query: (keyword) => ({
@@ -66,18 +71,23 @@ export const courseApiSlice = apiSlice.injectEndpoints({
             }),
         }),
         deleteCaption: builder.mutation({
-            query: ({ courseId, ...data }) => ({
-                url: `${COURSE_URL}/${courseId}/captions`,
+            query: ({ courseAlias, ...data }) => ({
+                url: `${COURSE_URL}/${courseAlias}/captions`,
                 method: "DELETE",
                 body: data,
             }),
-            invalidatesTags: (result, error, { courseId }) => [{ type: "Caption", id: courseId }, "Caption"],
+            invalidatesTags: (result, error, { courseAlias }) => [
+                { type: "Caption", id: courseAlias },
+                "Caption",
+            ],
         }),
         getCaptionContent: builder.query({
             query: ({ courseId, lectureId, language, itemType }) => ({
                 url: `${COURSE_URL}/${courseId}/captions/${lectureId}/${language}/${itemType}`,
             }),
-            providesTags: (result, error, { courseId, lectureId, language }) => [{ type: "Caption", id: `${courseId}-${lectureId}-${language}` }]
+            providesTags: (result, error, { courseId, lectureId, language }) => [
+                { type: "Caption", id: `${courseId}-${lectureId}-${language}` },
+            ],
         }),
         updateCaption: builder.mutation({
             query: ({ courseId, lectureId, language, itemType, captions }) => ({
@@ -85,7 +95,10 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 method: "PUT",
                 body: { captions },
             }),
-            invalidatesTags: (result, error, { courseId, lectureId, language }) => [{ type: "Caption", id: `${courseId}-${lectureId}-${language}` }]
+            invalidatesTags: (result, error, { courseId, lectureId, language }) => [
+                { type: "Caption", id: `${courseId}-${lectureId}-${language}` },
+                { type: "Caption" }
+            ],
         }),
     }),
 });

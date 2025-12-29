@@ -41,10 +41,10 @@ const RightCard = ({ course }) => {
   return (
     <div className="bg-white flex-col rounded-md shadow-xl text-gray-800 max-h-[800px] p-4 outline outline-1 outline-gray-300">
       <div className="mx-auto w-full h-80 self-center space-y-2 h-48 overflow-hidden mb-2">
-        {course?.thumbnail?.url ? (
+        {course?.thumbnail?.publicURL ? (
           <img
             src={
-              course?.thumbnail.url ||
+              course?.thumbnail.publicURL ||
               "/logo.png"
             }
             alt={course?.title}
