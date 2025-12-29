@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, Heart } from "lucide-react";
 import Button from "./Button.jsx";
 import { useState, useEffect, useRef, use } from "react";
 import { useSelector, useDispatch } from "react-redux";
