@@ -133,7 +133,7 @@ export function CardCatalog({ course, index, columns = 3 }) {
           )}
 
           <button className="mt-4 w-full bg-[#098be4] text-white py-2 rounded hover:bg-[#087ac7] transition">
-            Thêm vào giỏ hàng
+            Thêm vào yêu thích
           </button>
         </div>
       )}

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Heart } from "lucide-react";
 import Slider from "react-slick";
 import Button from "./Button";
 import CourseCard from "./CourseCard";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
+import { useAddToFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice";
+import { toast } from "react-toastify";
 
 function NextArrow(props) {
   const { className, style, onClick } = props;
@@ -28,6 +30,38 @@ function PrevArrow(props) {
     >
       <ChevronLeft className="w-6 h-6" />
     </button>
+  );
+}
+
+function FavoriteButton({ courseId, onAddToFavorite, isLoading }) {
+  const { data: favoriteData, isLoading: isChecking } = useCheckFavoriteQuery(courseId, {
+    skip: !courseId,
+  });
+  const isFavorite = favoriteData?.isFavorite || false;
+
+  if (!courseId) return null;
+
+  return (
+    <Button
+      variant="reverse"
+      className="w-full mt-2 flex items-center justify-center gap-2"
+      onClick={(e) => onAddToFavorite(e, courseId)}
+      disabled={isLoading || isChecking || isFavorite}
+    >
+      {isLoading ? (
+        "Đang thêm..."
+      ) : isFavorite ? (
+        <>
+          <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+          Đã thêm vào yêu thích
+        </>
+      ) : (
+        <>
+          <Heart className="w-4 h-4" />
+          Thêm vào yêu thích
+        </>
+      )}
+    </Button>
   );
 }
 
@@ -90,6 +124,20 @@ export default function CoursesList() {
       ? courses.filter((c) => c?.category === activeTab)
       : [];
   const sliderRef = useRef(null);
+  
+  // Favorite functionality
+  const [addToFavorites, { isLoading: isAddingFavorite }] = useAddToFavoritesMutation();
+  
+  const handleAddToFavorite = async (e, courseId) => {
+    e.stopPropagation();
+    try {
+      await addToFavorites(courseId).unwrap();
+      toast.success("Đã thêm vào yêu thích");
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      toast.error("Lỗi khi thêm vào yêu thích");
+    }
+  };
   const settings = {
     dots: false,
     infinite: true,
@@ -142,7 +190,7 @@ export default function CoursesList() {
               <Button
                 onMouseEnter={(e) => enterPopUp(e, index)}
                 onMouseLeave={leavePopUp}
-                key={course.id}
+                key={course._id || course.id}
                 className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
               >
                 <CourseCard course={course} isInSlider={true} />
@@ -233,9 +281,11 @@ export default function CoursesList() {
                 </ul>
               </div>
 
-              <Button variant="reverse" className="w-full mt-2">
-                Thêm vào giỏ hàng
-              </Button>
+              <FavoriteButton 
+                courseId={coursePopUp?._id}
+                onAddToFavorite={handleAddToFavorite}
+                isLoading={isAddingFavorite}
+              />
             </div>
           </div>
         )}
