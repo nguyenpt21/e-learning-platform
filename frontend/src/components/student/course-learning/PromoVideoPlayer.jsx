@@ -21,7 +21,7 @@ const PromoVideoPlayer = ({
                     startTime={startTime}
                     captions={captions}
                     poster={poster}
-                    className={`h-48`}
+                    className={``}
                 />
             </div>
         </div>

@@ -68,18 +68,11 @@ const CourseLearning = () => {
                 lectureId={currentItem?.itemId}
                 sectionId={currentSectionId}
             />
-            <div className="grow lg:grid lg:grid-cols-7">
+            <div className="grow lg:grid lg:grid-cols-9">
                 <div className='fixed bottom-5 left-5 z-50'>
                     <QnASheet courseId={course?._id} lectureId={currentItem?.itemId}/>
                 </div>
-                <div className="lg:col-span-5 h-[calc(100vh-64px)] overflow-auto">
-                    <CoursePlayer
-                        key={`${currentItem.itemId}-${currentItem.itemType}}`}
-                        itemId={currentItem.itemId}
-                        itemType={currentItem.itemType}
-                        onDoneChange={handleDoneChange}
-                    />
-                </div>
+                
                 <div className="lg:col-span-2 h-[calc(100vh-64px)] overflow-auto border-l">
                     <SectionsAccordion
                         courseId = {course._id}
@@ -87,6 +80,15 @@ const CourseLearning = () => {
                         handleChangeItem={handleChangeItem}
                         currentItem={currentItem}
                         isDone={isDone}
+                    />
+                </div>
+
+                <div className="lg:col-span-7 h-[calc(100vh-64px)] overflow-auto">
+                    <CoursePlayer
+                        key={`${currentItem.itemId}-${currentItem.itemType}}`}
+                        itemId={currentItem.itemId}
+                        itemType={currentItem.itemType}
+                        onDoneChange={handleDoneChange}
                     />
                 </div>
             </div>
