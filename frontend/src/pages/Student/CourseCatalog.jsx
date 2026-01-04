@@ -67,7 +67,7 @@ const languageOptions = [
 ];
 
 export function CoursesCatalog() {
-  const COURSES_PER_PAGE = 3;
+  const COURSES_PER_PAGE = 15;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const q = searchParams.get("q")
@@ -198,9 +198,9 @@ export function CoursesCatalog() {
       </header>
 
       <div className="container py-8">
-        <div className="flex gap-3 h-[calc(100vh-8rem)]">
+        <div className="flex gap-3 ">
           {/* Sidebar Filters */}
-          <div className="w-56 shrink-0 overflow-y-auto">
+          <div className="w-56 shrink-0 ">
             <div className=" top-8 space-y-6">
               {/* Category */}
               <div>
@@ -340,10 +340,10 @@ export function CoursesCatalog() {
           </div>
 
           {/* Course Grid */}
-          <main className="px-10 flex-1 overflow-y-auto">
+          <main className="px-10 flex-1">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Hiển thị {startIndex + 1}-{Math.min(endIndex, courses?.totalCourse)} trong tổng số {courses?.results.length} kết quả
+                Hiển thị {courses?.results?.length > 0 ? startIndex + 1 : 0}-{Math.min(startIndex + (courses?.results?.length || 0), courses?.totalCourse || 0)} trong tổng số {courses?.totalCourse || 0} kết quả
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
