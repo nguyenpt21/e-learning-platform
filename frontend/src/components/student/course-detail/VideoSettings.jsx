@@ -52,7 +52,6 @@ const VideoSettings = ({ videoRef, containerRef,
             setCurrentLang("off");
         }
     };
-    console.log(qualities)
 
     return (
         <div>

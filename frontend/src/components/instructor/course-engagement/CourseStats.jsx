@@ -133,8 +133,8 @@ const SectionStats = ({ section, id }) => {
                                                 <td className="p-4 text-foreground">{item.watched} học viên</td>
                                                 <td className="p-4">
                                                     <div className="flex items-center justify-start gap-3">
-                                                        <span className="text-sm font-medium">{item.watchedPercent}%</span>
-                                                        <Progress value={item.watchedPercent} className="flex-1" />
+                                                        <span className="text-sm font-medium">{item.completedPercent}%</span>
+                                                        <Progress value={item.completedPercent} className="flex-1" />
                                                     </div>
                                                 </td>
                                             </>
@@ -150,8 +150,8 @@ const SectionStats = ({ section, id }) => {
                                                 <td className="p-4 text-foreground">{item.watched} học viên</td>
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-sm font-medium">{item.watchedPercent}%</span>
-                                                        <Progress value={item.watchedPercent} className="flex-1" />
+                                                        <span className="text-sm font-medium">{item.completedPercent}%</span>
+                                                        <Progress value={item.completedPercent} className="flex-1" />
                                                     </div>
                                                 </td>
                                             </>

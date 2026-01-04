@@ -133,7 +133,7 @@ export const updateItemProgress = async (req, res) => {
                     $set: {
                         totalSeconds: total,
                         watchedSeconds: ws,
-                        progressPercent: percent,
+                        // progressPercent: percent,
                         updatedAt: new Date()
                     }
                 }

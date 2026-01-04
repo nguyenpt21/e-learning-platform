@@ -17,7 +17,7 @@ const LANGUAGE_MAP = {
 const VideoPlayer = forwardRef(({
     className = "", videoHeight = "",
     videoUrl = "https://newzlearn-e-learning-bucket.s3.ap-southeast-1.amazonaws.com/68ef1a1ce03f62b51b2cd332/lecture-video/hls-output/1765268478809-HTML CSS là gì   Ví dụ trực quan về HTML & CSS/master.m3u8",
-    onPlayStateChange, startTime = 0, captions = [], poster
+    onTimeUpdate, onPlayStateChange, startTime = 0, captions = [], poster
 }, ref) => {
 
     const videoRef = useRef(null);
@@ -46,6 +46,12 @@ const VideoPlayer = forwardRef(({
                 videoRef.current.currentTime = time;
         }
     }));
+
+    const handleTimeUpdate = () => {
+        if (videoRef.current && onTimeUpdate) {
+            onTimeUpdate(videoRef.current.currentTime);
+        }
+    };
 
 
     //khởi tạo video
@@ -270,10 +276,10 @@ const VideoPlayer = forwardRef(({
                         aspect-video
                     `}
                 >
-                    <Poster 
-                        poster={poster} 
-                        isPlaying={isPlaying} 
-                        currentTime={currentTime}  
+                    <Poster
+                        poster={poster}
+                        isPlaying={isPlaying}
+                        currentTime={currentTime}
                     />
 
                     <video
@@ -282,6 +288,7 @@ const VideoPlayer = forwardRef(({
                         playsInline
                         poster={poster}
                         onClick={handleTogglePlay}
+                        onTimeUpdate={handleTimeUpdate}
                     />
 
                     <CenterPlayButton
@@ -317,7 +324,6 @@ const VideoPlayer = forwardRef(({
 })
 
 const Poster = ({ poster, isPlaying, currentTime }) => {
-    console.log(poster)
     return (
         <>
             {poster && !isPlaying && currentTime === 0 && (
