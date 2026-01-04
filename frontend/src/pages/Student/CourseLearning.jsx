@@ -5,6 +5,7 @@ import CoursePlayer from '@/components/student/course-learning/CoursePlayer'
 import Header from '@/components/student/course-learning/Header'
 import { QnASheet } from '@/components/student/qna/QnASheet'
 import SectionsAccordion from '@/components/student/course-learning/SectionsAccordion'
+import { ChatbotPanel, ChatbotToggleButton } from '@/components/student/course-learning/ChatbotWidget'
 import { useGetCourseByAliasQuery } from '@/redux/api/coursePublicApiSlice'
 import { useGetItemsProgressQuery } from '@/redux/api/progressApiSlice'
 import { skipToken } from '@reduxjs/toolkit/query'
@@ -26,6 +27,8 @@ const CourseLearning = () => {
     const [currentItem, setCurrentItem] = useState(null)
     const [currentSectionId, setCurrentSectionId] = useState(null)
     const [isDone, setIsDone] = useState(false);
+    const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+    
     const handleDoneChange = (done) => {
         setIsDone(done);
     };
@@ -68,12 +71,14 @@ const CourseLearning = () => {
                 lectureId={currentItem?.itemId}
                 sectionId={currentSectionId}
             />
-            <div className="grow lg:grid lg:grid-cols-9">
+            <div className="grow flex">
+                {/* Q&A Sheet Button */}
                 <div className='fixed bottom-5 left-5 z-50'>
                     <QnASheet courseId={course?._id} lectureId={currentItem?.itemId}/>
                 </div>
                 
-                <div className="lg:col-span-2 h-[calc(100vh-64px)] overflow-auto border-l">
+                {/* Sections Accordion - Left sidebar */}
+                <div className="w-72 shrink-0 h-[calc(100vh-64px)] overflow-auto border-r border-gray-200">
                     <SectionsAccordion
                         courseId = {course._id}
                         sections={course.sections}
@@ -83,7 +88,8 @@ const CourseLearning = () => {
                     />
                 </div>
 
-                <div className="lg:col-span-7 h-[calc(100vh-64px)] overflow-auto">
+                {/* Course Player - Main content */}
+                <div className={`flex-1 h-[calc(100vh-64px)] overflow-auto transition-all duration-300`}>
                     <CoursePlayer
                         key={`${currentItem.itemId}-${currentItem.itemType}}`}
                         itemId={currentItem.itemId}
@@ -91,7 +97,28 @@ const CourseLearning = () => {
                         onDoneChange={handleDoneChange}
                     />
                 </div>
+
+                {/* Chatbot Panel - Right sidebar (when open) */}
+                <div 
+                    className={`h-[calc(100vh-64px)] shrink-0 transition-all duration-300 overflow-hidden ${
+                        isChatbotOpen ? 'w-75' : 'w-0'
+                    }`}
+                >
+                    {isChatbotOpen && (
+                        <ChatbotPanel 
+                            courseTitle={course?.title} 
+                            isOpen={isChatbotOpen}
+                            onClose={() => setIsChatbotOpen(false)}
+                        />
+                    )}
+                </div>
             </div>
+            
+            {/* Chatbot Toggle Button */}
+            <ChatbotToggleButton 
+                isOpen={isChatbotOpen} 
+                onClick={() => setIsChatbotOpen(!isChatbotOpen)} 
+            />
         </div>
     )
 }
