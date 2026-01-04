@@ -74,7 +74,7 @@ export const login = async (req, res) => {
         }
 
         let isPasswordCorrect = null
-        if (email === "alice.instructor@example.com") {
+        if (email === "alice@example.com") {
             isPasswordCorrect = password === user.password ? true : false;
         } else {
             isPasswordCorrect = await bcrypt.compare(password, user.password);

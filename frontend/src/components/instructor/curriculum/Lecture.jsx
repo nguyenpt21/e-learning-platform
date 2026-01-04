@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { estimateReadingTime, formatTimeShort, generateThumbnailFromVideo } from "@/utils";
 import LectureResourceList from "./LectureResourceList";
+import LectureQuestion from "@/components/instructor/curriculum/LectureQuestion";
 
 const Lecture = ({
     item,
@@ -203,14 +204,13 @@ const Lecture = ({
             )}
             <div
                 {...dragHandleProps}
-                className={`cursor-grab active:cursor-grabbing border border-gray-300 p-3 ${
-                    isCourseInfoOpen ||
-                    isAddingResource ||
-                    isEditingArticleLecture ||
-                    isEditingVideoLecture
+                className={`cursor-grab active:cursor-grabbing border border-gray-300 p-3 ${isCourseInfoOpen ||
+                        isAddingResource ||
+                        isEditingArticleLecture ||
+                        isEditingVideoLecture
                         ? "rounded-t"
                         : "rounded"
-                } bg-white`}
+                    } bg-white`}
             >
                 {!isEditingTitle ? (
                     <div
@@ -222,9 +222,8 @@ const Lecture = ({
                             Bài học {sectionOrder}.{lectureOrder}: {lectureTitle}
                         </span>
                         <div
-                            className={`ml-2 flex items-center gap-1 transition-opacity duration-200 ${
-                                isHovered ? "opacity-100" : "opacity-0"
-                            }`}
+                            className={`ml-2 flex items-center gap-1 transition-opacity duration-200 ${isHovered ? "opacity-100" : "opacity-0"
+                                }`}
                         >
                             <button
                                 className="p-1 hover:bg-gray-200 rounded"
@@ -249,13 +248,12 @@ const Lecture = ({
                             <div className="flex">
                                 <div
                                     onClick={() => setIsCourseInfoOpen(!isCourseInfoOpen)}
-                                    className={`p-1 w-6 h-6 hover:bg-gray-200 rounded ${
-                                        isAddingResource ||
-                                        isEditingArticleLecture ||
-                                        isEditingVideoLecture
+                                    className={`p-1 w-6 h-6 hover:bg-gray-200 rounded ${isAddingResource ||
+                                            isEditingArticleLecture ||
+                                            isEditingVideoLecture
                                             ? "opacity-0"
                                             : "opacity-100"
-                                    }`}
+                                        }`}
                                 >
                                     {isCourseInfoOpen ? (
                                         <IoIosArrowUp></IoIosArrowUp>
@@ -264,9 +262,8 @@ const Lecture = ({
                                     )}
                                 </div>
                                 <MdOutlineDragIndicator
-                                    className={`p-1 w-6 h-6 hover:bg-gray-200 rounded ${
-                                        isHovered ? "opacity-100" : "opacity-0"
-                                    }`}
+                                    className={`p-1 w-6 h-6 hover:bg-gray-200 rounded ${isHovered ? "opacity-100" : "opacity-0"
+                                        }`}
                                 ></MdOutlineDragIndicator>
                             </div>
                         </div>
@@ -291,9 +288,8 @@ const Lecture = ({
                                     <button
                                         disabled={isDeletingLecture}
                                         onClick={handleDeleteLecture}
-                                        className={`px-4 py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium ${
-                                            isDeletingLecture ? "opacity-60" : ""
-                                        }`}
+                                        className={`px-4 py-1 bg-primary text-white rounded hover:bg-primary/70 font-medium ${isDeletingLecture ? "opacity-60" : ""
+                                            }`}
                                     >
                                         {isDeletingLecture ? "Đang xóa" : "OK"}
                                     </button>
@@ -443,18 +439,25 @@ const Lecture = ({
                             </div>
                         </div>
                     ) : item.description && !isAddingLectureDescription ? (
-                        <div className="border-t py-2 mt-2 border-gray-300">
-                            <div
-                                onClick={() => setIsAddingLectureDescription(true)}
-                                className="prose max-w-none border border-transparent hover:border-gray-300 cursor-pointer"
-                                dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(lectureDescription),
-                                }}
-                            />
+                        <div className="border-t pt-2 mt-2 border-gray-300">
+                            <div className="flex items-center gap-2 border px-2 py-1 border-transparent hover:border-gray-300 cursor-pointer">
+                                <p className="font-semibold ">Mô tả bài giảng: </p>
+                                <div
+                                    onClick={() => setIsAddingLectureDescription(true)}
+                                    className="prose max-w-none"
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(lectureDescription),
+                                    }}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <></>
                     )}
+                    <div>
+                        <LectureQuestion itemId={item._id} sectionId={sectionId} courseId={courseId} />
+                    </div>
+
                     {/* Lecture Resource List */}
                     {item.resources.length > 0 && (
                         <LectureResourceList
