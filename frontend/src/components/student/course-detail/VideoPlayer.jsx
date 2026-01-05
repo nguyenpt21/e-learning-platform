@@ -17,7 +17,7 @@ const LANGUAGE_MAP = {
 const VideoPlayer = forwardRef(({
     className = "", videoHeight = "",
     videoUrl = "https://newzlearn-e-learning-bucket.s3.ap-southeast-1.amazonaws.com/68ef1a1ce03f62b51b2cd332/lecture-video/hls-output/1765268478809-HTML CSS là gì   Ví dụ trực quan về HTML & CSS/master.m3u8",
-    onPlayStateChange, startTime = 0, captions = [], poster
+    onTimeUpdate, onPlayStateChange, startTime = 0, captions = [], poster
 }, ref) => {
 
     const videoRef = useRef(null);
@@ -33,6 +33,7 @@ const VideoPlayer = forwardRef(({
     const [availableLanguages, setAvailableLanguages] = useState([]);
     const [qualities, setQualities] = useState([]);
     const [currentQuality, setCurrentQuality] = useState(-1);
+    const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
 
 
     useImperativeHandle(ref, () => ({
@@ -45,6 +46,12 @@ const VideoPlayer = forwardRef(({
                 videoRef.current.currentTime = time;
         }
     }));
+
+    const handleTimeUpdate = () => {
+        if (videoRef.current && onTimeUpdate) {
+            onTimeUpdate(videoRef.current.currentTime);
+        }
+    };
 
 
     //khởi tạo video
@@ -135,7 +142,10 @@ const VideoPlayer = forwardRef(({
         const video = videoRef.current;
         if (!video) return;
 
-        const onLoaded = () => setDuration(video.duration);
+        const onLoadedMetadata = () => {
+            setDuration(video.duration);
+            setIsMetadataLoaded(true);
+        };
 
         const onTimeUpdate = () => {
             setCurrentTime(video.currentTime);
@@ -163,7 +173,7 @@ const VideoPlayer = forwardRef(({
             }
         };
 
-        video.addEventListener("loadedmetadata", onLoaded);
+        video.addEventListener("loadedmetadata", onLoadedMetadata);
         video.addEventListener("timeupdate", onTimeUpdate);
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
@@ -171,7 +181,7 @@ const VideoPlayer = forwardRef(({
         video.addEventListener("progress", handleProgress);
 
         return () => {
-            video.removeEventListener("loadedmetadata", onLoaded);
+            video.removeEventListener("loadedmetadata", onLoadedMetadata);
             video.removeEventListener("timeupdate", onTimeUpdate);
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
@@ -266,12 +276,19 @@ const VideoPlayer = forwardRef(({
                         aspect-video
                     `}
                 >
+                    <Poster
+                        poster={poster}
+                        isPlaying={isPlaying}
+                        currentTime={currentTime}
+                    />
+
                     <video
                         ref={videoRef}
                         className="w-full h-full object-cover"
                         playsInline
                         poster={poster}
                         onClick={handleTogglePlay}
+                        onTimeUpdate={handleTimeUpdate}
                     />
 
                     <CenterPlayButton
@@ -305,5 +322,21 @@ const VideoPlayer = forwardRef(({
         </div>
     )
 })
+
+const Poster = ({ poster, isPlaying, currentTime }) => {
+    return (
+        <>
+            {poster && !isPlaying && currentTime === 0 && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <img
+                        src={poster}
+                        alt="Video Poster"
+                        className="w-full h-full object-cover transition-opacity duration-500"
+                    />
+                </div>
+            )}
+        </>
+    );
+}
 
 export default VideoPlayer

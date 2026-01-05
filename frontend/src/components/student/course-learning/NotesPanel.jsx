@@ -13,6 +13,7 @@ import {
   useGetSectionByLectureQuery,
   useDeleteNoteMutation,
 } from "@/redux/api/notesApiSlice";
+import { seekVideo } from "@/redux/features/videoControlSlice";
 
 const formatDuration = (s) => {
   if (!s || isNaN(s)) return "00:00";
@@ -30,6 +31,7 @@ const NotesPanel = ({ lectureId, courseId, sectionId }) => {
   const [deleteNoteMutation] = useDeleteNoteMutation();
   const [filter, setFilter] = useState("current");
   const [sortBy, setSortBy] = useState("newest");
+  
 
   // Popup xác nhận xóa
   const [showConfirm, setShowConfirm] = useState(false);
@@ -123,6 +125,10 @@ const NotesPanel = ({ lectureId, courseId, sectionId }) => {
     }
   });
 
+  const handleSeekToTimestamp = (timestamp) => {
+    dispatch(seekVideo(timestamp));
+  };
+
   if (!isNotesPanelOpen) return null;
 
   return (
@@ -205,7 +211,10 @@ const NotesPanel = ({ lectureId, courseId, sectionId }) => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                          <div 
+                            className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded hover:cursor-pointer hover:bg-blue-600"
+                            onClick={() => handleSeekToTimestamp(note.timestamp)}
+                          >
                             {formatDuration(note.timestamp)}
                           </div>
                           <span className="text-sm font-semibold text-blue-600">

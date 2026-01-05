@@ -13,6 +13,7 @@ import CourseQA from "@/pages/instructor/CourseQA";
 import Review from "@/pages/instructor/Review";
 import CourseStudents from "@/pages/instructor/CourseStudents";
 import ProtectedRoutes from "./ProtectedRoutes";
+import Overview from "@/pages/instructor/Overview";
 
 const InstructorRoutes = () => {
     return (
@@ -25,6 +26,7 @@ const InstructorRoutes = () => {
                     <Route path="communication/qa" element={<CourseQA />} />
                     <Route path="performance/engagement" element={<CourseEngagement />} />
                     <Route path="performance/students" element={<CourseStudents />} />
+                    <Route path="performance/overview" element={<Overview />} />
                     <Route path="reviews" element={<Review />} />
                 </Route>
                 {/* Layout riêng cho quản lý course, không bị bọc bởi InstructorLayout */}

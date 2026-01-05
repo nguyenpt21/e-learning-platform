@@ -71,27 +71,44 @@ const getItemCompletionRate = async (sectionId, totalStudents) => {
             $group: {
                 _id: {
                     itemId: "$itemId",
-                    itemType: "$itemType"
+                    userId: "$userId"
                 },
-                completedCount: {
-                    $sum: {
+                hasWatched: {
+                    $max: {
+                        $cond: [{ $gt: ["$progressPercent", 0] }, 1, 0]
+                    }
+                },
+                hasCompleted: {
+                    $max: {
                         $cond: [{ $eq: ["$isCompleted", true] }, 1, 0]
                     }
                 }
+            }
+        },
+        {
+            $group: {
+                _id: "$_id.itemId",
+                completedCount: { $sum: "$hasCompleted" },
+                watchedCount: { $sum: "$hasWatched" }
             }
         }
     ]);
 
     const progressMap = Object.fromEntries(
         progressStats.map(p => [
-            p._id.itemId.toString(),
-            p.completedCount
+            p._id.toString(),
+            {
+                watchedCount: p.watchedCount,
+                completedCount: p.completedCount
+            }
         ])
     );
 
     const items = section.curriculumItems.map(ci => {
         const idStr = ci.itemId.toString();
-        // Lecture
+        const watchedCount = progressMap[idStr]?.watchedCount || 0;
+        const completedCount = progressMap[idStr]?.completedCount || 0;
+
         if (lectureMap[idStr]) {
             const lecture = lectureMap[idStr];
             const duration = lecture.content?.duration || 0;
@@ -102,20 +119,25 @@ const getItemCompletionRate = async (sectionId, totalStudents) => {
                 duration: duration
                     ? `${Math.floor(Math.round(duration) / 60)}:${String(Math.round(duration) % 60).padStart(2, "0")}`
                     : "0:00",
-                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
-                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                watched: `${watchedCount}/${totalStudents}`,
+                completedPercent: totalStudents
+                    ? Math.floor((completedCount / totalStudents) * 100)
+                    : 0,
                 type: "Lecture"
             };
         }
 
         if (quizMap[idStr]) {
             const quiz = quizMap[idStr];
+
             return {
                 id: idStr,
                 title: quiz.title,
                 duration: quiz.questions.length.toString(),
-                watched: `${progressMap[idStr] || 0}/${totalStudents}`,
-                watchedPercent: totalStudents ? Math.floor(((progressMap[idStr] || 0) / totalStudents) * 100) : 0,
+                watched: `${watchedCount}/${totalStudents}`,
+                completedPercent: totalStudents
+                    ? Math.floor((completedCount / totalStudents) * 100)
+                    : 0,
                 type: "Quiz"
             };
         }
@@ -124,7 +146,7 @@ const getItemCompletionRate = async (sectionId, totalStudents) => {
     }).filter(Boolean);
 
     return items;
-}
+};
 
 export const getCourseStats = async (req, res) => {
     try {

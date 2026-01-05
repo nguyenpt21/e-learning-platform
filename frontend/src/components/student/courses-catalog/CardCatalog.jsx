@@ -1,12 +1,65 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Star, Check, Heart } from "lucide-react"
+import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice"
+import { toast } from "react-toastify"
 
 export function CardCatalog({ course, index, columns = 3 }) {
   const [popUp, setPopUp] = useState(false)
+  const [cardLeave, setCardLeave] = useState(false)
+  const [popUpLeave, setPopUpLeave] = useState(true)
   const [coords, setCoords] = useState({ x: 0, y: 0 })
   const [width, setWidth] = useState(300)
+  const closeTimeoutRef = useRef(null)
+  
+  // Close popup when both card and popup are left (with delay)
+  useEffect(() => {
+    if (cardLeave && popUpLeave) {
+      closeTimeoutRef.current = setTimeout(() => {
+        setPopUp(false)
+      }, 150) // 150ms delay để có thời gian di chuột sang popup
+    } else {
+      // Clear timeout nếu vào lại card hoặc popup
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+        closeTimeoutRef.current = null
+      }
+    }
+    
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
+    }
+  }, [cardLeave, popUpLeave])
+  
+  // Favorite functionality
+  const [addToFavorites, { isLoading: isAddingFavorite }] = useAddToFavoritesMutation()
+  const [removeFromFavorites, { isLoading: isRemovingFavorite }] = useRemoveFromFavoritesMutation()
+  const { data: favoriteData, isLoading: isCheckingFavorite } = useCheckFavoriteQuery(course?._id, {
+    skip: !course?._id,
+  })
+  const isFavorite = favoriteData?.isFavorite || false
+  const isLoading = isAddingFavorite || isRemovingFavorite
+
+  const handleToggleFavorite = async (e) => {
+    e.stopPropagation()
+    if (isLoading) return
+    
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(course._id).unwrap()
+        toast.success("Đã xóa khỏi yêu thích")
+      } else {
+        await addToFavorites(course._id).unwrap()
+        toast.success("Đã thêm vào yêu thích")
+      }
+    } catch (error) {
+      console.error("Error toggling favorites:", error)
+      toast.error(isFavorite ? "Lỗi khi xóa khỏi yêu thích" : "Lỗi khi thêm vào yêu thích")
+    }
+  }
 
   const formatPrice = (price) => `₫${price.toLocaleString()}`
 
@@ -14,6 +67,8 @@ export function CardCatalog({ course, index, columns = 3 }) {
   const isRightEdge = (index + 1) % columns === 0
 
   const onEnter = (e) => {
+    setCardLeave(false)
+    setPopUpLeave(false)
     const rect = e.currentTarget.getBoundingClientRect()
     setCoords({
       x: rect.left,
@@ -24,7 +79,8 @@ export function CardCatalog({ course, index, columns = 3 }) {
   }
 
   const onLeave = () => {
-    setPopUp(false)
+    setCardLeave(true)
+    setPopUpLeave(true)
   }
 
   return (
@@ -65,78 +121,101 @@ export function CardCatalog({ course, index, columns = 3 }) {
       </div>
 
       {/* POPUP */}
-      {popUp && (
+      <div
+        className="absolute top-0 z-50"
+        style={{
+          top: "-10px",
+          left: isRightEdge ? `calc(-100% - 25px)` : `calc(100% + 25px)`,
+          width: width,
+          backgroundColor: "white",
+          padding: "1rem",
+          borderRadius: "0.5rem",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+          opacity: popUp ? 1 : 0,
+          transform: popUp ? "scale(1)" : "scale(0.95)",
+          transition: "opacity 0.3s ease-in-out, transform 0.3s ease-in-out",
+          pointerEvents: popUp ? "auto" : "none",
+        }}
+        onMouseEnter={() => setPopUpLeave(false)}
+        onMouseLeave={() => setPopUpLeave(true)}
+      >
+        {/* MŨI TÊN */}
         <div
-          className="absolute top-0 z-50"
           style={{
-            top: "-10px",
-            left: isRightEdge ? `calc(-100% - 25px)` : `calc(100% + 25px)`,
-            width: width,
-            background: "white",
-            padding: "1rem",
-            borderRadius: "0.5rem",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+            position: "absolute",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 0,
+            height: 0,
+            ...(isRightEdge
+              ? {
+                right: "-10px",
+                borderTop: "12px solid transparent",
+                borderBottom: "12px solid transparent",
+                borderLeft: "12px solid white",
+              }
+              : {
+                left: "-10px",
+                borderTop: "12px solid transparent",
+                borderBottom: "12px solid transparent",
+                borderRight: "12px solid white",
+              }),
           }}
-        >
-          {/* MŨI TÊN */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 0,
-              height: 0,
-              ...(isRightEdge
-                ? {
-                  right: "-10px",
-                  borderTop: "10px solid transparent",
-                  borderBottom: "10px solid transparent",
-                  borderLeft: "10px solid white",
-                }
-                : {
-                  left: "-10px",
-                  borderTop: "10px solid transparent",
-                  borderBottom: "10px solid transparent",
-                  borderRight: "10px solid white",
-                }),
-            }}
-          />
+        />
 
-          <p className="text-sm xl:text-base font-semibold">{course.title}</p>
-
-          <div className="flex items-center space-x-2 h-6 my-2">
-            {course.badge && (
-              <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded">
-                {course.badge}
+        <div>
+          <p className="text-sm xl:text-base font-semibold">
+            {course.title}
+          </p>
+          <div className="flex space-x-2 w-full items-center h-8">
+            {course.level && (
+              <span className="font-semibold text-xs px-2 py-1 bg-[#cee8fb] text-[#098be4] rounded max-w-1/2">
+                {course.level}
               </span>
             )}
-            <span className="text-xs py-1 italic max-w-1/2">
+            <p className="text-xs py-1 italic max-w-1/2">
               Cập nhật:{" "}
               {(course.updatedAt
                 ? new Date(course.updatedAt)
                 : new Date()
               ).toLocaleDateString("vi")}
-            </span>
+            </p>
           </div>
 
-          <p className="text-xs text-gray-700 leading-5">
-            {course.description.replace(/<[^>]+>/g, "").slice(0, 250)}
-            {course.description.replace(/<[^>]+>/g, "").length > 250 && "..."}
-          </p>
-
-          {course.learningOutcomes?.length > 0 && (
-            <ul className="list-disc text-xs/5 text-gray-800 space-y-2 px-5 mt-3">
-              {course.learningOutcomes.slice(0, 3).map((item, i) => (
-                <li key={i}>{item}</li>
+          <div className="text-xs/5 text-gray-800 py-2 space-y-2">
+            <p>{course?.subtitle}</p>
+            <ul className="list-disc px-6">
+              {course?.learningOutcomes?.slice(0, 3).map((outcome, idx) => (
+                <li key={idx}>{outcome}</li>
               ))}
             </ul>
-          )}
+          </div>
 
-          <button className="mt-4 w-full bg-[#098be4] text-white py-2 rounded hover:bg-[#087ac7] transition">
-            Thêm vào giỏ hàng
+          <button 
+            className={`mt-2 w-full py-2 rounded transition flex items-center justify-center gap-2 ${
+              isFavorite 
+                ? 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600' 
+                : 'bg-[#098be4] text-white hover:bg-[#087ac7]'
+            }`}
+            onClick={handleToggleFavorite}
+            disabled={isLoading || isCheckingFavorite}
+          >
+            {isLoading ? (
+              isFavorite ? "Đang xóa..." : "Đang thêm..."
+            ) : isFavorite ? (
+              <>
+                <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+                Đã thêm vào yêu thích
+              </>
+            ) : (
+              <>
+                <Heart className="w-4 h-4" />
+                Thêm vào yêu thích
+              </>
+            )}
           </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }

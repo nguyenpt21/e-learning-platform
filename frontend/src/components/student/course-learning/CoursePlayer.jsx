@@ -1,5 +1,5 @@
 import { useGetCurriculumItemByIdQuery } from "@/redux/api/coursePublicApiSlice";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import parse, { domToReact } from "html-react-parser";
 import { IoBook } from "react-icons/io5";
@@ -10,9 +10,12 @@ import {
   useGetItemProgressQuery,
   useUpdateItemProgressMutation,
 } from "@/redux/api/progressApiSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { openAddNoteModal } from "@/redux/features/notesSlice";
 import VideoPlayer from "@/components/student/course-detail/VideoPlayer";
+import { clearVideoCommand } from "@/redux/features/videoControlSlice";
+import { useGetLectureQuestionsQuery } from "@/redux/api/lectureQuestionApiSlice";
+import VideoQuestionOverlay from "@/components/student/course-learning/VideoQuestionOverlay";
 
 const quillToText = (quillContent) => {
   if (!quillContent) return null;
@@ -116,11 +119,58 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       },
       { skip: !item || !item?._id, refetchOnMountOrArgChange: true }
     );
+  const { data: questions, isLoading: isQuestionsLoading } = useGetLectureQuestionsQuery(itemId, {
+    skip: !itemId,
+    selectFromResult: ({ data }) => ({
+      data: data ? data.questions : [],
+    }),
+  });
+
   const [updateProgress] = useUpdateItemProgressMutation();
   const videoRef = useRef(null);
+  const lastTriggeredTime = useRef(-1);
+  const currentTimeRef = useRef(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [answeredQuestionIds, setAnsweredQuestionIds] = useState([]);
+
+  const completedQuestionIds = useMemo(() => {
+    return answeredQuestionIds || [];
+  }, [answeredQuestionIds]);
+  // Tạo Map: Key = giây (number), Value = question object
+  const questionsMap = useMemo(() => {
+    if (!questions || questions.length === 0) return new Map();
+    const map = new Map();
+    questions.forEach((q) => {
+      map.set(q.displayedAt, q);
+    });
+    return map;
+  }, [questions]);
+
+  //seek to note
+  const { seekTo, play, pause } = useSelector(
+    (state) => state.videoControl
+  );
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (seekTo !== null) {
+      video.setCurrentTime(Math.min(seekTo, video.getDuration()));
+      dispatch(clearVideoCommand());
+    }
+    if (play) {
+      video.play();
+      dispatch(clearVideoCommand());
+    }
+
+    if (pause) {
+      video.pause();
+      dispatch(clearVideoCommand());
+    }
+  }, [seekTo, play, pause, dispatch]);
 
   const handleAddNote = () => {
     // Tạm dừng video 
@@ -144,17 +194,6 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     }
   }, [isDone, onDoneChange]);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    const interval = setInterval(() => {
-      if (videoRef.current) {
-        setCurrentTime(Math.floor(videoRef.current.getCurrentTime()));
-      }
-      // console.log(videoRef.current.getCurrentTime(), "-", videoRef.current.getDuration())
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPlaying]);
-
   //lưu progress
   useEffect(() => {
     if (!item || !videoRef.current) return;
@@ -164,12 +203,14 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     let hasSavedCompletion = false;
     let interval = null;
 
-    const handleSaveProgress = async () => {
-      const watchedSeconds =
-        currentVideo.getCurrentTime?.() || itemProgress?.watchedSeconds || 0;
-      if (watchedSeconds < (itemProgress?.watchedSeconds || 0)) return;
-      const totalSeconds = item?.content.duration ||
-        currentVideo.getDuration?.() || itemProgress?.totalSeconds || 0;
+    const handleSaveProgress = async (currentTime) => {
+      let current;
+      if (currentTime) current = currentTime;
+      else current = currentVideo.getCurrentTime?.() || 0;
+      currentTimeRef.current = current;
+      const watchedSeconds = current || itemProgress?.watchedSeconds || 0;
+      // if (watchedSeconds < (itemProgress?.watchedSeconds || 0)) return;
+      const totalSeconds = item?.content.duration || itemProgress?.totalSeconds || 0;
       const progressPercent = totalSeconds
         ? Math.round((watchedSeconds / totalSeconds) * 100)
         : 0;
@@ -206,9 +247,10 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       const progressPercent = totalSeconds
         ? Math.round((watchedSeconds / totalSeconds) * 100)
         : 0;
+      currentTimeRef.current = watchedSeconds;
       if (
         progressPercent >= 85 &&
-        watchedSeconds >= (itemProgress?.watchedSeconds || 0) &&
+        watchedSeconds > (itemProgress?.watchedSeconds || 0) &&
         watchedSeconds != totalSeconds
       ) {
         if (!hasSavedCompletion) {
@@ -221,9 +263,34 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
 
     return () => {
       clearInterval(interval);
-      handleSaveProgress();
+      if (currentTimeRef.current != 0) {
+        // console.log("Saving progress on unmount:", currentTimeRef.current);
+        handleSaveProgress(currentTimeRef.current);
+      }
     };
   }, [item?._id, itemProgress, updateProgress, videoRef]);
+
+  //question
+  const handleVideoTimeUpdate = (currentTime) => {
+    const currentSecond = Math.floor(currentTime);
+    setCurrentTime(currentSecond);
+    console.log("Current time update:", currentSecond);
+
+    if (currentSecond !== lastTriggeredTime.current) {
+      const match = questionsMap.get(currentSecond);
+
+      if (match) {
+        videoRef.current?.pause();
+        setCurrentQuestion(match);
+        lastTriggeredTime.current = currentSecond;
+      }
+    }
+  }
+
+  const handleContinue = () => {
+    setCurrentQuestion(null);
+    videoRef.current?.play();
+  };
 
   if ((isItemLoading && !item) || (isProgressLoading && !itemProgress)) {
     return (
@@ -259,19 +326,28 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             />
           ) : (
             <div className="flex flex-col">
-              <div className="w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
+              <div className="relative w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
                   <VideoPlayer
                     key={item._id + "_" + itemProgress?.watchedSeconds}
                     ref={videoRef}
                     videoUrl={item.content.hlsURL || item.content.publicURL}
+                    onTimeUpdate={handleVideoTimeUpdate}
                     onPlayStateChange={setIsPlaying}
-                    startTime={itemProgress?.isCompleted? 0 : itemProgress?.watchedSeconds}
+                    startTime={itemProgress?.watchedSeconds ? itemProgress?.watchedSeconds : 0}
                     captions={item.content.captions || []}
                     videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
+                    poster={item?.content.thumbnailURL || "/logo.png"}
                   />
                 ) : (
                   <Skeleton className="w-full h-full" />
+                )}
+
+                {currentQuestion && (
+                  <VideoQuestionOverlay 
+                    question={currentQuestion}
+                    onContinue={handleContinue}
+                  />
                 )}
               </div>
               <div className=" mx-12 mt-8 md:mx-12 md:mt-12 lg:mx-20 lg:mt-12 overflow-auto">
