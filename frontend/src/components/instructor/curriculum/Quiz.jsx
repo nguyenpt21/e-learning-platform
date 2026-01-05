@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { FaRegTrashAlt } from "react-icons/fa";
-import { LuPlus, LuPencil } from "react-icons/lu";
+import {  LuPencil } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { MdOutlineDragIndicator } from "react-icons/md";
-import ReactQuillNew from "react-quill-new";
 import {
     Dialog,
     DialogContent,
@@ -18,6 +17,8 @@ import {
     useUpdateCurriculumItemMutation,
 } from "@/redux/api/sectionApiSlice";
 import Question from "./Question";
+import QuizUploadModal from "./QuizUploadModal";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandleProps, style }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [quizTitle, setQuizTitle] = useState(item.title);
@@ -26,7 +27,7 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandlePr
     const [isQuizQuestionOpen, setIsQuizQuestionOpen] = useState(false);
     const [quizDescription, setQuizDescription] = useState(item.description || "");
     const [isQuizQuestionModalOpen, setIsQuizQuestionModalOpen] = useState(false);
-
+    const [isQuizUploadModalOpen, setIsQuizUploadModalOpen] = useState(false);
     const [addQuestion, { isLoading: isAddingQuestion }] = useUpdateCurriculumItemMutation();
     const [updateTitle, { isLoading }] = useUpdateCurriculumItemMutation();
 
@@ -141,17 +142,8 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandlePr
                                     value={quizTitle}
                                     className="w-full border focus:border-primary border-gray-300 rounded px-2 py-[6px]"
                                 />
-                                <div className="rounded-[6px] mt-2 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                    <ReactQuillNew
-                                        className="article-lecture-editor description-lecture-editor"
-                                        theme="snow"
-                                        value={quizDescription}
-                                        onChange={setQuizDescription}
-                                        modules={{
-                                            toolbar: [["bold", "italic", "underline"]],
-                                        }}
-                                        placeholder="Nhập mô tả quiz..."
-                                    ></ReactQuillNew>
+                                <div className="rounded-[6px] mt-2">                                   
+                                    <SimpleEditor value={quizDescription} onChange={setQuizDescription} placeholder={"Nhập mô tả quiz"} mention={null} type="basic"></SimpleEditor>
                                 </div>
                             </div>
                         </div>
@@ -190,12 +182,21 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandlePr
                 <div className="border-l border-b border-r border-gray-300 rounded-b p-2 bg-white flex flex-col gap-3">
                     <div className="flex items-baseline gap-3">
                         <p className="font-bold">Câu hỏi</p>
-                        <button
-                            onClick={() => setIsQuizQuestionModalOpen(true)}
-                            className="px-3 py-1 flex items-center gap-2 border rounded text-primary"
-                        >
-                            Câu hỏi mới
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsQuizQuestionModalOpen(true)}
+                                className="px-3 py-1 flex items-center gap-2 border rounded text-primary"
+                            >
+                                Câu hỏi mới
+                            </button>
+                            <button
+                                onClick={() => setIsQuizUploadModalOpen(true)}
+                                className="px-3 py-1 flex items-center gap-2 border rounded text-primary"
+                            >
+                                Upload file
+                            </button>
+                            
+                        </div>
                         <QuizQuestionModal
                             itemId={item._id}
                             open={isQuizQuestionModalOpen}
@@ -204,6 +205,7 @@ const Quiz = ({ item, sectionOrder, quizOrder, sectionId, courseId, dragHandlePr
                             sectionId={sectionId}
                             courseId={courseId}
                         ></QuizQuestionModal>
+                        <QuizUploadModal sectionId={sectionId} quizId={item._id} open={isQuizUploadModalOpen} onOpenChange={setIsQuizUploadModalOpen}></QuizUploadModal>
                     </div>
                     {item.questions && (
                         <div className="space-y-2">

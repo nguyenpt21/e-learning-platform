@@ -6,13 +6,8 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { IoClose } from "react-icons/io5";
-import { FaCirclePlay } from "react-icons/fa6";
-import { FaRegFileAlt, FaRegTrashAlt } from "react-icons/fa";
-import ArticleEditor from "./ArticleEditor";
-import ReactQuillNew from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import { useAddQuizToSectionMutation } from "@/redux/api/sectionApiSlice";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 
 const QuizModal = ({ open, onOpenChange, courseId, sectionId }) => {
     const [quizTitle, setQuizTitle] = useState("");
@@ -66,17 +61,8 @@ const QuizModal = ({ open, onOpenChange, courseId, sectionId }) => {
                         <div>
                             <div className="">
                                 <p>Mô tả bài giảng</p>
-                                <div className="rounded-[6px] mt-2 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                    <ReactQuillNew
-                                        className="article-lecture-editor description-lecture-editor"
-                                        theme="snow"
-                                        value={quizDescription}
-                                        onChange={setQuizDescription}
-                                        modules={{
-                                            toolbar: [["bold", "italic", "underline"]],
-                                        }}
-                                        placeholder="Nhập mô tả quiz..."
-                                    ></ReactQuillNew>
+                                <div className="rounded-[6px] mt-2">
+                                    <SimpleEditor value={quizDescription} onChange={setQuizDescription} placeholder={"Nhập mô tả quiz"} mention={null} type="basic"></SimpleEditor>
                                 </div>
                             </div>
                         </div>

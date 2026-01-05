@@ -121,6 +121,16 @@ export const sectionApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ["Section"],
         }),
+        uploadQuestionsToQuiz: builder.mutation({
+            query: ({ sectionId, quizId, questions }) => ({
+                url: `${COURSE_URL}/quizzes/${quizId}/questions`,
+                method: "PUT",
+                body: { questions },
+            }),
+            invalidatesTags: (result, error, { sectionId }) => [
+                { type: "CurriculumItem", id: sectionId },
+            ],
+        }),
     }),
 });
 
@@ -138,5 +148,6 @@ export const {
     useDeleteResourceFromLectureMutation,
     useDeleteCurriculumItemMutation,
     useUpdateSectionMutation,
-    useDeleteSectionMutation
+    useDeleteSectionMutation,
+    useUploadQuestionsToQuizMutation
 } = sectionApiSlice;

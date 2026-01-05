@@ -34,6 +34,7 @@ import {
     deleteResourceFromLecture,
     updateQuestionInQuiz,
     deleteQuestionFromQuiz,
+    uploadQuestionsToQuiz,
 } from "../controllers/sectionController.js";
 
 import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
@@ -97,6 +98,8 @@ router.delete(
 router.route("/quizzes/:quizId/questions/:questionId")
     .put(updateQuestionInQuiz)
     .delete(deleteQuestionFromQuiz);
+router.route("/quizzes/:quizId/questions")
+    .put(uploadQuestionsToQuiz)
 
 router.route("/item/:itemId/type/:itemType").get(getCurriculumItemById);
 
