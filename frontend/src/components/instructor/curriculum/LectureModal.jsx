@@ -8,16 +8,15 @@ import {
 import { useState, useRef } from "react";
 import { IoClose } from "react-icons/io5";
 import { FaCirclePlay } from "react-icons/fa6";
-import { FaRegFileAlt, FaRegTrashAlt } from "react-icons/fa";
+import { FaRegFileAlt } from "react-icons/fa";
 import ArticleEditor from "./ArticleEditor";
-import ReactQuillNew from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import axios from "axios";
 import {
     useAddLectureToSectionMutation,
     useGenerateUploadUrlMutation,
 } from "@/redux/api/sectionApiSlice";
 import { estimateReadingTime, generateThumbnailFromVideo } from "@/utils";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 
 const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
     const [showContentType, setShowContentType] = useState(true);
@@ -229,14 +228,14 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
             )}
             <Dialog open={open} onOpenChange={handleCloseLectureModal} className="">
                 <DialogContent
-                    className="min-w-[700px] max-h-[550px] overflow-auto p-0 gap-0"
+                    className="min-w-[890px] max-h-[550px] overflow-y-auto p-0 gap-0"
                     onPointerDownOutside={(e) => e.preventDefault()}
                 >
                     <DialogHeader className={"px-5 py-4 border-b border-gray-300"}>
                         <DialogTitle>Thêm bài giảng mới</DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-3 p-5">
+                    <div className="space-y-3 p-5 ">
                         <div>
                             <label className="block">Tiêu đề</label>
                             <input
@@ -244,7 +243,7 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                                 value={lectureTitle}
                                 onChange={(e) => setLectureTitle(e.target.value)}
                                 className="w-full border rounded border-gray-300 px-3 py-2 mt-1 text-sm"
-                                placeholder="Nhập tên lecture..."
+                                placeholder="Nhập tên bài giảng..."
                             />
                         </div>
 
@@ -351,20 +350,8 @@ const LectureModal = ({ open, onOpenChange, courseId, sectionId }) => {
                         <div>
                             <div className="">
                                 <p>Mô tả bài giảng</p>
-                                <div className="rounded-[6px] mt-2 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                    <ReactQuillNew
-                                        className="article-lecture-editor description-lecture-editor"
-                                        theme="snow"
-                                        value={lectureDescription}
-                                        onChange={setLectureDescription}
-                                        modules={{
-                                            toolbar: [
-                                                ["bold", "italic", "underline"],
-                                                [{ list: "ordered" }, { list: "bullet" }],
-                                            ],
-                                        }}
-                                        placeholder="Nhập mô tả bài giảng..."
-                                    ></ReactQuillNew>
+                                <div className="rounded-[6px] mt-2">
+                                    <SimpleEditor value={lectureDescription} onChange={setLectureDescription} placeholder={"Nhập mô tả bài giảng"} mention={null} type="basic"></SimpleEditor>
                                 </div>
                             </div>
                         </div>

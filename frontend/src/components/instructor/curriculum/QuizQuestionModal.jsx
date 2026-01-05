@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 
 const stripHtml = (html) => {
     const tmp = document.createElement("div");
@@ -30,9 +31,9 @@ const QuizQuestionModal = ({
 }) => {
     const [options, setOptions] = useState(
         initialData?.options || [
-            { optionText: "", textExplanation: "", isCorrect: false },
-            { optionText: "", textExplanation: "", isCorrect: false },
-            { optionText: "", textExplanation: "", isCorrect: false },
+            { optionText: "", optionExplanation: "", isCorrect: false },
+            { optionText: "", optionExplanation: "", isCorrect: false },
+            { optionText: "", optionExplanation: "", isCorrect: false },
         ]
     );
     const [questionText, setQuestion] = useState(initialData?.questionText || "");
@@ -46,17 +47,17 @@ const QuizQuestionModal = ({
                 setQuestion(initialData.questionText || "");
                 setOptions(
                     initialData.options || [
-                        { optionText: "", textExplanation: "", isCorrect: false },
-                        { optionText: "", textExplanation: "", isCorrect: false },
-                        { optionText: "", textExplanation: "", isCorrect: false },
+                        { optionText: "", optionExplanation: "", isCorrect: false },
+                        { optionText: "", optionExplanation: "", isCorrect: false },
+                        { optionText: "", optionExplanation: "", isCorrect: false },
                     ]
                 );
             } else {
                 setQuestion("");
                 setOptions([
-                    { optionText: "", textExplanation: "", isCorrect: false },
-                    { optionText: "", textExplanation: "", isCorrect: false },
-                    { optionText: "", textExplanation: "", isCorrect: false },
+                    { optionText: "", optionExplanation: "", isCorrect: false },
+                    { optionText: "", optionExplanation: "", isCorrect: false },
+                    { optionText: "", optionExplanation: "", isCorrect: false },
                 ]);
             }
             setActiveEditor(null);
@@ -65,12 +66,11 @@ const QuizQuestionModal = ({
 
     useEffect(() => {
         if (activeEditor && quillRef.current) {
-            
             setTimeout(() => {
                 const editor = quillRef.current.getEditor();
                 if (editor) {
                     editor.focus();
-                    
+
                     const length = editor.getLength();
                     editor.setSelection(length, 0);
                 }
@@ -81,7 +81,7 @@ const QuizQuestionModal = ({
     const addOption = () => {
         const newOption = {
             optionText: "",
-            textExplanation: "",
+            optionExplanation: "",
             isCorrect: false,
         };
         setOptions([...options, newOption]);
@@ -190,22 +190,15 @@ const QuizQuestionModal = ({
 
                         <div
                             onClick={() => handleEditorClick(`questionText`)}
-                            className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors "
+                            className="rounded-[6px]"
                         >
-                            <ReactQuillNew
-                                ref={quillRef}
+                            <SimpleEditor
                                 value={questionText}
                                 onChange={setQuestion}
-                                modules={{
-                                    toolbar: [
-                                        ["bold", "italic", "underline"],
-                                        ["code-block"],
-                                        ["link", "image"],
-                                    ],
-                                }}
-                                placeholder="Nhâp câu hỏi..."
-                                className=""
-                            />
+                                placeholder={"Nhập câu hỏi"}
+                                mention={null}
+                                type="question"
+                            ></SimpleEditor>
                         </div>
                     </div>
 
@@ -226,8 +219,8 @@ const QuizQuestionModal = ({
                                     <div className="flex-1">
                                         <div>
                                             {activeEditor === `option-${index}` ? (
-                                                <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                                    <ReactQuillNew
+                                                <div className="rounded-[6px]">
+                                                    {/* <ReactQuillNew
                                                         ref={quillRef}
                                                         value={option.optionText}
                                                         onChange={(value) =>
@@ -236,7 +229,17 @@ const QuizQuestionModal = ({
                                                         modules={modules}
                                                         placeholder="Nhập câu trả lời."
                                                         className="quiz-option-editor"
-                                                    />
+                                                    /> */}
+                                                    <SimpleEditor
+                                                        ref={quillRef}
+                                                        value={option.optionText}
+                                                        onChange={(value) =>
+                                                            updateOption(index, "optionText", value)
+                                                        }
+                                                        placeholder={"Nhập câu trả lời."}
+                                                        mention={null}
+                                                        type="basic"
+                                                    ></SimpleEditor>
                                                 </div>
                                             ) : (
                                                 <div
@@ -265,10 +268,10 @@ const QuizQuestionModal = ({
 
                                         <div className="mt-2 ml-4">
                                             {activeEditor === `explanation-${index}` ? (
-                                                <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                                    <ReactQuillNew
+                                                <div className="rounded-[6px]">
+                                                    {/* <ReactQuillNew
                                                         ref={quillRef}
-                                                        valutextE={option.explanation}
+                                                        value={option.optionExplanation}
                                                         onChange={(value) =>
                                                             updateOption(
                                                                 index,
@@ -279,7 +282,23 @@ const QuizQuestionModal = ({
                                                         modules={modules}
                                                         placeholder="Giải thích tại sao đây là câu trả lời tốt nhất hoặc sai."
                                                         className="quiz-explanation-editor"
-                                                    />
+                                                    /> */}
+                                                    <SimpleEditor
+                                                        ref={quillRef}
+                                                        value={option.optionExplanation}
+                                                        onChange={(value) =>
+                                                            updateOption(
+                                                                index,
+                                                                "explanation",
+                                                                value
+                                                            )
+                                                        }
+                                                        placeholder={
+                                                            "Giải thích tại sao đây là câu trả lời tốt nhất hoặc sai."
+                                                        }
+                                                        mention={null}
+                                                        type="basic"
+                                                    ></SimpleEditor>
                                                 </div>
                                             ) : (
                                                 <div
@@ -288,12 +307,12 @@ const QuizQuestionModal = ({
                                                     }
                                                     className="p-3 border border-gray-300 rounded-md cursor-text hover:border-gray-400 transition-colors text-sm"
                                                 >
-                                                    {option.textExplanation
+                                                    {option.optionExplanation
                                                         ?.replace(/<(.|\n)*?>/g, "")
                                                         .trim().length > 0 ? (
                                                         <div
                                                             dangerouslySetInnerHTML={{
-                                                                __html: option.explanation,
+                                                                __html: option.optionExplanation,
                                                             }}
                                                         />
                                                     ) : (

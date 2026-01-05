@@ -83,6 +83,7 @@ const EditableList = ({ minItems = 1, placeholders, items, setItems, setIsChange
             const oldIndex = items.findIndex((i) => i.id === active.id);
             const newIndex = items.findIndex((i) => i.id === over.id);
             setItems(arrayMove(items, oldIndex, newIndex));
+            setIsChanged(true);
         }
     };
     const handleChange = (id, value) => {

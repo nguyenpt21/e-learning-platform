@@ -317,7 +317,7 @@ const updateCurriculumItem = async (req, res) => {
             type,
             content,
             resource, // for Lecture
-            question
+            question,
         } = req.body;
 
         const course = await Course.findById(courseId);
@@ -529,6 +529,53 @@ const deleteQuestionFromQuiz = async (req, res) => {
     }
 };
 
+const uploadQuestionsToQuiz = async (req, res) => {
+    try {
+        const { quizId } = req.params;
+        const { questions } = req.body;
+
+        console.log(req.body)
+        if (!questions || questions.length === 0) {
+            return res.status(400).json({ message: "Không có câu hỏi nào để thêm" });
+        }
+
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({ message: "Không tìm thấy quiz" });
+        }
+
+        for (let i = 0; i < questions.length; i++) {
+            const hasCorrectAnswer = questions[i].options.some((opt) => opt.isCorrect);
+
+            if (!hasCorrectAnswer) {
+                return res.status(400).json({
+                    message: `Câu hỏi ${i + 1} không có đáp án đúng`,
+                });
+            }
+
+            if (questions[i].options.length < 2) {
+                return res.status(400).json({
+                    message: `Câu hỏi ${i + 1} phải có ít nhất 2 đáp án`,
+                });
+            }
+        }
+
+        quiz.questions.push(...questions);
+        await quiz.save();
+
+        res.status(200).json({
+            message: `Đã thêm ${questions.length} câu hỏi vào quiz`,
+            quiz,
+        });
+    } catch (error) {
+        console.error("Error adding questions:", error);
+        res.status(500).json({
+            message: "Lỗi server khi thêm câu hỏi",
+            error: error.message,
+        });
+    }
+};
+
 export {
     getAllSectionsByCourse,
     getAllCurriculumItemsBySection,
@@ -542,4 +589,5 @@ export {
     deleteResourceFromLecture,
     updateQuestionInQuiz,
     deleteQuestionFromQuiz,
+    uploadQuestionsToQuiz,
 };

@@ -13,7 +13,7 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 import { Selection } from "@tiptap/extensions";
-import { Placeholder } from '@tiptap/extensions'
+import { Placeholder } from "@tiptap/extensions";
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
@@ -46,11 +46,7 @@ import {
   ColorHighlightPopoverContent,
   ColorHighlightPopoverButton,
 } from "@/components/tiptap/tiptap-ui/color-highlight-popover";
-import {
-  LinkPopover,
-  LinkContent,
-  LinkButton,
-} from "@/components/tiptap/tiptap-ui/link-popover";
+import { LinkPopover, LinkContent, LinkButton } from "@/components/tiptap/tiptap-ui/link-popover";
 import { MarkButton } from "@/components/tiptap/tiptap-ui/mark-button";
 import { TextAlignButton } from "@/components/tiptap/tiptap-ui/text-align-button";
 import { UndoRedoButton } from "@/components/tiptap/tiptap-ui/undo-redo-button";
@@ -72,59 +68,120 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 import "@/components/tiptap/tiptap-templates/simple/simple-editor.scss";
 import Mention from "@tiptap/extension-mention";
 import { useEffect } from "react";
+import { MathBlock, MathInline } from "../../MathExtensions";
+import { MathBlockButton, MathInlineButton } from "../../tiptap-ui/math-button";
+import { MathDialogManager } from "../../MathDialog";
 
-const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile }) => {
-  return (
-    <>
-    <Spacer/>
-      <ToolbarGroup>
-        <UndoRedoButton action="undo" />
-        <UndoRedoButton action="redo" />
-      </ToolbarGroup>
-      <ToolbarSeparator />
-      <ToolbarGroup>
-        <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
-        <ListDropdownMenu
-          types={["bulletList", "orderedList", "taskList"]}
-          portal={isMobile}
-        />
-        <BlockquoteButton />
-        <CodeBlockButton />
-      </ToolbarGroup>
-      <ToolbarSeparator />
-      <ToolbarGroup>
-        <MarkButton type="bold" />
-        <MarkButton type="italic" />
-        <MarkButton type="strike" />
-        <MarkButton type="code" />
-        <MarkButton type="underline" />
-        {!isMobile ? (
-          <ColorHighlightPopover />
-        ) : (
-          <ColorHighlightPopoverButton onClick={onHighlighterClick} />
-        )}
-        {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
-      </ToolbarGroup>
-      <ToolbarSeparator />
-      <ToolbarGroup>
-        <MarkButton type="superscript" />
-        <MarkButton type="subscript" />
-      </ToolbarGroup>
-      <ToolbarSeparator />
-      <ToolbarGroup>
-        <TextAlignButton align="left" />
-        <TextAlignButton align="center" />
-        <TextAlignButton align="right" />
-        <TextAlignButton align="justify" />
-      </ToolbarGroup>
-      <ToolbarSeparator />
-      <ToolbarGroup>
-        <ImageUploadButton/>
-      </ToolbarGroup>
-      {isMobile && <ToolbarSeparator />}
-      <Spacer/>
-    </>
-  );
+const MainToolbarContent = ({ onHighlighterClick, onLinkClick, isMobile, type = "all" }) => {
+  switch (type) {
+    case "basic": {
+      return (
+        <>
+          <ToolbarGroup>
+            <UndoRedoButton action="undo" />
+            <UndoRedoButton action="redo" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
+            <ListDropdownMenu types={["bulletList", "orderedList", "taskList"]} portal={isMobile} />
+            <BlockquoteButton />
+            <CodeBlockButton />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <MarkButton type="bold" />
+            <MarkButton type="italic" />
+            <MarkButton type="underline" />
+          </ToolbarGroup>
+          <Spacer />
+        </>
+      );
+    }
+    case "question": {
+      return (
+        <>
+          <ToolbarGroup>
+            <UndoRedoButton action="undo" />
+            <UndoRedoButton action="redo" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
+            <ListDropdownMenu types={["bulletList", "orderedList", "taskList"]} portal={isMobile} />
+            <BlockquoteButton />
+            <CodeBlockButton />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <MarkButton type="bold" />
+            <MarkButton type="italic" />
+            <MarkButton type="underline" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
+          <ToolbarGroup>
+            <ImageUploadButton />
+          </ToolbarGroup>
+          {isMobile && <ToolbarSeparator />}
+          <MathInlineButton />
+          <MathBlockButton />
+          <Spacer />
+        </>
+      );
+    }
+    default: {
+      return (
+        <>
+          <ToolbarGroup>
+            <UndoRedoButton action="undo" />
+            <UndoRedoButton action="redo" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
+            <ListDropdownMenu types={["bulletList", "orderedList", "taskList"]} portal={isMobile} />
+            <BlockquoteButton />
+            <CodeBlockButton />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <MarkButton type="bold" />
+            <MarkButton type="italic" />
+            <MarkButton type="underline" />
+            <MarkButton type="strike" />
+            <MarkButton type="code" />
+            {!isMobile ? (
+              <ColorHighlightPopover />
+            ) : (
+              <ColorHighlightPopoverButton onClick={onHighlighterClick} />
+            )}
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <MarkButton type="superscript" />
+            <MarkButton type="subscript" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          <ToolbarGroup>
+            <TextAlignButton align="left" />
+            <TextAlignButton align="center" />
+            <TextAlignButton align="right" />
+            <TextAlignButton align="justify" />
+          </ToolbarGroup>
+          <ToolbarSeparator />
+          {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
+          <ToolbarGroup>
+            <ImageUploadButton />
+          </ToolbarGroup>
+          {isMobile && <ToolbarSeparator />}
+          <MathInlineButton />
+          <MathBlockButton />
+          <Spacer />
+        </>
+      );
+    }
+  }
 };
 
 const MobileToolbarContent = ({ type, onBack }) => (
@@ -142,15 +199,11 @@ const MobileToolbarContent = ({ type, onBack }) => (
 
     <ToolbarSeparator />
 
-    {type === "highlighter" ? (
-      <ColorHighlightPopoverContent />
-    ) : (
-      <LinkContent />
-    )}
+    {type === "highlighter" ? <ColorHighlightPopoverContent /> : <LinkContent />}
   </>
 );
 
-export function SimpleEditor({ value = "", onChange, placeholder, mention = null }) {
+export function SimpleEditor({ value = "", onChange, placeholder, mention = null, type='all' }) {
   const isMobile = useIsMobile();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = React.useState("main");
@@ -202,6 +255,8 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
           class: "mention bg-[#cee8fb] text-white px-1 rounded",
         },
       }),
+      MathInline,
+      MathBlock,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -209,7 +264,7 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
       onChange?.(html);
     },
   });
-  
+
   useEffect(() => {
     if (!mention || !editor) return;
     // Xóa toàn bộ mention cũ trước
@@ -264,6 +319,7 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
               onHighlighterClick={() => setMobileView("highlighter")}
               onLinkClick={() => setMobileView("link")}
               isMobile={isMobile}
+              type={type}
             />
           ) : (
             <MobileToolbarContent
@@ -273,11 +329,8 @@ export function SimpleEditor({ value = "", onChange, placeholder, mention = null
           )}
         </Toolbar>
 
-        <EditorContent
-          editor={editor}
-          role="presentation"
-          className="simple-editor-content"
-        />
+        <EditorContent editor={editor} role="presentation" className="simple-editor-content" />
+        <MathDialogManager />
       </EditorContext.Provider>
     </div>
   );

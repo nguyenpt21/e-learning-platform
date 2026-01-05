@@ -4,8 +4,6 @@ import { LuPlus, LuPencil } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import { MdOutlineArticle } from "react-icons/md";
-import ReactQuillNew from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import DOMPurify from "dompurify";
 import axios from "axios";
 import LectureResources from "./LectureResources";
@@ -26,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { estimateReadingTime, formatTimeShort, generateThumbnailFromVideo } from "@/utils";
 import LectureResourceList from "./LectureResourceList";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 import LectureQuestion from "@/components/instructor/curriculum/LectureQuestion";
 
 const Lecture = ({
@@ -392,19 +391,8 @@ const Lecture = ({
                     {isAddingLectureDescription ? (
                         <div className="py-2 mt-2">
                             <p>Mô tả bài giảng</p>
-                            <div className="rounded-[6px] mt-2 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                <ReactQuillNew
-                                    className="article-lecture-editor description-lecture-editor"
-                                    theme="snow"
-                                    value={lectureDescription}
-                                    onChange={setLectureDescription}
-                                    modules={{
-                                        toolbar: [
-                                            ["bold", "italic", "underline"],
-                                            [{ list: "ordered" }, { list: "bullet" }],
-                                        ],
-                                    }}
-                                ></ReactQuillNew>
+                            <div className="rounded-[6px] mt-2">
+                                <SimpleEditor value={lectureDescription} onChange={setLectureDescription} placeholder={"Nhập mô tả bài giảng"} mention={null} type="basic"></SimpleEditor>
                             </div>
                             <div className="flex justify-end gap-3 mt-3">
                                 <button
