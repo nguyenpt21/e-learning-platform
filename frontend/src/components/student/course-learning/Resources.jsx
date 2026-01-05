@@ -34,12 +34,12 @@ const getFileIcon = (type) => {
 };
 
 function getFileTypeFromName(filename) {
+    if (!filename || typeof filename !== 'string') return 'unknown';
+
     const parts = filename.split('.');
-    if (parts.length > 1) {
-        return parts[parts.length - 1].toLowerCase();
-    }
-    return '';
+    return parts.length > 1 ? parts.pop().toLowerCase() : 'unknown';
 }
+
 
 const Resources = ({ resources }) => {
     // console.log(resources)

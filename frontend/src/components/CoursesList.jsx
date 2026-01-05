@@ -4,7 +4,7 @@ import Slider from "react-slick";
 import Button from "./Button";
 import CourseCard from "./CourseCard";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
-import { useAddToFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice";
+import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice";
 import { toast } from "react-toastify";
 
 function NextArrow(props) {
@@ -33,23 +33,32 @@ function PrevArrow(props) {
   );
 }
 
-function FavoriteButton({ courseId, onAddToFavorite, isLoading }) {
+function FavoriteButton({ courseId, onAddToFavorite, onRemoveFromFavorite, isAddLoading, isRemoveLoading }) {
   const { data: favoriteData, isLoading: isChecking } = useCheckFavoriteQuery(courseId, {
     skip: !courseId,
   });
   const isFavorite = favoriteData?.isFavorite || false;
+  const isLoading = isAddLoading || isRemoveLoading;
 
   if (!courseId) return null;
 
+  const handleClick = (e) => {
+    if (isFavorite) {
+      onRemoveFromFavorite(e, courseId);
+    } else {
+      onAddToFavorite(e, courseId);
+    }
+  };
+
   return (
     <Button
-      variant="reverse"
+      variant={isFavorite ? "outline" : "reverse"}
       className="w-full mt-2 flex items-center justify-center gap-2"
-      onClick={(e) => onAddToFavorite(e, courseId)}
-      disabled={isLoading || isChecking || isFavorite}
+      onClick={handleClick}
+      disabled={isLoading || isChecking}
     >
       {isLoading ? (
-        "Đang thêm..."
+        isFavorite ? "Đang xóa..." : "Đang thêm..."
       ) : isFavorite ? (
         <>
           <Heart className="w-4 h-4 fill-red-500 text-red-500" />
@@ -127,6 +136,7 @@ export default function CoursesList() {
   
   // Favorite functionality
   const [addToFavorites, { isLoading: isAddingFavorite }] = useAddToFavoritesMutation();
+  const [removeFromFavorites, { isLoading: isRemovingFavorite }] = useRemoveFromFavoritesMutation();
   
   const handleAddToFavorite = async (e, courseId) => {
     e.stopPropagation();
@@ -136,6 +146,17 @@ export default function CoursesList() {
     } catch (error) {
       console.error("Error adding to favorites:", error);
       toast.error("Lỗi khi thêm vào yêu thích");
+    }
+  };
+
+  const handleRemoveFromFavorite = async (e, courseId) => {
+    e.stopPropagation();
+    try {
+      await removeFromFavorites(courseId).unwrap();
+      toast.success("Đã xóa khỏi yêu thích");
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      toast.error("Lỗi khi xóa khỏi yêu thích");
     }
   };
   const settings = {
@@ -284,7 +305,9 @@ export default function CoursesList() {
               <FavoriteButton 
                 courseId={coursePopUp?._id}
                 onAddToFavorite={handleAddToFavorite}
-                isLoading={isAddingFavorite}
+                onRemoveFromFavorite={handleRemoveFromFavorite}
+                isAddLoading={isAddingFavorite}
+                isRemoveLoading={isRemovingFavorite}
               />
             </div>
           </div>
