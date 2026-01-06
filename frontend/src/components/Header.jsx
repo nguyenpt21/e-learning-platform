@@ -11,6 +11,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { LuDot } from "react-icons/lu";
 import MyCourseDropdown from "@/components/student/home-page/MyCourseDropdown.jsx";
 import UserDropDown from "./UserDropDown.jsx";
+import { useGetMyFavoritesQuery } from "@/redux/api/favoriteApiSlice";
 
 export default function Header({ q }) {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ export default function Header({ q }) {
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
+  
+  // Lấy danh sách yêu thích để hiển thị badge trên icon Heart
+  const { data: favorites = [] } = useGetMyFavoritesQuery(undefined, {
+    skip: !user, // Chỉ gọi API khi đã đăng nhập
+  });
 
   const handleSearch = () => {
     const param = new URLSearchParams()
@@ -146,11 +152,24 @@ export default function Header({ q }) {
             </div>
           ) : (
             <div className="flex items-center space-x-4">
+              <Link to={"/student/wishlist"} className="relative group">
+                <Heart size={22} className="text-gray-700 hover:text-red-500 transition-colors"/>
+                {/* Badge số lượng yêu thích */}
+                {favorites.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {favorites.length > 99 ? "99+" : favorites.length}
+                  </span>
+                )}
+                {/* Tooltip */}
+                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  Danh sách yêu thích
+                </span>
+              </Link>
               {user.role === 'user' ? <div
                 className="relative inline-block"
                 onMouseEnter={() => setOpenMycourseDropdown(true)}
                 onMouseLeave={() => setOpenMycourseDropdown(false)}
-              >
+              >              
                 <Button className="text-gray-700">Học tập</Button>
 
                 {openMycourseDropdown && (
