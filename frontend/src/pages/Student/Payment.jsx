@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import React, { useState } from "react";
 import { FaRegStar, FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
+import { useCreateVNPayPaymentMutation } from "@/redux/api/paymentApiSlice";
+
 
 const AverageRating = ({ averageRating }) => {
   const r = Number(averageRating) || 0;
@@ -88,7 +90,31 @@ function Payment() {
   const [createOrder, { isLoading: isPayPalLoading }] =
     useCreatePaypalOrderMutation();
   const [loadingStripe, setLoadingStripe] = useState(false);
+    const [loadingVNPAY, setLoadingVNPAY] = useState(false);
   const [stripeMessage, setStripeMessage] = useState("");
+  const [createVNPayPayment] = useCreateVNPayPaymentMutation();
+
+  const handleVNPay = async () => {
+  try {
+    setLoadingVNPAY(true);
+
+    const res = await createVNPayPayment({
+      amount: course.price,
+      courseId: course._id,
+      courseAlias: course.alias,
+    }).unwrap();
+
+    if (res.paymentUrl) {
+      window.location.href = res.paymentUrl;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Thanh toán VNPAY thất bại");
+  } finally {
+    setLoadingVNPAY(false);
+  }
+};
+
   const handlePayPal = async () => {
     try {
       const orderData = await createOrder({
@@ -152,15 +178,16 @@ function Payment() {
               )}
               <img src="/paypalIcon.png" alt="Paypal Icon" className="h-8" />
             </button>
-            {stripeMessage && <p className="text-red-500">{stripeMessage}</p>}
+          
+           
             <button
-              className="bg-indigo-500 w-full py-2 flex justify-center rounded cursor-pointer hover:bg-indigo-300"
-              onClick={() => handleStripe()}
+             className="bg-white border border-gray-300 w-full py-2 flex justify-center rounded cursor-pointer hover:bg-gray-100"
+              onClick={handleVNPay}
             >
-              {loadingStripe && (
+              {loadingVNPAY && (
                 <Spinner className="size-8 mr-2" color="#098ce9" />
               )}
-              <img src="/stripeIcon.png" alt="Stripe Icon" className="h-8" />
+              <img src="/VNPAY.png" alt="VNPAY Icon" className="h-8" />
             </button>
           </div>
         </div>
