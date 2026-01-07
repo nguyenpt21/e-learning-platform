@@ -268,7 +268,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
               <input
                 id="terms"
                 type="checkbox"
-                className="h-4 w-4 text-[#27B5FC] border-gray-300 rounded focus:ring-[#27B5FC]"
+                className="h-4 w-4 accent-[#27B5FC] rounded"
                 required
               />
             </div>

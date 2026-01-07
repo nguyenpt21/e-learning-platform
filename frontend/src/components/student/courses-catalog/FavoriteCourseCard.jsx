@@ -58,7 +58,10 @@ export default function FavoriteCourseCard({ course, onRemove }) {
 
       {/* CONFIRM DELETE */}
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="bg-white rounded-xl p-5 w-[300px] text-center">
             <p className="text-sm font-semibold mb-4">
               Xóa khóa học khỏi danh sách yêu thích?
@@ -66,14 +69,18 @@ export default function FavoriteCourseCard({ course, onRemove }) {
 
             <div className="flex justify-center gap-3 cursor-pointer">
               <button
-                onClick={() => setConfirmOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmOpen(false);
+                }}
                 className="px-4 py-2 text-sm rounded border"
               >
                 Hủy
               </button>
 
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onRemove(course._id);
                   setConfirmOpen(false);
                 }}
