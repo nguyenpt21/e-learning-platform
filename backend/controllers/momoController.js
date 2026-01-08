@@ -9,16 +9,16 @@ export const createMoMoPayment = async (req, res) => {
     const { amount, courseAlias } = req.body;
     const userId = req.user._id;
 
-    const accessKey = 'F8BBA842ECF85';
-    const secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
-    const partnerCode = 'MOMO';
+    const accessKey = "F8BBA842ECF85";
+    const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+    const partnerCode = "MOMO";
 
     const requestId = `${partnerCode}_${Date.now()}`;
     const orderId = `${Date.now()}_${userId}_${courseAlias}`;
     const orderInfo = `Thanh toan khoa hoc ${courseAlias}`;
     const redirectUrl = `${process.env.BACKEND_URL}/api/checkout/momo/return`;
     const ipnUrl = `${process.env.BACKEND_URL}/api/checkout/momo/ipn`;
-    const requestType = "captureWallet";
+    const requestType = "payWithMethod";
     const extraData = "";
 
     // Chuỗi ký
@@ -52,6 +52,7 @@ export const createMoMoPayment = async (req, res) => {
       requestType,
       signature,
       lang: "vi",
+      paymentMethod: "ALL",
     };
 
     const momoRes = await axios.post(
@@ -71,11 +72,7 @@ export const createMoMoPayment = async (req, res) => {
 
 export const momoReturn = async (req, res) => {
   try {
-    const {
-      resultCode,
-      orderId,
-      message,
-    } = req.query;
+    const { resultCode, orderId, message } = req.query;
 
     if (!orderId) {
       return res.redirect(
@@ -89,12 +86,15 @@ export const momoReturn = async (req, res) => {
     const courseAlias = parts.slice(2).join("_");
 
     // ❌ Thanh toán thất bại / hủy
-    if (resultCode !== "0") {
+    // ❌ Chỉ coi là thất bại khi KHÔNG phải 0 hoặc 1006 hoặc 7002
+    const SUCCESS_CODES = ["0", "1006", "7002"];
+
+    if (!SUCCESS_CODES.includes(resultCode)) {
       return res.redirect(
         `${process.env.FRONTEND_URL}/course/${courseAlias}/momo-success` +
-        `?resultCode=${resultCode}&message=${encodeURIComponent(
-          message || "Thanh toán MoMo thất bại hoặc bị hủy"
-        )}`
+          `?resultCode=${resultCode}&message=${encodeURIComponent(
+            message || "Thanh toán MoMo thất bại hoặc bị hủy"
+          )}`
       );
     }
 
@@ -103,7 +103,9 @@ export const momoReturn = async (req, res) => {
     if (!course) {
       return res.redirect(
         `${process.env.FRONTEND_URL}/course/${courseAlias}/momo-success` +
-        `?resultCode=1&message=${encodeURIComponent("Không tìm thấy khóa học")}`
+          `?resultCode=1&message=${encodeURIComponent(
+            "Không tìm thấy khóa học"
+          )}`
       );
     }
 
@@ -137,7 +139,6 @@ export const momoReturn = async (req, res) => {
   }
 };
 
-
 export const momoIPN = async (req, res) => {
   try {
     const { resultCode, orderId } = req.body;
@@ -155,4 +156,3 @@ export const momoIPN = async (req, res) => {
     return res.status(500).json({ message: "IPN error" });
   }
 };
-
