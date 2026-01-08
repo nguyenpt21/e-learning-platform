@@ -25,8 +25,16 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
         body,
       }),
     }),
+    // MoMo
+    createMoMoPayment: builder.mutation({
+      query: (body) => ({
+        url: `${PAYMENT_URL}/momo/create`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useCreatePaypalOrderMutation, useCompletePaypalOrderMutation, useCreateVNPayPaymentMutation } =
+export const { useCreatePaypalOrderMutation, useCompletePaypalOrderMutation, useCreateVNPayPaymentMutation, useCreateMoMoPaymentMutation } =
   paymentApiSlice;

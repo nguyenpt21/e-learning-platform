@@ -79,6 +79,8 @@ app.use("/api/instructor/students", studentRoute);
 
 app.use("/api/lectureQuestions", lectureQuestionRoute);
 
+
+
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
