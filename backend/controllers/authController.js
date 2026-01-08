@@ -214,12 +214,10 @@ export const resendVerificationEmail = async (req, res) => {
         .json({ message: "Không thể gửi email. Vui lòng thử lại sau." });
     }
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Email xác nhận đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.",
-      });
+    res.status(200).json({
+      message:
+        "Email xác nhận đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.",
+    });
   } catch (error) {
     console.log("Error in resendVerificationEmail controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -315,6 +313,149 @@ export const googleAuth = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in googleAuth controller:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+/**
+ * Forgot Password - Send reset password email
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email là bắt buộc" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Để bảo mật, vẫn trả về success dù email không tồn tại
+      return res.status(200).json({
+        message:
+          "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được email đặt lại mật khẩu.",
+      });
+    }
+
+    // Kiểm tra nếu user đăng ký bằng Google
+    if (user.authProvider === "google" && !user.password) {
+      return res.status(400).json({
+        message:
+          "Tài khoản này được đăng ký bằng Google. Vui lòng đăng nhập bằng Google.",
+      });
+    }
+
+    // Tạo reset token
+    const resetPasswordToken = crypto.randomBytes(32).toString("hex");
+    const resetPasswordExpires = new Date();
+    resetPasswordExpires.setHours(resetPasswordExpires.getHours() + 1); // 1 giờ
+
+    user.resetPasswordToken = resetPasswordToken;
+    user.resetPasswordExpires = resetPasswordExpires;
+    await user.save();
+
+    // Import dynamic để tránh circular dependency
+    const { sendResetPasswordEmail } = await import("../utils/sendEmail.js");
+
+    const emailSent = await sendResetPasswordEmail(email, resetPasswordToken);
+
+    if (!emailSent) {
+      return res.status(500).json({
+        message: "Không thể gửi email. Vui lòng thử lại sau.",
+      });
+    }
+
+    res.status(200).json({
+      message:
+        "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được email đặt lại mật khẩu.",
+    });
+  } catch (error) {
+    console.error("Error in forgotPassword controller:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+/**
+ * Verify Reset Token - Check if reset token is valid
+ */
+export const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token không hợp lệ" });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message:
+          "Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.",
+      });
+    }
+
+    res.status(200).json({
+      message: "Token hợp lệ",
+      email: user.email,
+    });
+  } catch (error) {
+    console.error("Error in verifyResetToken controller:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+/**
+ * Reset Password - Set new password
+ */
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Token và mật khẩu mới là bắt buộc" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Mật khẩu phải có ít nhất 6 ký tự",
+      });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message:
+          "Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.",
+      });
+    }
+
+    // Hash password mới
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Cập nhật password và xóa reset token
+    user.password = hashedPassword;
+    user.resetPasswordToken = "";
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message:
+        "Mật khẩu đã được đặt lại thành công! Bạn có thể đăng nhập ngay bây giờ.",
+    });
+  } catch (error) {
+    console.error("Error in resetPassword controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
