@@ -1,6 +1,5 @@
 import Button from "@/components/Button";
-import { Undo2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 function MomoSuccess() {
@@ -11,51 +10,87 @@ function MomoSuccess() {
   const resultCode = searchParams.get("resultCode");
   const messageParam = searchParams.get("message");
 
-  const hasRun = useRef(false);
-  const [message, setMessage] = useState("Vui lòng chờ...");
-  const [link, setLink] = useState("");
+  const isSuccess = ["0", "1006", "7002"].includes(resultCode);
 
-  useEffect(() => {
-    if (hasRun.current) return;
-    hasRun.current = true;
-
-    if (resultCode === "0") {
-      setMessage("Thanh toán MoMo thành công!");
-      setLink(`/course/${courseAlias}`);
-    } else {
-      setMessage(
-        messageParam
-          ? decodeURIComponent(messageParam)
-          : "Thanh toán MoMo thất bại hoặc đã bị hủy."
-      );
-      setLink(`/course/${courseAlias}/payment`);
-    }
-  }, [resultCode, messageParam, courseAlias]);
+  const message = isSuccess
+    ? "Thanh toán MoMo thành công. Khóa học đã được kích hoạt."
+    : messageParam
+    ? decodeURIComponent(messageParam)
+    : "Thanh toán MoMo thất bại hoặc đã bị hủy.";
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen text-center">
-      {message.startsWith("Vui lòng chờ") ? (
-        <img src="/loadingGIF.gif" alt="loading" className="w-[256px]" />
-      ) : resultCode === "0" ? (
-        <img src="/successGIF.gif" alt="success" className="w-[720px]" />
-      ) : (
-        <img src="/errorGIF.gif" alt="error" className="w-[720px]" />
-      )}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+        
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          {isSuccess ? (
+            <CheckCircle className="w-20 h-20 text-[#098BE4]" />
+          ) : (
+            <XCircle className="w-20 h-20 text-red-500" />
+          )}
+        </div>
 
-      <h2 className="text-2xl font-semibold mb-3">{message}</h2>
+        {/* Title */}
+        <h1
+          className={`text-2xl font-bold mb-2 ${
+            isSuccess ? "text-[#098BE4]" : "text-gray-800"
+          }`}
+        >
+          {isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại"}
+        </h1>
 
-      <Button
-        variant="reverse"
-        className={`flex gap-2 px-4 py-2 ${
-          message.startsWith("Vui lòng chờ") ? "hidden" : ""
-        }`}
-        onClick={() => navigate(link)}
-      >
-        <Undo2 />
-        {resultCode === "0"
-          ? "Quay lại trang khóa học"
-          : "Quay lại trang thanh toán"}
-      </Button>
+        {/* Description */}
+        <p className="text-gray-600 mb-6">{message}</p>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-3">
+          {isSuccess ? (
+            <>
+              <button
+                onClick={() => navigate(`/student/learning/${courseAlias}`)}
+                className="
+                  w-full py-3 rounded-md
+                  bg-[#098BE4] text-white
+                  font-semibold hover:bg-[#0069D9]
+                  transition shadow-md
+                "
+              >
+                Vào khóa học của tôi
+              </button>
+
+              <Button variant="outline" onClick={() => navigate("/")}>
+                Về trang chủ
+              </Button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate(`/course/${courseAlias}`)}
+                className="
+                  w-full py-3 rounded-xl
+                  bg-gray-200 hover:bg-gray-300
+                  transition font-medium
+                "
+              >
+                Quay lại khóa học
+              </button>
+
+              <button
+                onClick={() => navigate(`/course/${courseAlias}/payment`)}
+                className="
+                  w-full py-3 rounded-xl
+                  bg-red-500 text-white
+                  hover:bg-red-600
+                  transition font-medium
+                "
+              >
+                Thanh toán lại
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
