@@ -10,6 +10,7 @@ import AnnouncementsPage from "@/pages/student/AnnouncementsPage";
 import VNPaySuccess from "@/pages/student/VNPaySuccess";
 import VNPayFailed from "@/pages/student/VNPayFailed";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import MomoSuccess from "@/pages/student/MoMoSuccess";
 
 const PublicRoutes = () => {
   return (
@@ -32,6 +33,10 @@ const PublicRoutes = () => {
       <Route
         path="/course/:courseAlias/vnpay-failed"
         element={<VNPayFailed />}
+      />
+      <Route
+        path="/course/:courseAlias/momo-success"
+        element={<MomoSuccess />}
       />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
