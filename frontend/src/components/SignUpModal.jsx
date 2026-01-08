@@ -414,7 +414,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
             </div>
           </div>
 
-          <div className="mt-4 flex justify-center ">
+          <div className="mt-4 flex justify-center">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
