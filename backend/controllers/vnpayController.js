@@ -3,6 +3,7 @@ import moment from "moment";
 import Course from "../models/course.js";
 import Order from "../models/order.js";
 import { updateCourseProgress } from "./progressController.js";
+import UserBehavior from "../models/userBehavior.js";
 
 /**
  * Khởi tạo VNPay
@@ -104,6 +105,27 @@ export const vnpayReturn = async (req, res) => {
         console.log(
           `VNPAY: Đã enroll user ${userId} vào khóa học ${courseAlias}`
         );
+        await UserBehavior.updateOne(
+          { user: userId },
+          {
+            $setOnInsert: {
+              user: req.user._id,
+            },
+          },
+          { upsert: true }
+        );
+        await UserBehavior.updateOne(
+          { user: userId, "ordered.course": { $ne: course._id } },
+          {
+            $push: {
+              ordered: {
+                course: course._id,
+                orderedAt: new Date(),
+                price: course.price,
+              },
+            },
+          }
+        );    
       } else {
         console.log(
           `VNPAY: User ${userId} đã mua khóa học ${courseAlias} trước đó`

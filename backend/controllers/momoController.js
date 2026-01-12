@@ -3,6 +3,7 @@ import axios from "axios";
 import Course from "../models/course.js";
 import Order from "../models/order.js";
 import { updateCourseProgress } from "./progressController.js";
+import UserBehavior from "../models/userBehavior.js";
 
 export const createMoMoPayment = async (req, res) => {
   try {
@@ -126,6 +127,27 @@ export const momoReturn = async (req, res) => {
       });
 
       await updateCourseProgress(userId, course._id);
+      await UserBehavior.updateOne(
+        { user: userId },
+        {
+          $setOnInsert: {
+            user: req.user._id,
+          },
+        },
+        { upsert: true }
+      );
+      await UserBehavior.updateOne(
+        { user: userId, "ordered.course": { $ne: course._id } },
+        {
+          $push: {
+            ordered: {
+              course: course._id,
+              orderedAt: new Date(),
+              price: course.price,
+            },
+          },
+        }
+      );    
     }
 
     return res.redirect(
