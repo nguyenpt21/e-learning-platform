@@ -100,6 +100,11 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 { type: "Caption" }
             ],
         }),
+        getRecommendCourses: builder.query({
+            query: () => ({
+                url: `${COURSE_URL}/recommendation`
+            })
+        })
     }),
 });
 
@@ -116,4 +121,5 @@ export const {
     useDeleteCaptionMutation,
     useGetCaptionContentQuery,
     useUpdateCaptionMutation,
+    useGetRecommendCoursesQuery
 } = courseApiSlice;

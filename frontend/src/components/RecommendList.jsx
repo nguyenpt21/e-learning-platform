@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Star, Heart } from "lucide-react";
-import Slider from "react-slick";
+import React, { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import CourseCard from "./CourseCard";
-import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
-import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice";
-import { toast } from "react-toastify";
+import Slider from "react-slick";
 import FavoriteButton from "./student/home-page/FavoriteButton";
+import {
+  useAddToFavoritesMutation,
+  useRemoveFromFavoritesMutation,
+} from "@/redux/api/favoriteApiSlice";
+import { useGetRecommendCoursesQuery } from "@/redux/api/courseApiSlice";
+import { useSelector } from "react-redux";
 
 function NextArrow(props) {
   const { className, style, onClick } = props;
@@ -34,19 +36,22 @@ function PrevArrow(props) {
   );
 }
 
-
-export default function CoursesList() {
-  const [activeTab, setActiveTab] = useState("Lập trình");
-  const tabs = [
-    "Lập trình",
-    "Kinh doanh",
-    "Thiết kế",
-    "Tiếp thị",
-    "CNTT & Phần mềm",
-    "Phát triển cá nhân",
-    "Nhiếp ảnh",
-    "Âm nhạc",
-  ];
+function RecommendList() {
+  const {userInfo} = useSelector((state) => state.auth);
+  const { data } = useGetRecommendCoursesQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+  const rcmdList = data?.map(item => item.course);
+  const sliderRef = useRef(null);
+  const settings = {
+    dots: false,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 4,
+    nextArrow: <NextArrow />,
+    prevArrow: <PrevArrow />,
+  };
 
   const [popUp, setPopUp] = useState(-1);
   const [cardLeave, setCardLeave] = useState(false);
@@ -65,7 +70,7 @@ export default function CoursesList() {
     const rect = e.currentTarget.getBoundingClientRect();
     setPopUpCoords({ x: rect.left, y: 250 });
     setPopUpWidth(rect.width);
-    setCoursePopUp(courses[index] || null);
+    setCoursePopUp(rcmdList[index] || null);
   };
 
   const leavePopUp = () => {
@@ -73,32 +78,12 @@ export default function CoursesList() {
     setCardLeave(true); // Set to true when leaving the card
   };
 
-  const { data: result } = useGetCourseSearchResultsQuery({
-    q: "",
-    courseDuration: "",
-    level: "",
-    category: activeTab,
-    language: "",
-    selectedPrices: "",
-    sort: "default",
-    page: 0,
-    limit: 8,
-  });
-  const courses = result?.results || [];
-  const handleAllCourseByCategory = () =>{
-    window.location.href = `/courses?q=&category=${encodeURIComponent(activeTab)}`;
-  }
-
-  const filteredCourses =
-    Array.isArray(courses) && courses.length > 0
-      ? courses.filter((c) => c?.category === activeTab)
-      : [];
-  const sliderRef = useRef(null);
-  
   // Favorite functionality
-  const [addToFavorites, { isLoading: isAddingFavorite }] = useAddToFavoritesMutation();
-  const [removeFromFavorites, { isLoading: isRemovingFavorite }] = useRemoveFromFavoritesMutation();
-  
+  const [addToFavorites, { isLoading: isAddingFavorite }] =
+    useAddToFavoritesMutation();
+  const [removeFromFavorites, { isLoading: isRemovingFavorite }] =
+    useRemoveFromFavoritesMutation();
+
   const handleAddToFavorite = async (e, courseId) => {
     e.stopPropagation();
     try {
@@ -120,72 +105,30 @@ export default function CoursesList() {
       toast.error("Lỗi khi xóa khỏi yêu thích");
     }
   };
-  const settings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 4,
-    nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />,
-  };
+  if (rcmdList?.length === 0 || !userInfo?._id) return null;
   return (
-    <div className="py-12">
-      <div className="font-bold text-3xl mx-20 my-5 px-6">
-        Tất cả các kỹ năng bạn cần đều có tại một nơi
-      </div>
+    <div className="py-8">
+      <div className="font-bold text-3xl mx-20 my-5 px-6">Bạn có thể thích</div>
       <div className="text-lg text-gray-800/50 mx-20 my-5 px-6">
-        Từ các kỹ năng quan trọng đến các chủ đề kỹ thuật, NewZLearn hỗ trợ sự
-        phát triển chuyên môn của bạn.
+        Từ những khóa học bạn vừa xem và tìm kiếm gần đây.
       </div>
-      {/* Tabs */}
-      <div className="flex gap-6 border-b border-gray-300 text-gray-700 font-medium mx-20 px-2 xl:px-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              if (sliderRef.current) {
-                sliderRef.current.slickGoTo(0); // reset về slide đầu
-              }
-              setActiveTab(tab);
-            }}
-            className={`pb-2 text-sm xl:text-base px-2 cursor-pointer ${
-              activeTab === tab
-                ? "border-b-2 border-[#098be4] text-[#098be4] font-bold"
-                : "hover:text-[#098be4]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Course Carousel*/}
       <div className="py-5 px-20 bg-gray-100 ">
-        {filteredCourses.length > 0 ? (
-          <Slider
-            className={"overflow-visible bg-none"}
-            ref={sliderRef}
-            {...settings}
-          >
-            {filteredCourses.map((course, index) => (
-              <Button
-                onMouseEnter={(e) => enterPopUp(e, index)}
-                onMouseLeave={leavePopUp}
-                key={course._id || course.id}
-                className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
-              >
-                <CourseCard course={course} isInSlider={true} />
-              </Button>
-            ))}
-          </Slider>
-        ) : (
-          <div className="w-full items-center justify-center flex flex-col gap-2 h-[300px]">
-            <img src="/empty-course.png" alt="No courses" className="w-20 h-20 opacity-50" />
-            <p className="text-[1.1rem] text-gray-500">Không có khóa học nào.</p>
-          </div>
-        )}
-
+        <Slider
+          className={"overflow-visible bg-none"}
+          ref={sliderRef}
+          {...settings}
+        >
+          {rcmdList?.map((course, index) => (
+            <Button
+              onMouseEnter={(e) => enterPopUp(e, index)}
+              onMouseLeave={leavePopUp}
+              key={course._id || course.id}
+              className="flex justify-start bg-white/0 hover:bg-white/0 items-start hover:scale-105 transition-transform duration-200 ease-in-out"
+            >
+              <CourseCard course={course} isInSlider={true} />
+            </Button>
+          ))}
+        </Slider>
         {popUp !== -1 && (
           <div
             style={{
@@ -257,9 +200,9 @@ export default function CoursesList() {
               <div className="text-xs/5 text-gray-800 py-2 space-y-2">
                 <p>{coursePopUp?.subtitle}</p>
                 <ul className="list-disc  px-6 ">
-                  {coursePopUp?.learningOutcomes?.map((outcome, idx) => {return(
-                    <li key={idx}>{outcome}</li>
-                  )})}
+                  {coursePopUp?.learningOutcomes?.map((outcome, idx) => {
+                    return <li key={idx}>{outcome}</li>;
+                  })}
                 </ul>
               </div>
 
@@ -273,11 +216,9 @@ export default function CoursesList() {
             </div>
           </div>
         )}
-
-        <Button variant="outline" className="mt-5 mx-2" onClick={handleAllCourseByCategory}>
-          Hiển thị toàn bộ khóa học {activeTab}
-        </Button>
       </div>
     </div>
   );
 }
+
+export default RecommendList;

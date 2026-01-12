@@ -16,7 +16,7 @@ function UserDropDown({user}) {
     try {
       await logoutApi().unwrap();
       dispatch(logout());
-      navigate("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
       alert("Logout thất bại, thử lại");
