@@ -1,8 +1,13 @@
 import express from "express";
-import { addLectureQuestions, deleteLectureQuestion, getLectureQuestions, updateLectureQuestion } from "../controllers/lectureQuestionController.js";
+import { addLectureQuestions, deleteLectureQuestion, getLectureQuestionAnswer, getLectureQuestions, submitAnswer, updateLectureQuestion } from "../controllers/lectureQuestionController.js";
 
 
 const router = express.Router();
+
+router.route("/submit")
+    .post(submitAnswer);
+router.route("/getAnswer")
+    .get(getLectureQuestionAnswer)
 
 router.route("/:lectureId")
     .get(getLectureQuestions)

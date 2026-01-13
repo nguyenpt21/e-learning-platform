@@ -4,11 +4,13 @@ import HeroSection from "../../components/HeroSection";
 import Testimonials from "../../components/Testimonials";
 import { useEffect, useState } from "react";
 import useInView from "../../hooks/tiptap/useInView";
+import RecommendList from "@/components/RecommendList";
 
 export default function HomePage() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [featureRef, featureVisible] = useInView();
   const [courseRef, courseVisible] = useInView();
+  const [recommendRef, recommendVisible] = useInView();
   const [testiRef, testiVisible] = useInView();
   useEffect(() => {
     setIsPageLoaded(true);
@@ -37,6 +39,17 @@ export default function HomePage() {
           }`}
         >
           <FeatureSection />
+        </section>
+        <section
+          id="courseList"
+          ref={recommendRef}
+          className={`mt-10 transition-all duration-1000 ${
+            recommendVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-8"
+          }`}
+        >
+          <RecommendList />
         </section>
         <section
           id="courseList"

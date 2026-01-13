@@ -39,6 +39,23 @@ export const lectureQuestionApiSlice = apiSlice.injectEndpoints({
                 { type: "LectureQuestions", id: lectureId },
             ],
         }),
+        getLectureResults: builder.query({
+            query: ({ userId, lectureId }) => ({
+                url: `${LECTURE_QUESTION_URL}/getAnswer`,
+                params: { userId, lectureId },
+            }),
+            providesTags: (result, error, { lectureId }) => 
+                [{ type: 'LectureResult', id: lectureId }],
+        }),
+        submitLectureAnswer: builder.mutation({
+            query: (data) => ({
+                url: `${LECTURE_QUESTION_URL}/submit`,
+                method: 'POST',
+                body: data,
+            }),
+            invalidatesTags: (result, error, { lectureId }) => 
+                [{ type: 'LectureResult', id: lectureId }],
+        }),
     }),
 });
 
@@ -47,4 +64,6 @@ export const {
     useAddLectureQuestionMutation,
     useUpdateLectureQuestionMutation,
     useDeleteLectureQuestionMutation,
+    useGetLectureResultsQuery,
+    useSubmitLectureAnswerMutation
 } = lectureQuestionApiSlice;

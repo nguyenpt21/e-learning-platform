@@ -6,6 +6,7 @@ import CourseCard from "./CourseCard";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
 import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation, useCheckFavoriteQuery } from "@/redux/api/favoriteApiSlice";
 import { toast } from "react-toastify";
+import FavoriteButton from "./student/home-page/FavoriteButton";
 
 function NextArrow(props) {
   const { className, style, onClick } = props;
@@ -33,46 +34,6 @@ function PrevArrow(props) {
   );
 }
 
-function FavoriteButton({ courseId, onAddToFavorite, onRemoveFromFavorite, isAddLoading, isRemoveLoading }) {
-  const { data: favoriteData, isLoading: isChecking } = useCheckFavoriteQuery(courseId, {
-    skip: !courseId,
-  });
-  const isFavorite = favoriteData?.isFavorite || false;
-  const isLoading = isAddLoading || isRemoveLoading;
-
-  if (!courseId) return null;
-
-  const handleClick = (e) => {
-    if (isFavorite) {
-      onRemoveFromFavorite(e, courseId);
-    } else {
-      onAddToFavorite(e, courseId);
-    }
-  };
-
-  return (
-    <Button
-      variant={isFavorite ? "outline" : "reverse"}
-      className="w-full mt-2 flex items-center justify-center gap-2"
-      onClick={handleClick}
-      disabled={isLoading || isChecking}
-    >
-      {isLoading ? (
-        isFavorite ? "Đang xóa..." : "Đang thêm..."
-      ) : isFavorite ? (
-        <>
-          <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-          Đã thêm vào yêu thích
-        </>
-      ) : (
-        <>
-          <Heart className="w-4 h-4" />
-          Thêm vào yêu thích
-        </>
-      )}
-    </Button>
-  );
-}
 
 export default function CoursesList() {
   const [activeTab, setActiveTab] = useState("Lập trình");
@@ -302,7 +263,7 @@ export default function CoursesList() {
                 </ul>
               </div>
 
-              <FavoriteButton 
+              <FavoriteButton
                 courseId={coursePopUp?._id}
                 onAddToFavorite={handleAddToFavorite}
                 onRemoveFromFavorite={handleRemoveFromFavorite}

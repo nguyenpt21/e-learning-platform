@@ -20,6 +20,12 @@ import {
 import { CheckCircle2, XCircle, RefreshCw, Circle } from "lucide-react";
 import { useUpdateQuizProgressMutation } from "@/redux/api/progressApiSlice";
 
+const stripHtml = (html) => {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+};
+
 const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
     const { userInfo } = useSelector((state) => state.auth);
     const questions = item.questions || [];
@@ -412,7 +418,9 @@ const Quiz = ({ item, setIsDone, itemProgress, isProgressLoading }) => {
                                                     {opt?.optionExplanation && (
                                                         <div className="mt-2">
                                                             <span className="font-semibold text-sm">Giải thích: </span>
-                                                            <span className="font-normal">{opt?.optionExplanation}</span>
+                                                            <span className="font-normal">
+                                                                {stripHtml(opt?.optionExplanation)}
+                                                            </span>
                                                         </div>
                                                     )}
                                                 </div>

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react"; 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
 
 import {
   Select,
@@ -23,22 +22,15 @@ import {
 } from "@/components/ui/pagination";
 
 import { Star } from "lucide-react";
-import {  CardCatalog} from "@/components/student/courses-catalog/CardCatalog";
+import { CardCatalog } from "@/components/student/courses-catalog/CardCatalog";
 import { useBreakpoint } from "@/hooks/tiptap/useBreakpoint";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import { useGetCourseSearchResultsQuery } from "@/redux/api/coursePublicApiSlice";
 
-
 const categories = [
-  "Lập trình",
-  "Kinh doanh",
-  "Thiết kế",
-  "Tiếp thị",
-  "CNTT & Phần mềm",
-  "Phát triển cá nhân",
-  "Nhiếp ảnh",
-  "Âm nhạc",
+  "Lập trình", "Kinh doanh", "Thiết kế", "Tiếp thị",
+  "CNTT & Phần mềm", "Phát triển cá nhân", "Nhiếp ảnh", "Âm nhạc",
 ];
 
 const levels = ["Mọi cấp độ", "Người mới bắt đầu", "Trung cấp", "Nâng cao"];
@@ -67,19 +59,18 @@ const languageOptions = [
 ];
 
 export function CoursesCatalog() {
-  const COURSES_PER_PAGE = 15;
+  const COURSES_PER_PAGE = 6;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const q = searchParams.get("q")
-  let categoryParam = searchParams.get("category") ? [decodeURIComponent(searchParams.get("category"))] : null
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get("q") || "";
+  const currentPage = parseInt(searchParams.get("page")) || 1;
+  const sortBy = searchParams.get("sort") || "default";
 
-  const [sortBy, setSortBy] = useState("default");
-  const [selectedCategories, setSelectedCategories] = useState(categoryParam?categoryParam:[]);
-  const [selectedLevels, setSelectedLevels] = useState([]);
-  const [selectedPrices, setSelectedPrices] = useState([]);
-  const [selectedDurations, setSelectedDurations] = useState([]);
-  const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const selectedCategories = searchParams.getAll("category");
+  const selectedLevels = searchParams.getAll("level");
+  const selectedPrices = searchParams.getAll("price");
+  const selectedDurations = searchParams.getAll("duration");
+  const selectedLanguages = searchParams.getAll("language");
 
   const [showMoreDurations, setShowMoreDurations] = useState(false);
   const [showMoreLanguages, setShowMoreLanguages] = useState(false);
@@ -92,93 +83,62 @@ export function CoursesCatalog() {
     language: selectedLanguages,
     selectedPrices: selectedPrices,
     sort: sortBy,
-    page: currentPage, limit: COURSES_PER_PAGE
-  })
+    page: currentPage,
+    limit: COURSES_PER_PAGE
+  });
 
-  const totalPages = courses?.totalPage;
+  const totalPages = courses?.totalPage || 1;
   const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
-  const endIndex = startIndex + COURSES_PER_PAGE;
 
-  const breakpoint = useBreakpoint();
 
-  const columns =
-    breakpoint === "xl" || breakpoint === "2xl"
-      ? 4
-      : breakpoint === "lg"
-        ? 3
-        : breakpoint === "md"
-          ? 2
-          : 1;
+  const updateArrayParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+    const currentValues = newParams.getAll(key);
+    newParams.delete(key);
 
-  const toggleCategory = (category) => {
-    searchParams.delete("category");
-    categoryParam = null
-    navigate("/courses?q=")
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+    if (currentValues.includes(value)) {
+      currentValues.filter((v) => v !== value).forEach((v) => newParams.append(key, v));
+    } else {
+      [...currentValues, value].forEach((v) => newParams.append(key, v));
+    }
+    newParams.set("page", "1");
+
+    setSearchParams(newParams);
   };
 
-  const toggleLevel = (level) => {
-    setSelectedLevels((prev) =>
-      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
-    );
+  const updateSingleParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    if (key === 'sort') newParams.set("page", "1");
+
+    setSearchParams(newParams);
   };
 
-  const togglePrice = (price) => {
-    setSelectedPrices((prev) =>
-      prev.includes(price) ? prev.filter((p) => p !== price) : [...prev, price]
-    );
+  const toggleCategory = (category) => updateArrayParam("category", category);
+  const toggleLevel = (level) => updateArrayParam("level", level);
+  const togglePrice = (price) => updateArrayParam("price", price);
+  const toggleDuration = (duration) => updateArrayParam("duration", duration);
+  const toggleLanguage = (language) => updateArrayParam("language", language);
+
+  const handlePageChange = (page) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", page.toString());
+    setSearchParams(newParams);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // Cuộn lên đầu trang
   };
 
-  const toggleDuration = (duration) => {
-    setSelectedDurations((prev) =>
-      prev.includes(duration)
-        ? prev.filter((d) => d !== duration)
-        : [...prev, duration]
-    );
-  };
-
-  const toggleLanguage = (language) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(language)
-        ? prev.filter((l) => l !== language)
-        : [...prev, language]
-    );
-  };
-
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    return (
-      <div className="flex items-center gap-0.5">
-        {[...Array(fullStars)].map((_, i) => (
-          <Star key={i} className="h-4 w-4 fill-orange-400 text-orange-400" />
-        ))}
-        {hasHalfStar && (
-          <Star
-            className="h-4 w-4 fill-orange-400 text-orange-400"
-            style={{ clipPath: "inset(0 50% 0 0)" }}
-          />
-        )}
-        {[...Array(5 - Math.ceil(rating))].map((_, i) => (
-          <Star
-            key={`empty-${i}`}
-            className="h-4 w-4 fill-none text-orange-400"
-          />
-        ))}
-      </div>
-    );
+  const handleSortChange = (value) => {
+    updateSingleParam("sort", value);
   };
 
   const onClickCourse = (courseId, courseAlias) => {
     navigate(`/course/${courseAlias}`);
-  }
+  };
 
-  console.log("courses", courses);
   return (
     <div className="min-h-screen bg-background">
       <Header q={q} />
@@ -186,13 +146,10 @@ export function CoursesCatalog() {
       <header className="border-b border-border">
         <div className="container mx-auto px-6 py-4">
           <h1 className="text-3xl font-bold text-foreground">
-            {q ? `Tìm kiếm khóa học theo từ khóa: "${q}"`
-              : "Tất cả các khóa học"}
+            {q ? `Tìm kiếm khóa học theo từ khóa: "${q}"` : "Tất cả các khóa học"}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {q
-              ? `Kết quả tìm kiếm cho từ khóa "${q}"`
-              : "Khám phá bộ sưu tập khóa học toàn diện của chúng tôi"}
+            {q ? `Kết quả tìm kiếm cho từ khóa "${q}"` : "Khám phá bộ sưu tập khóa học toàn diện của chúng tôi"}
           </p>
         </div>
       </header>
@@ -221,8 +178,6 @@ export function CoursesCatalog() {
                 </div>
               </div>
 
-
-
               {/* Video Duration */}
               <div>
                 <h3 className="mb-3 text-sm font-medium">Thời gian video</h3>
@@ -230,19 +185,13 @@ export function CoursesCatalog() {
                   {durationOptions
                     .slice(0, showMoreDurations ? durationOptions.length : 3)
                     .map((option) => (
-                      <div
-                        key={option.value}
-                        className="flex items-center space-x-2"
-                      >
+                      <div key={option.value} className="flex items-center space-x-2">
                         <Checkbox
                           id={`duration-${option.value}`}
                           checked={selectedDurations.includes(option.value)}
                           onCheckedChange={() => toggleDuration(option.value)}
                         />
-                        <Label
-                          htmlFor={`duration-${option.value}`}
-                          className="text-sm font-normal"
-                        >
+                        <Label htmlFor={`duration-${option.value}`} className="text-sm font-normal">
                           {option.label}
                         </Label>
                       </div>
@@ -265,19 +214,13 @@ export function CoursesCatalog() {
                   {languageOptions
                     .slice(0, showMoreLanguages ? languageOptions.length : 3)
                     .map((option) => (
-                      <div
-                        key={option.value}
-                        className="flex items-center space-x-2"
-                      >
+                      <div key={option.value} className="flex items-center space-x-2">
                         <Checkbox
                           id={`language-${option.value}`}
                           checked={selectedLanguages.includes(option.value)}
                           onCheckedChange={() => toggleLanguage(option.value)}
                         />
-                        <Label
-                          htmlFor={`language-${option.value}`}
-                          className="text-sm font-normal"
-                        >
+                        <Label htmlFor={`language-${option.value}`} className="text-sm font-normal">
                           {option.label}
                         </Label>
                       </div>
@@ -317,19 +260,13 @@ export function CoursesCatalog() {
                 <h3 className="mb-3 text-sm font-medium">Giá</h3>
                 <div className="space-y-2">
                   {priceRanges.map((range) => (
-                    <div
-                      key={range.value}
-                      className="flex items-center space-x-2"
-                    >
+                    <div key={range.value} className="flex items-center space-x-2">
                       <Checkbox
                         id={range.value}
                         checked={selectedPrices.includes(range.value)}
                         onCheckedChange={() => togglePrice(range.value)}
                       />
-                      <Label
-                        htmlFor={range.value}
-                        className="text-sm font-normal"
-                      >
+                      <Label htmlFor={range.value} className="text-sm font-normal">
                         {range.label}
                       </Label>
                     </div>
@@ -343,11 +280,14 @@ export function CoursesCatalog() {
           <main className="px-10 flex-1">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Hiển thị {courses?.results?.length > 0 ? startIndex + 1 : 0}-{Math.min(startIndex + (courses?.results?.length || 0), courses?.totalCourse || 0)} trong tổng số {courses?.totalCourse || 0} kết quả
+                Hiển thị {courses?.results?.length > 0 ? startIndex + 1 : 0}-
+                {Math.min(startIndex + (courses?.results?.length || 0), courses?.totalCourse || 0)} trong tổng số {courses?.totalCourse || 0} kết quả
               </div>
-              <Select value={sortBy} onValueChange={setSortBy}>
+
+              {/* Sort By */}
+              <Select value={sortBy} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sắp xếp theo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Đề cử</SelectItem>
@@ -363,47 +303,42 @@ export function CoursesCatalog() {
               {courses?.results.map((course, index) => (
                 <div
                   key={course._id}
-                  className="h-full" 
+                  className="h-full"
                   onClick={() => onClickCourse(course._id, course.alias)}
                 >
                   <CardCatalog
                     key={course._id}
                     course={course}
                     index={index}
-                    columns={3}// cột hiện tại ở breakpoint xl (tuỳ chỉnh)
+                    columns={3}
                   />
                 </div>
               ))}
             </div>
 
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-8 flex justify-center">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(1, prev - 1))
-                        }
-                        className={
-                          currentPage === 1
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
+
                     {[...Array(totalPages)].map((_, i) => {
                       const pageNumber = i + 1;
                       if (
                         pageNumber === 1 ||
                         pageNumber === totalPages ||
-                        (pageNumber >= currentPage - 1 &&
-                          pageNumber <= currentPage + 1)
+                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
                       ) {
                         return (
                           <PaginationItem key={pageNumber}>
                             <PaginationLink
-                              onClick={() => setCurrentPage(pageNumber)}
+                              onClick={() => handlePageChange(pageNumber)}
                               isActive={currentPage === pageNumber}
                               className="cursor-pointer"
                             >
@@ -423,18 +358,11 @@ export function CoursesCatalog() {
                       }
                       return null;
                     })}
+
                     <PaginationItem>
                       <PaginationNext
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(totalPages, prev + 1)
-                          )
-                        }
-                        className={
-                          currentPage === totalPages
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                   </PaginationContent>

@@ -40,22 +40,26 @@ import {
 
 import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
 import { protectRoute } from "../middleware/authMiddleware.js"
+import { publicRoute } from "../middleware/publicMiddleware.js"; // cho phép unauth và auth đi qua, nhưng auth trả về req.user => để tracking
+import { getRecommendations } from "../controllers/userRecommendationController.js";
 const router = express.Router();
 
 //search
 router.route("/suggestion")
-    .get(getSearchCourseSuggestion)
+    .get(publicRoute, getSearchCourseSuggestion)
 router.route("/suggestion/results")
-    .get(getSearchCourseResults)
+    .get(publicRoute, getSearchCourseResults)
 router.route("/getAllCoursesInfo")
     .get(getAllCoursesInfo)
 router.route("/search")
     .get(searchCourses)
 router.get("/instructor", getInstructorCourses)
 
+router.get("/recommendation", protectRoute, getRecommendations)
+
 //course
 router.route("/alias/:courseAlias")
-    .get(getCourseByAlias)
+    .get(publicRoute, getCourseByAlias)
 router.route("/")
     .get(getAllCourses)
     .post(createCourse);

@@ -5,8 +5,10 @@ import Footer from "@/components/Footer";
 import FavoriteCourseCard from "@/components/student/courses-catalog/FavoriteCourseCard";
 import { HeartOff } from "lucide-react";
 import { useGetMyFavoritesQuery, useRemoveFromFavoritesMutation } from "@/redux/api/favoriteApiSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function WishlistPage() {
+  const navigate = useNavigate();
   const { data: favorites = [], isLoading, error } = useGetMyFavoritesQuery();
   const [removeFromFavorites, { isLoading: isRemoving }] = useRemoveFromFavoritesMutation();
 
@@ -18,6 +20,10 @@ export default function WishlistPage() {
       console.error("Error removing from favorites:", error);
     }
   };
+
+   const onClickCourse = (courseId, courseAlias) => {
+    navigate(`/course/${courseAlias}`);
+  }
 
   return (
     <>
@@ -61,11 +67,17 @@ export default function WishlistPage() {
             /* GRID */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {favorites.map((course) => (
+                <div
+                  key={course._id}
+                  className="h-full cursor-pointer" 
+                  onClick={() => onClickCourse(course._id, course.alias)}
+                >
                 <FavoriteCourseCard
                   key={course._id}
                   course={course}
                   onRemove={removeFavorite}
                 />
+                 </div>
               ))}
             </div>
           )}

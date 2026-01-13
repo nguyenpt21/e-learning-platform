@@ -1,5 +1,6 @@
 import Course from "../models/course.js";
 import Order from "../models/order.js";
+import UserBehavior from "../models/userBehavior.js";
 import { updateCourseProgress } from "./progressController.js";
 const environment = process.env.ENVIRONMENT;
 const client_id = process.env.CLIENT_ID;
@@ -101,7 +102,28 @@ export const completeOrder = async (req, res) => {
         paymentMethod: "PayPal",
       })
 
-      updateCourseProgress(req.user._id, course._id);
+      await updateCourseProgress(req.user._id, course._id);
+      await UserBehavior.updateOne(
+        { user: req.user._id },
+        {
+          $setOnInsert: {
+            user: req.user._id,
+          },
+        },
+        { upsert: true }
+      );
+      await UserBehavior.updateOne(
+        { user: req.user._id, "ordered.course": { $ne: course._id } },
+        {
+          $push: {
+            ordered: {
+              course: course._id,
+              orderedAt: new Date(),
+              price: course.price,
+            },
+          },
+        }
+      );      
     }
     res.send(json);
   } catch (err) {

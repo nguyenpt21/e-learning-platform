@@ -1,10 +1,12 @@
 import express from "express";
 
 import { protectRoute } from "../middleware/authMiddleware.js"
-import { createOrUpdateReview, deleteReviewById, getReviews, getReviewsByCourse, getReviewsByUser, getSurveyStatistics } from "../controllers/reviewController.js";
+import { createOrUpdateReview, deleteReviewById, getAllReviews, getReviews, getReviewsByCourse, getReviewsByUser, getSurveyStatistics } from "../controllers/reviewController.js";
 const router = express.Router();
 
 router.get("/", getReviews);
+router.get("/all", getAllReviews);
+
 router.get("/survey-stats/:courseId", getSurveyStatistics);
 
 router.route("/my-reviews")

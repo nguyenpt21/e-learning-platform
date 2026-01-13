@@ -106,6 +106,10 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 method: "POST",
                 body: { question, threadId },
             }),
+        getRecommendCourses: builder.query({
+            query: () => ({
+                url: `${COURSE_URL}/recommendation`
+            })
         })
     }),
 });
@@ -124,4 +128,5 @@ export const {
     useGetCaptionContentQuery,
     useUpdateCaptionMutation,
     useCallChatBotMutation
+    useGetRecommendCoursesQuery
 } = courseApiSlice;

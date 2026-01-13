@@ -7,26 +7,42 @@ import Payment from "@/pages/student/Payment";
 import PaypalSuccess from "@/pages/student/PayPalSuccess";
 import VerifyEmail from "@/pages/student/VerifyEmail";
 import AnnouncementsPage from "@/pages/student/AnnouncementsPage";
+import VNPaySuccess from "@/pages/student/VNPaySuccess";
+import VNPayFailed from "@/pages/student/VNPayFailed";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import MomoSuccess from "@/pages/student/MoMoSuccess";
 
 const PublicRoutes = () => {
-    return (
-        <Routes>
-            <Route
-                element={
-                    <Layout />
-                }
-            >
-                <Route path="/" element={<HomePage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-                <Route path="/course/:courseAlias/payment" element={<Payment />} />
-            </Route>
-            <Route path="/courses" element={<CoursesCatalog />} />
-            <Route path="/course/:courseAlias" element={<CourseDetail />} />
-            <Route path="/course/:courseAlias/paypal-success" element={<PaypalSuccess />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/announcements" element={<AnnouncementsPage />} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/course/:courseAlias/payment" element={<Payment />} />
+      </Route>
+      <Route path="/courses" element={<CoursesCatalog />} />
+      <Route path="/course/:courseAlias" element={<CourseDetail />} />
+      <Route
+        path="/course/:courseAlias/paypal-success"
+        element={<PaypalSuccess />}
+      />
+      <Route
+        path="/course/:courseAlias/vnpay-success"
+        element={<VNPaySuccess />}
+      />
+      <Route
+        path="/course/:courseAlias/vnpay-failed"
+        element={<VNPayFailed />}
+      />
+      <Route
+        path="/course/:courseAlias/momo-success"
+        element={<MomoSuccess />}
+      />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/announcements" element={<AnnouncementsPage />} />
+    </Routes>
+  );
 };
 
 export default PublicRoutes;

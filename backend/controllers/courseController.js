@@ -14,6 +14,7 @@ import { deleteS3File, s3Client } from "./uploadController.js";
 import slugify from "slugify";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { generateVTT, parseVTT, streamToString } from "../utils/chatbot/contentProcessor.js";
+import UserBehavior from "../models/userBehavior.js";
 
 const lambda = new LambdaClient({
     region: process.env.AWS_REGION || "ap-southeast-1",
@@ -26,6 +27,7 @@ const lambda = new LambdaClient({
 const getCourseByAlias = async (req, res) => {
     try {
         const { courseAlias } = req.params;
+        const userId = req.user ? req.user._id : null;
         const course = await Course.findOne({ alias: courseAlias })
             .populate("sections.sectionId")
             .lean();
@@ -72,6 +74,39 @@ const getCourseByAlias = async (req, res) => {
                         .filter(Boolean) || [],
             }));
 
+        if (userId) {
+          // đảm bảo document tồn tại
+          await UserBehavior.updateOne(
+            { user: userId },
+            { $setOnInsert: { user: userId } },
+            { upsert: true }
+          );
+          // tăng count
+          const incResult = await UserBehavior.updateOne(
+            { user: userId, "viewed.course": course._id },
+            {
+              $inc: { "viewed.$.count": 1 },
+              $set: { "viewed.$.lastView": new Date() },
+            }
+          );
+          // push mới
+          if (incResult.matchedCount === 0) {
+            await UserBehavior.updateOne(
+              { user: userId },
+              {
+                $push: {
+                  viewed: {
+                    course: course._id,
+                    count: 1,
+                    lastView: new Date(),
+                  },
+                },
+              }
+            );
+          }
+        } else {
+          console.log("User not logged in, skipping behavior tracking.");
+        }
         res.status(200).json({ ...course, sections });
     } catch (error) {
         console.error("getCourseByAlias error:", error);
@@ -131,8 +166,8 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
     try {
         const { courseAlias } = req.params;
-        const course = await Course.findOne({alias: courseAlias});
-        
+        const course = await Course.findOne({ alias: courseAlias });
+
         if (!course) {
             return res.status(404).json({ message: "Course not found" });
         }
@@ -178,7 +213,7 @@ const updateCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
     try {
         const { courseAlias } = req.params;
-        const course = await Course.findOne({alias: courseAlias}).populate("sections.sectionId").lean();
+        const course = await Course.findOne({ alias: courseAlias }).populate("sections.sectionId").lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
         for (const section of course.sections) {
             for (const item of section.curriculumItems) {
@@ -262,8 +297,7 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${
-                        sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;
@@ -730,7 +764,7 @@ const getSearchCourseSuggestion = async (req, res) => {
                     index: "course_search",
                     text: {
                         query: normalizedQuery,
-                        path: ["title", "subtitle", "description", "category", "subcategory"],
+                        path: ["title", "category"],
                         fuzzy: {},
                     },
                 },
@@ -808,9 +842,11 @@ const getSearchCourseSuggestion = async (req, res) => {
                 keywordSet.add(item.subcategory.toLowerCase());
             }
 
-            const normalizedTitle = item.title.toLowerCase();
-            if (normalizedTitle.startsWith(normalizedQuery)) {
-                keywordSet.add(course.title.toLowerCase());
+            if (item.title) {
+                const normalizedTitle = item.title.toLowerCase();
+                if (normalizedTitle.startsWith(normalizedQuery)) {
+                    keywordSet.add(normalizedTitle);
+                }
             }
         });
         const keywords = Array.from(keywordSet).slice(0, 6);
@@ -827,6 +863,7 @@ const getSearchCourseSuggestion = async (req, res) => {
 
 const getSearchCourseResults = async (req, res) => {
     try {
+        const userId = req.user? req.user._id : null
         const { q, courseDuration, level, category, language, selectedPrices, sort, page, limit } =
             req.query;
         console.log(q);
@@ -840,21 +877,48 @@ const getSearchCourseResults = async (req, res) => {
                         index: "course_search",
                         text: {
                             query: normalizedQuery,
-                            path: [
-                                "title",
-                                "subtitle",
-                                "description",
-                                "learningOutcomes",
-                                "intendedLearners",
-                                "category",
-                                "subcategory",
-                                "requirements",
-                            ],
+                            path: ["title", "category"],
                             fuzzy: {},
                         },
                     },
                 },
             ];
+          // thêm từ khóa (q) vào searched của userBehavior
+          if (userId && normalizedQuery) {
+            // Chắc chắn tồn tại
+            await UserBehavior.updateOne(
+              { user: userId },
+              { $setOnInsert: { user: userId } },
+              { upsert: true }
+            );
+            // Tăng count
+            const updated = await UserBehavior.updateOne(
+              {
+                user: userId,
+                "searched.normalized": normalizedQuery,
+              },
+              {
+                $inc: { "searched.$.count": 1 },
+                $set: { "searched.$.lastSearch": new Date() },
+              }
+            );
+            // Push mới
+            if (updated.matchedCount === 0) {
+              await UserBehavior.updateOne(
+                { user: userId },
+                {
+                  $push: {
+                    searched: {
+                      keyword: q,
+                      normalized: normalizedQuery,
+                      count: 1,
+                      lastSearch: new Date(),
+                    },
+                  },
+                }
+              );
+            }
+          }
         }
 
         let filterStage = {
@@ -893,21 +957,35 @@ const getSearchCourseResults = async (req, res) => {
         if (level) filterStage.$match.level = { $in: level.split(",") };
 
         if (courseDuration) {
+            const ONE_HOUR_IN_SECONDS = 3600;
+
             switch (courseDuration) {
                 case "0-3": {
-                    filterStage.$match.courseDuration = { $gte: 0, $lte: 3 };
+                    
+                    filterStage.$match.courseDuration = {
+                        $gte: 0,
+                        $lte: 3 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "3-6": {
-                    filterStage.$match.courseDuration = { $gte: 3, $lte: 6 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 3 * ONE_HOUR_IN_SECONDS,
+                        $lte: 6 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "6-17": {
-                    filterStage.$match.courseDuration = { $gte: 6, $lte: 17 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 6 * ONE_HOUR_IN_SECONDS,
+                        $lte: 17 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "17-more": {
-                    filterStage.$match.courseDuration = { $gte: 17 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 17 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 default:
