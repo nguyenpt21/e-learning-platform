@@ -35,6 +35,7 @@ import {
     updateQuestionInQuiz,
     deleteQuestionFromQuiz,
     uploadQuestionsToQuiz,
+    callLectureChatbotAgent,
 } from "../controllers/sectionController.js";
 
 import { getCurriculumItemById } from "../controllers/curriculumItemController.js";
@@ -111,5 +112,7 @@ router.route('/:courseAlias/captions')
 router.route('/:courseId/captions/:lectureId/:language/:itemType')
     .get(getCaptionContent)
     .put(updateCaption)
+
+router.post('/lectures/:lectureId/chat/agent', callLectureChatbotAgent)
 
 export default router;

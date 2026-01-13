@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
 
+const ChunkSchema = new mongoose.Schema({
+    text: { type: String, required: true },
+    chunkIndex: { type: Number, required: true },
+    embedding: { type: [Number], required: true }, // Array of floats
+    metadata: {
+        startTime: Number, // Cho video
+        endTime: Number,
+        language: String,
+    }
+});
+
 const LectureSchema = new mongoose.Schema({
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
     sectionId: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -37,7 +48,17 @@ const LectureSchema = new mongoose.Schema({
         }],
         default: []
     },
+
+    chunks: [ChunkSchema],
+    embeddingMetadata: {
+        isIndexed: { type: Boolean, default: false },
+        totalChunks: { type: Number, default: 0 },
+        embeddingModel: { type: String, default: 'text-embedding-3-small' },
+        lastIndexedAt: Date,
+        sourceLanguage: String, // Ngôn ngữ của caption được dùng
+    }
 }, { timestamps: true });
 
+// LectureSchema.index({ 'chunks.embedding': 1 });
 const Lecture = mongoose.model("Lecture", LectureSchema);
 export default Lecture;

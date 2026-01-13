@@ -100,6 +100,13 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 { type: "Caption" }
             ],
         }),
+        callChatBot: builder.mutation({
+            query: ({ lectureId, question, threadId = null }) => ({
+                url: `${COURSE_URL}/lectures/${lectureId}/chat/agent`,
+                method: "POST",
+                body: { question, threadId },
+            }),
+        })
     }),
 });
 
@@ -116,4 +123,5 @@ export const {
     useDeleteCaptionMutation,
     useGetCaptionContentQuery,
     useUpdateCaptionMutation,
+    useCallChatBotMutation
 } = courseApiSlice;

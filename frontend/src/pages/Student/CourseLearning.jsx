@@ -63,6 +63,7 @@ const CourseLearning = () => {
         )
     }
 
+
     return (
         <div className="min-h-screen flex flex-col">
             <Header 
@@ -101,12 +102,13 @@ const CourseLearning = () => {
                 {/* Chatbot Panel - Right sidebar (when open) */}
                 <div 
                     className={`h-[calc(100vh-64px)] shrink-0 transition-all duration-300 overflow-hidden ${
-                        isChatbotOpen ? 'w-75' : 'w-0'
+                        isChatbotOpen && currentItem.itemType === 'Lecture' ? 'w-75' : 'w-0'
                     }`}
                 >
-                    {isChatbotOpen && (
-                        <ChatbotPanel 
-                            courseTitle={course?.title} 
+                    {isChatbotOpen && currentItem.itemType === 'Lecture' && (
+                        <ChatbotPanel
+                            key={`${currentItem.itemId}-${currentItem.itemType}}`}
+                            lectureId={currentItem.itemId}
                             isOpen={isChatbotOpen}
                             onClose={() => setIsChatbotOpen(false)}
                         />

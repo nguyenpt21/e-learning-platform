@@ -77,8 +77,10 @@ const CaptionEditModal = ({ courseId, caption, isOpen, onOpenChange, language })
     const startEditing = (caption) => {
         setEditingId(caption.id);
         setCurrentTime(caption.start);
+
+        console.log(isPlaying)
         if (videoRef.current) {
-            videoRef.current.setCurrentTime(caption.start);
+            videoRef.current.setCurrentTime(caption.start);            
         }
 
         setTimeout(() => {
@@ -123,7 +125,7 @@ const CaptionEditModal = ({ courseId, caption, isOpen, onOpenChange, language })
         <Dialog modal={false} open={isOpen} onOpenChange={handleOpenChange}>
             <DialogContent
                 onInteractOutside={(e) => {
-                    e.preventDefault(); 
+                    e.preventDefault();
                 }}
                 key={dialogKey}
                 className={
