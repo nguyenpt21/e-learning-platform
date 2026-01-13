@@ -166,8 +166,8 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
     try {
         const { courseAlias } = req.params;
-        const course = await Course.findOne({alias: courseAlias});
-        
+        const course = await Course.findOne({ alias: courseAlias });
+
         if (!course) {
             return res.status(404).json({ message: "Course not found" });
         }
@@ -213,7 +213,7 @@ const updateCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
     try {
         const { courseAlias } = req.params;
-        const course = await Course.findOne({alias: courseAlias}).populate("sections.sectionId").lean();
+        const course = await Course.findOne({ alias: courseAlias }).populate("sections.sectionId").lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
         for (const section of course.sections) {
             for (const item of section.curriculumItems) {
@@ -297,8 +297,7 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${
-                        sectionDetail?.title || section.sectionId
+                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
                     }" cần có ít nhất 1 bài học hoặc quiz`
                 );
                 break;
@@ -765,7 +764,7 @@ const getSearchCourseSuggestion = async (req, res) => {
                     index: "course_search",
                     text: {
                         query: normalizedQuery,
-                        path: ["title", "subtitle", "description", "category", "subcategory"],
+                        path: ["title", "category"],
                         fuzzy: {},
                     },
                 },
@@ -843,9 +842,11 @@ const getSearchCourseSuggestion = async (req, res) => {
                 keywordSet.add(item.subcategory.toLowerCase());
             }
 
-            const normalizedTitle = item.title.toLowerCase();
-            if (normalizedTitle.startsWith(normalizedQuery)) {
-                keywordSet.add(item.title.toLowerCase());
+            if (item.title) {
+                const normalizedTitle = item.title.toLowerCase();
+                if (normalizedTitle.startsWith(normalizedQuery)) {
+                    keywordSet.add(normalizedTitle);
+                }
             }
         });
         const keywords = Array.from(keywordSet).slice(0, 6);
@@ -876,16 +877,7 @@ const getSearchCourseResults = async (req, res) => {
                         index: "course_search",
                         text: {
                             query: normalizedQuery,
-                            path: [
-                                "title",
-                                "subtitle",
-                                "description",
-                                "learningOutcomes",
-                                "intendedLearners",
-                                "category",
-                                "subcategory",
-                                "requirements",
-                            ],
+                            path: ["title", "category"],
                             fuzzy: {},
                         },
                     },
@@ -965,21 +957,35 @@ const getSearchCourseResults = async (req, res) => {
         if (level) filterStage.$match.level = { $in: level.split(",") };
 
         if (courseDuration) {
+            const ONE_HOUR_IN_SECONDS = 3600;
+
             switch (courseDuration) {
                 case "0-3": {
-                    filterStage.$match.courseDuration = { $gte: 0, $lte: 3 };
+                    
+                    filterStage.$match.courseDuration = {
+                        $gte: 0,
+                        $lte: 3 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "3-6": {
-                    filterStage.$match.courseDuration = { $gte: 3, $lte: 6 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 3 * ONE_HOUR_IN_SECONDS,
+                        $lte: 6 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "6-17": {
-                    filterStage.$match.courseDuration = { $gte: 6, $lte: 17 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 6 * ONE_HOUR_IN_SECONDS,
+                        $lte: 17 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 case "17-more": {
-                    filterStage.$match.courseDuration = { $gte: 17 };
+                    filterStage.$match.courseDuration = {
+                        $gt: 17 * ONE_HOUR_IN_SECONDS
+                    };
                     break;
                 }
                 default:

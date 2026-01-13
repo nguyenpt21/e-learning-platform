@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 import Order from "../models/order.js";
-import CourseProgress from "../models/course-progress.js";
+import CourseProgress from "../models/courseProgress.js";
 import nodemailer from "nodemailer";
 
 /**

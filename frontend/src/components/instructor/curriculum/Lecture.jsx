@@ -442,9 +442,11 @@ const Lecture = ({
                     ) : (
                         <></>
                     )}
-                    <div>
-                        <LectureQuestion itemId={item._id} sectionId={sectionId} courseId={courseId} />
-                    </div>
+                    {item.type === "video" && (
+                        <div>
+                            <LectureQuestion itemId={item._id} item={item} sectionId={sectionId} courseId={courseId} />
+                        </div>
+                    )}
 
                     {/* Lecture Resource List */}
                     {item.resources.length > 0 && (

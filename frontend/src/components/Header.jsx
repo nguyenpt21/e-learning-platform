@@ -25,6 +25,10 @@ export default function Header({ q }) {
   const { data: searchSuggestions, error, isLoading: isSearching } = useGetCourseSearchSuggestionQuery(
     searchQuery ? { q: searchQuery } : skipToken,
   );
+
+  useEffect(() => {
+    setSearchQuery(q || "");
+  }, [q]);
   
   // Lấy danh sách yêu thích để hiển thị badge trên icon Heart
   const { data: favorites = [] } = useGetMyFavoritesQuery(undefined, {
@@ -123,7 +127,11 @@ export default function Header({ q }) {
                   searchQuery != "" &&
                   (searchSuggestions?.keywords.length > 0 || searchSuggestions?.courses.length > 0) && (
                     <div className='border border-gray-100 bg-white shadow-lg rounded-lg'>
-                      <DropDownSuggestion searchSuggestions={searchSuggestions} setOpen={setOpenSearchSuggestion} />
+                      <DropDownSuggestion 
+                        searchSuggestions={searchSuggestions} 
+                        setOpen={setOpenSearchSuggestion} 
+                        setSearchQuery={setSearchQuery}
+                        />
                     </div>
                   )}
               </div>
@@ -211,7 +219,7 @@ export default function Header({ q }) {
   );
 }
 
-const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
+const DropDownSuggestion = ({ searchSuggestions, setOpen, setSearchQuery }) => {
 
   const navigate = useNavigate()
 
@@ -219,13 +227,14 @@ const DropDownSuggestion = ({ searchSuggestions, setOpen }) => {
     const param = new URLSearchParams()
     param.set("q", keyword)
     setOpen(false)
+    setSearchQuery(keyword)
     navigate(`/courses?${param.toString()}`)
   }
 
   const onClickCourse = (courseAlias) => {
     navigate(`/course/${courseAlias}`)
   }
-  console.log(searchSuggestions?.courses)
+  
   return (
     <div>
       {searchSuggestions?.keywords.length > 0 && (

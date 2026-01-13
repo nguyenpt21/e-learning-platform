@@ -16,8 +16,10 @@ const LANGUAGE_MAP = {
 
 const VideoPlayer = forwardRef(({
     className = "", videoHeight = "",
-    videoUrl = "https://newzlearn-e-learning-bucket.s3.ap-southeast-1.amazonaws.com/68ef1a1ce03f62b51b2cd332/lecture-video/hls-output/1765268478809-HTML CSS là gì   Ví dụ trực quan về HTML & CSS/master.m3u8",
-    onTimeUpdate, onPlayStateChange, startTime = 0, captions = [], poster
+    videoUrl = "",
+    onTimeUpdate, onPlayStateChange, startTime = 0, captions = [], poster,
+    questionMarkers, noteMarkers,
+    children
 }, ref) => {
 
     const videoRef = useRef(null);
@@ -29,11 +31,12 @@ const VideoPlayer = forwardRef(({
     const [duration, setDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [buffered, setBuffered] = useState(0);
-    const [showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(false);
     const [availableLanguages, setAvailableLanguages] = useState([]);
     const [qualities, setQualities] = useState([]);
     const [currentQuality, setCurrentQuality] = useState(-1);
     const [isMetadataLoaded, setIsMetadataLoaded] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
 
     useImperativeHandle(ref, () => ({
@@ -53,8 +56,6 @@ const VideoPlayer = forwardRef(({
         }
     };
 
-
-    //khởi tạo video
     useEffect(() => {
         const video = videoRef.current;
         if (!video || !videoUrl) return;
@@ -78,7 +79,7 @@ const VideoPlayer = forwardRef(({
             hls.attachMedia(video);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                const levels = hls.levels.map((level, index) => ({ // độ phân giải
+                const levels = hls.levels.map((level, index) => ({
                     index: index,
                     height: level.height,
                     bitrate: level.bitrate
@@ -193,10 +194,16 @@ const VideoPlayer = forwardRef(({
     //tua bằng phím
     useEffect(() => {
         const handleKeyDown = (e) => {
+            const activeEl = document.activeElement;
+            const tagName = activeEl?.tagName.toUpperCase();
+
+            const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(tagName);
+            const isContentEditable = activeEl?.isContentEditable || activeEl?.getAttribute("contenteditable") === "true";
+
+            if (isInput || isContentEditable) return;
+
             const video = videoRef.current;
             if (!video) return;
-
-            if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
 
             switch (e.key) {
                 case "ArrowRight":
@@ -223,17 +230,53 @@ const VideoPlayer = forwardRef(({
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [duration]);
 
-    const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
+    // fullscreen 
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isFs = !!(document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement);
+            setIsFullscreen(isFs);
+        };
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+            .forEach(event => document.addEventListener(event, handleFullscreenChange));
 
-    const toggleFullscreen = () => {
-        setIsFakeFullscreen(prev => !prev);
+        return () => {
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+                .forEach(event => document.removeEventListener(event, handleFullscreenChange));
+        };
+    }, []);
+
+    const toggleFullscreen = async () => {
+        if (!containerRef.current) return;
+
+        try {
+            const isFs = document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement;
+
+            if (!isFs) {
+                if (containerRef.current.requestFullscreen) {
+                    await containerRef.current.requestFullscreen();
+                } else if (containerRef.current.webkitRequestFullscreen) {
+                    await containerRef.current.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    await document.webkitExitFullscreen();
+                }
+            }
+        } catch (err) {
+            console.error("Fullscreen error:", err);
+        }
     };
 
-    useEffect(() => {
-        document.body.classList.toggle("no-scroll", isFakeFullscreen);
-    }, [isFakeFullscreen]);
-
-    const handleMouseMove = () => {
+    const handleMouseMove = (e) => {
+        e.stopPropagation()
         setShowControls(true);
 
         if (hideTimerRef.current) {
@@ -241,6 +284,9 @@ const VideoPlayer = forwardRef(({
         }
 
         hideTimerRef.current = setTimeout(() => {
+            // if (isPlaying) {
+            //     setShowControls(false);
+            // }
             setShowControls(false);
         }, 2500);
     };
@@ -264,16 +310,18 @@ const VideoPlayer = forwardRef(({
         <div
             ref={containerRef}
             className={`
-                relative w-full mx-auto bg-black 
+                bg-black group select-none
                 ${showControls ? 'cursor-default' : 'cursor-none'}
                 ${className}
+                ${isFullscreen ? 'fixed inset-0 z-50 w-screen h-screen flex items-center justify-center' : 'relative w-full mx-auto'}
             `}
             onMouseMove={handleMouseMove}
         >
-            <div className={`w-full flex items-center justify-center`}>
+            <div className={`w-full h-full flex items-center justify-center`}>
                 <div
-                    className={`${isFakeFullscreen ? "fake-fullscreen" : videoHeight} 
-                        aspect-video
+                    className={`
+                        bg-black flex items-center justify-center select-none
+                        ${isFullscreen ? "w-full h-full enter-fullscreen" : `w-full ${videoHeight} aspect-video relative`}
                     `}
                 >
                     <Poster
@@ -284,12 +332,22 @@ const VideoPlayer = forwardRef(({
 
                     <video
                         ref={videoRef}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full select-none"
+                        style={{ objectFit: isFullscreen ? 'contain' : 'cover' }}
                         playsInline
                         poster={poster}
                         onClick={handleTogglePlay}
                         onTimeUpdate={handleTimeUpdate}
+                        onContextMenu={(e) => e.preventDefault()}
                     />
+
+                    <div className="absolute inset-0 z-70 w-full h-full pointer-events-none cursor-auto">
+                        {/* pointer-events-none: Để khi không có overlay, click xuyên qua xuống video.
+                            Children bên trong (Overlay) phải có pointer-events-auto.
+                            cursor-auto: Để đè lên cursor-none của cha khi hiển thị overlay.
+                        */}
+                        {children}
+                    </div>
 
                     <CenterPlayButton
                         visible={!isPlaying}
@@ -298,10 +356,9 @@ const VideoPlayer = forwardRef(({
 
                     <VideoControls
                         className={`
-                            absolute left-0 right-0 bottom-0
-                            p-4
+                            absolute left-0 right-0 bottom-0 py-4
                             bg-linear-to-t from-black/80 via-black/40 to-transparent
-                            transition-opacity duration-300
+                            transition-opacity duration-300 z-40 select-none
                             ${showControls ? 'opacity-100' : 'opacity-0'}
                         `}
                         containerRef={containerRef}
@@ -311,11 +368,14 @@ const VideoPlayer = forwardRef(({
                         isPlaying={isPlaying}
                         videoRef={videoRef}
                         toggleFullscreen={toggleFullscreen}
+                        isFullscreen={isFullscreen}
                         handleTogglePlay={handleTogglePlay}
                         availableLanguages={availableLanguages}
                         qualities={qualities}
                         currentQuality={currentQuality}
                         onQualityChange={handleQualityChange}
+                        questionMarkers={questionMarkers}
+                        noteMarkers={noteMarkers}
                     />
                 </div>
             </div>
@@ -327,7 +387,7 @@ const Poster = ({ poster, isPlaying, currentTime }) => {
     return (
         <>
             {poster && !isPlaying && currentTime === 0 && (
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none z-10 select-none">
                     <img
                         src={poster}
                         alt="Video Poster"
@@ -339,4 +399,4 @@ const Poster = ({ poster, isPlaying, currentTime }) => {
     );
 }
 
-export default VideoPlayer
+export default VideoPlayer;

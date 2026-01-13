@@ -1,3 +1,4 @@
+import Course from "../models/course.js";
 import Review from "../models/review.js";
 import mongoose from "mongoose";
 
@@ -24,6 +25,29 @@ export const getReviewsByCourse = async (req, res) => {
     }
 };
 
+const updateCourseAverageRating = async (courseId) => {
+    try {
+        const stats = await Review.aggregate([
+            {
+                $match: { courseId: new mongoose.Types.ObjectId(courseId) }
+            },
+            {
+                $group: {
+                    _id: "$courseId",
+                    averageRating: { $avg: "$rating" }
+                }
+            }
+        ]);
+        let averageRating = stats.length > 0 ? stats[0].averageRating : 0;
+        averageRating = Math.round(averageRating * 100) / 100;
+        
+        await Course.findByIdAndUpdate(courseId, { averageRating: averageRating });
+
+    } catch (error) {
+        console.error("Error updating course average rating:", error);
+    }
+};
+
 export const createOrUpdateReview = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -47,6 +71,8 @@ export const createOrUpdateReview = async (req, res) => {
             await review.save();
         }
 
+        await updateCourseAverageRating(courseId);
+
         res.status(200).json(review);
     } catch (error) {
         res.status(500).json({ message: "Server Error", error });
@@ -61,6 +87,8 @@ export const deleteReviewById = async (req, res) => {
         if (!review) {
             return res.status(404).json({ message: "Review not found" });
         }
+
+        await updateCourseAverageRating(review.courseId);
 
         res.status(200).json({ message: "Review deleted successfully" });
     } catch (error) {
@@ -177,6 +205,53 @@ export const getSurveyStatistics = async (req, res) => {
             stats
         });
 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error });
+    }
+};
+
+export const getAllReviews = async (req, res) => {
+    try {
+        const { courseId, rating, sortBy } = req.query;
+
+        const filter = {};
+
+        if (courseId && courseId !== "all" && mongoose.Types.ObjectId.isValid(courseId)) {
+            filter.courseId = courseId;
+        }
+
+        const ratingNumber = Number(rating);
+        if (!isNaN(ratingNumber)) {
+            filter.rating = { $gte: ratingNumber };
+        }
+
+        let sortOption = { createdAt: -1 };
+        switch (sortBy) {
+            case "newest":
+                sortOption = { createdAt: -1 };
+                break;
+            case "oldest":
+                sortOption = { createdAt: 1 };
+                break;
+            case "highest":
+                sortOption = { rating: -1, createdAt: -1 };
+                break;
+            case "lowest":
+                sortOption = { rating: 1, createdAt: -1 };
+                break;
+        }
+
+        const reviews = await Review.find(filter)
+            .sort(sortOption)
+            .populate("userId", "firstName lastName profilePicture")
+            .populate("courseId", "title")
+            .lean();
+
+        res.status(200).json({
+            reviews,
+            totalReviews: reviews.length, 
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error", error });
