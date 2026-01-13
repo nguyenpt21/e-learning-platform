@@ -8,12 +8,14 @@ import { LuMaximize } from "react-icons/lu";
 import { FaCheck } from "react-icons/fa6";
 import { FaPlay, FaPause, FaCog } from "react-icons/fa";
 import VideoSettings from '@/components/student/course-detail/VideoSettings';
+import VideoQuestionMarkers from '@/components/student/course-detail/VideoQuestionMarkers';
 
 
 const VideoControls = ({ className = "",
     buffered = 0, duration = 0, currentTime = 0,
-    isPlaying, videoRef, toggleFullscreen, handleTogglePlay, containerRef,
-    availableLanguages, qualities, currentQuality, onQualityChange
+    isPlaying, isFullscreen, videoRef, toggleFullscreen, handleTogglePlay, containerRef,
+    availableLanguages, qualities, currentQuality, onQualityChange,
+    questionMarkers, noteMarkers
 }) => {
     const controlsRef = useRef(null);
     const [compact, setCompact] = useState(false);
@@ -40,12 +42,16 @@ const VideoControls = ({ className = "",
         return () => observer.disconnect();
     }, []);
 
-
+    const handleMarkerClick = (marker) => {
+        if (videoRef.current) {
+            videoRef.current.currentTime = marker.time;
+        }
+    };
 
     return (
         <div ref={controlsRef} className={className}>
             <VideoProgress
-                className="relative w-full h-1.5 bg-gray-100 cursor-pointer mb-4
+                className="relative h-1.5 bg-gray-100 cursor-pointer mb-4
                             group/progress flex items-center hover:h-2 duration-200
                             select-none"
                 progressRef={progressRef}
@@ -53,6 +59,11 @@ const VideoControls = ({ className = "",
                 buffered={buffered}
                 dragPercent={dragPercent}
                 setDragPercent={setDragPercent}
+                questionMarkers={questionMarkers}
+                handleMarkerClick={handleMarkerClick}
+                noteMarkers={noteMarkers}
+                isFullscreen={isFullscreen}
+                containerRef={containerRef}
             />
 
             {compact ? (
@@ -66,7 +77,7 @@ const VideoControls = ({ className = "",
                     availableLanguages={availableLanguages}
                 />
             ) : (
-                <div className="flex items-center justify-between text-gray-300">
+                <div className="flex items-center justify-between text-gray-300 px-4">
                     <div className="flex items-center gap-3">
                         <button onClick={handleTogglePlay} className="hover:text-white text-gray-300 transition-colors cursor-pointer">
                             {isPlaying ? <FaPause size={20} /> : <FaPlay size={20} />}
@@ -89,9 +100,9 @@ const VideoControls = ({ className = "",
                         <Volume videoRef={videoRef} />
 
                         {/* settings */}
-                        <VideoSettings 
-                            videoRef={videoRef} 
-                            containerRef={containerRef} 
+                        <VideoSettings
+                            videoRef={videoRef}
+                            containerRef={containerRef}
                             availableLanguages={availableLanguages}
                             qualities={qualities}
                             currentQuality={currentQuality}
@@ -159,7 +170,7 @@ const Volume = ({ videoRef }) => {
 const CompactControls = ({ videoRef, isPlaying, toggleFullscreen, containerRef, percent, duration, availableLanguages }) => {
 
     return (
-        <div className="flex items-center justify-between text-gray-300 mb-2">
+        <div className="flex items-center justify-between text-gray-300 mb-2 px-4">
             <div className="flex items-center gap-3">
                 <button
                     onClick={() => videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause()}
@@ -179,10 +190,10 @@ const CompactControls = ({ videoRef, isPlaying, toggleFullscreen, containerRef, 
             </div>
 
             <div className="flex items-center gap-4">
-                <VideoSettings 
-                    videoRef={videoRef} 
+                <VideoSettings
+                    videoRef={videoRef}
                     containerRef={containerRef}
-                    availableLanguages={availableLanguages} 
+                    availableLanguages={availableLanguages}
                 />
 
                 <button

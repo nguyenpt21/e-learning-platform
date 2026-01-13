@@ -1,7 +1,6 @@
 import { useGetCurriculumItemByIdQuery } from "@/redux/api/coursePublicApiSlice";
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import parse, { domToReact } from "html-react-parser";
 import { IoBook } from "react-icons/io5";
 import { MdAdd } from "react-icons/md";
 import Quiz from "@/components/student/course-learning/Quiz";
@@ -14,84 +13,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { openAddNoteModal } from "@/redux/features/notesSlice";
 import VideoPlayer from "@/components/student/course-detail/VideoPlayer";
 import { clearVideoCommand } from "@/redux/features/videoControlSlice";
-import { useGetLectureQuestionsQuery } from "@/redux/api/lectureQuestionApiSlice";
+import { useGetLectureQuestionsQuery, useGetLectureResultsQuery, useSubmitLectureAnswerMutation } from "@/redux/api/lectureQuestionApiSlice";
 import VideoQuestionOverlay from "@/components/student/course-learning/VideoQuestionOverlay";
+import ArticleViewer from "@/components/student/course-learning/ArticleViewer";
+import { toast } from "react-toastify";
+import { useGetNotesByLectureQuery } from "@/redux/api/notesApiSlice";
 
-const quillToText = (quillContent) => {
-  if (!quillContent) return null;
-
-  return parse(quillContent, {
-    replace: (domNode) => {
-      const { name, children, attribs } = domNode;
-      if (!name) return;
-      switch (name) {
-        case "h1":
-          return (
-            <h1 className="html-h1 text-3xl font-bold mb-4">
-              {domToReact(children)}
-            </h1>
-          );
-        case "h2":
-          return (
-            <h2 className="html-h2 text-2xl font-semibold mb-3">
-              {domToReact(children)}
-            </h2>
-          );
-        case "h3":
-          return (
-            <h3 className="html-h3 text-xl font-semibold mb-2">
-              {domToReact(children)}
-            </h3>
-          );
-        case "p":
-          return <p className="my-5">{domToReact(children)}</p>;
-        case "ul":
-          return (
-            <ul className="list-disc ml-6 mb-2 html-content">
-              {domToReact(children)}
-            </ul>
-          );
-        case "ol":
-          return (
-            <ol className="list-decimal ml-6 mb-2 html-content">
-              {domToReact(children)}
-            </ol>
-          );
-        case "li":
-          return <li className="mb-1">{domToReact(children)}</li>;
-        case "strong":
-        case "b":
-          return <strong>{domToReact(children)}</strong>;
-        case "em":
-        case "i":
-          return <em>{domToReact(children)}</em>;
-        case "u":
-          return <u>{domToReact(children)}</u>;
-        case "a":
-          return (
-            <a
-              href={attribs?.href || "#"}
-              target={attribs?.target || "_blank"}
-              rel={attribs?.rel || "noopener noreferrer"}
-              className="text-blue-600 underline hover:text-blue-800"
-            >
-              {domToReact(children)}
-            </a>
-          );
-        case "img":
-          return (
-            <img
-              src={attribs?.src}
-              alt={attribs?.alt || ""}
-              className="my-4 max-w-full rounded"
-            />
-          );
-        default:
-          return undefined;
-      }
-    },
-  });
-};
 
 const formatDuration = (s) => {
   if (!s || isNaN(s)) return "00:00";
@@ -105,6 +32,7 @@ const formatDuration = (s) => {
 
 const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
   const dispatch = useDispatch();
+  const { userInfo } = useSelector((state) => state.auth);
   const { data: item, isLoading: isItemLoading } =
     useGetCurriculumItemByIdQuery(
       { itemId, itemType },
@@ -125,6 +53,14 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       data: data ? data.questions : [],
     }),
   });
+  const { data: resultData } = useGetLectureResultsQuery(
+    { userId: userInfo?._id, lectureId: itemId },
+    { skip: !userInfo?._id || !itemId }
+  );
+  const { data: notes = [] } = useGetNotesByLectureQuery(itemId, {
+    skip: !itemId
+  });
+  const [submitAnswer, { isLoading: isSubmitting }] = useSubmitLectureAnswerMutation();
 
   const [updateProgress] = useUpdateItemProgressMutation();
   const videoRef = useRef(null);
@@ -133,21 +69,8 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDone, setIsDone] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [answeredQuestionIds, setAnsweredQuestionIds] = useState([]);
+  const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
-  const completedQuestionIds = useMemo(() => {
-    return answeredQuestionIds || [];
-  }, [answeredQuestionIds]);
-  // Tạo Map: Key = giây (number), Value = question object
-  const questionsMap = useMemo(() => {
-    if (!questions || questions.length === 0) return new Map();
-    const map = new Map();
-    questions.forEach((q) => {
-      map.set(q.displayedAt, q);
-    });
-    return map;
-  }, [questions]);
 
   //seek to note
   const { seekTo, play, pause } = useSelector(
@@ -173,9 +96,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
   }, [seekTo, play, pause, dispatch]);
 
   const handleAddNote = () => {
-    // Tạm dừng video 
     videoRef.current?.pause();
-
     dispatch(
       openAddNoteModal({
         timestamp: currentTime,
@@ -185,6 +106,17 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     );
   };
 
+  const noteMarkers = useMemo(() => {
+    if (!notes || notes.length === 0) return [];
+    return notes.map((note) => ({
+      id: note._id,
+      time: Number(note.timestamp),
+      content: note.content,
+      type: "note",
+    }));
+  }, [notes]);
+
+  //done
   useEffect(() => {
     setIsDone(itemProgress?.isCompleted);
   }, [itemProgress]);
@@ -267,30 +199,98 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
         // console.log("Saving progress on unmount:", currentTimeRef.current);
         handleSaveProgress(currentTimeRef.current);
       }
+      setCurrentQuestionId(null);
     };
   }, [item?._id, itemProgress, updateProgress, videoRef]);
 
+
+
   //question
+  const questionsMap = useMemo(() => {
+    if (!questions || questions.length === 0) return new Map();
+    const map = new Map();
+    questions.forEach((q) => {
+      map.set(q.displayedAt, q);
+    });
+    return map;
+  }, [questions]);
+  const currentQuestion = useMemo(() => {
+    if (!currentQuestionId) return null;
+    return questions.find(q => q._id === currentQuestionId) || null;
+  }, [questions, currentQuestionId]);
+
+  useEffect(() => {
+    if (!currentQuestionId) return;
+
+    const exists = questions.some(q => q._id === currentQuestionId);
+
+    if (!exists) {
+      setCurrentQuestionId(null);
+      videoRef.current?.play();
+    }
+  }, [questions, currentQuestionId]);
+
   const handleVideoTimeUpdate = (currentTime) => {
     const currentSecond = Math.floor(currentTime);
     setCurrentTime(currentSecond);
-    console.log("Current time update:", currentSecond);
+    if (currentSecond < lastTriggeredTime.current) {
+      lastTriggeredTime.current = -1;
+    }
 
     if (currentSecond !== lastTriggeredTime.current) {
       const match = questionsMap.get(currentSecond);
-
       if (match) {
         videoRef.current?.pause();
-        setCurrentQuestion(match);
+        setCurrentQuestionId(match._id);
         lastTriggeredTime.current = currentSecond;
       }
     }
   }
 
   const handleContinue = () => {
-    setCurrentQuestion(null);
+    setCurrentQuestionId(null);
     videoRef.current?.play();
   };
+
+  useEffect(() => {
+    lastTriggeredTime.current = -1;
+  }, [questions]);
+
+  const questionMarkers = useMemo(() => {
+    if (!questions || questions.length === 0) return [];
+
+    return questions.map((q) => ({
+      id: q._id,
+      time: Number(q.displayedAt) - 0.00001,
+      type: "question",
+    }));
+  }, [questions]);
+
+  //answer
+  const answeredMap = useMemo(() => {
+    if (!resultData?.answers) return {};
+    const map = {};
+    resultData.answers.forEach(ans => {
+      map[ans.questionId] = ans.selectedOptionId;
+    });
+    return map;
+  }, [resultData]);
+
+  const handleSubmitAnswer = async (selectedOptionId) => {
+    if (!currentQuestion) return;
+    try {
+      await submitAnswer({
+        userId: userInfo?._id,
+        lectureId: itemId,
+        questionId: currentQuestion._id,
+        selectedOptionId
+      }).unwrap();
+    } catch (error) {
+      console.error("Lỗi submit:", error);
+      toast.error("Không thể gửi câu trả lời");
+    }
+  };
+  const savedAnswerId = currentQuestion ? answeredMap[currentQuestion._id] : null
 
   if ((isItemLoading && !item) || (isProgressLoading && !itemProgress)) {
     return (
@@ -328,6 +328,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             <div className="flex flex-col">
               <div className="relative w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
+                  
                   <VideoPlayer
                     key={item._id + "_" + itemProgress?.watchedSeconds}
                     ref={videoRef}
@@ -338,17 +339,24 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
                     captions={item.content.captions || []}
                     videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
                     poster={item?.content.thumbnailURL || "/logo.png"}
-                  />
+                    questionMarkers={questionMarkers}
+                    noteMarkers={noteMarkers}
+                  >
+                    {currentQuestion && (
+                      <VideoQuestionOverlay
+                        question={currentQuestion}
+                        onContinue={handleContinue}
+                        isCompleted={!!savedAnswerId}
+                        savedAnswerId={savedAnswerId} 
+                        isSubmitting={isSubmitting}
+                        onSubmit={handleSubmitAnswer}
+                      />
+                    )}
+                  </VideoPlayer>
                 ) : (
                   <Skeleton className="w-full h-full" />
                 )}
 
-                {currentQuestion && (
-                  <VideoQuestionOverlay 
-                    question={currentQuestion}
-                    onContinue={handleContinue}
-                  />
-                )}
               </div>
               <div className=" mx-12 mt-8 md:mx-12 md:mt-12 lg:mx-20 lg:mt-12 overflow-auto">
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -531,7 +539,7 @@ const ArticleRender = ({ item, itemProgress, setIsDone }) => {
         })}
       </span>
       <div className="border-b border-gray-200 my-6"></div>
-      <div className="mt-4">{quillToText(item.content?.text)}</div>
+      <ArticleViewer content={item.content?.text} />
     </div>
   );
 };

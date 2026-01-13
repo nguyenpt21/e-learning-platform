@@ -1,23 +1,37 @@
 import React, { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Play, Loader2, RotateCcw } from "lucide-react"; // Thêm icon RotateCcw
+import { CheckCircle, XCircle, Play, Loader2, RotateCcw, X } from "lucide-react";
 
-const VideoQuestionOverlay = ({ index = 0, question, isCompleted, isSubmitting, onSubmit, onContinue }) => {
+const VideoQuestionOverlay = ({
+    index = 0, question,
+    isCompleted, savedAnswerId,
+    isSubmitting, onSubmit,
+    onContinue, isPreview
+}) => {
     const [selectedOptionId, setSelectedOptionId] = useState(null);
     const [viewMode, setViewMode] = useState('answering'); // 'answering' | 'result'
 
     useEffect(() => {
-        setSelectedOptionId(null);
-        setViewMode(isCompleted ? 'result' : 'answering');
-    }, [question, isCompleted]);
+        if (isCompleted && savedAnswerId) {
+            setSelectedOptionId(savedAnswerId);
+            setViewMode('result');
+        } else {
+            setSelectedOptionId(null);
+            setViewMode('answering');
+        }
+    }, [question, isCompleted, savedAnswerId]);
 
     const handleConfirm = async () => {
         if (!selectedOptionId) return;
-        
-        if (onSubmit) {
-             // await onSubmit(selectedOptionId); 
+
+        if (isPreview) {
+            setViewMode('result');
+            return;
         }
 
-        setViewMode('result');
+        if (onSubmit) {
+            await onSubmit(selectedOptionId);
+            setViewMode('result');
+        }
     };
 
     const handleRetry = () => {
@@ -30,17 +44,26 @@ const VideoQuestionOverlay = ({ index = 0, question, isCompleted, isSubmitting, 
     );
 
     return (
-        <div className='absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-3 animate-in fade-in duration-200'>
-            <div className="bg-white w-full max-w-2xl rounded-lg overflow-hidden flex flex-col max-h-[90%] shadow-2xl">
-            
+        <div className='absolute inset-0 flex items-center justify-center bg-black/50 p-3 animate-in fade-in duration-200 pointer-events-auto'>
+            <div className="bg-white w-full max-w-xl rounded-lg overflow-hidden flex flex-col max-h-[90%] shadow-2xl">
+
                 <div className="p-3 bg-gray-100 border-b flex justify-between items-center shrink-0">
                     <span className="font-bold text-gray-800 text-sm">Câu hỏi tương tác</span>
-                    
+
+                    {isPreview && (
+                        <button
+                            onClick={onContinue}
+                            className="p-1 rounded-full hover:bg-gray-200 transition"
+                            aria-label="Close preview"
+                        >
+                            <X size={18} className="text-gray-600" />
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-4 overflow-y-auto custom-scrollbar">
                     <div className="text-base font-medium mb-3 text-gray-800 flex items-center gap-1">
-                        <span className='text-sm font-semibold tracking-wide'>Câu hỏi {index + 1}:</span>
+                        <span className='text-sm font-semibold tracking-wide'>Câu hỏi:</span>
                         <div className='text-sm font-semibold tracking-wide' dangerouslySetInnerHTML={{ __html: question.questionText }} />
                     </div>
 
@@ -48,7 +71,7 @@ const VideoQuestionOverlay = ({ index = 0, question, isCompleted, isSubmitting, 
                         {question.options.map((opt) => {
                             const isSelected = selectedOptionId === opt._id;
                             const isCorrect = opt.isCorrect;
-                            
+
                             let containerStyle = "border-gray-200 hover:bg-gray-50 cursor-pointer hover:border-blue-300";
                             let icon = null;
 
@@ -70,7 +93,7 @@ const VideoQuestionOverlay = ({ index = 0, question, isCompleted, isSubmitting, 
                                 <div
                                     key={opt._id}
                                     onClick={() => viewMode === 'answering' && setSelectedOptionId(opt._id)}
-                                    className={`py-2 px-3 border rounded-md flex justify-between items-center transition-all duration-200 ${containerStyle}`}
+                                    className={`py-2 px-3 border cursor-pointer rounded-md flex justify-between items-center transition-all duration-200 ${containerStyle}`}
                                 >
                                     <div className="flex-1 text-sm pr-2">
                                         <div dangerouslySetInnerHTML={{ __html: opt.optionText }} />
@@ -82,9 +105,8 @@ const VideoQuestionOverlay = ({ index = 0, question, isCompleted, isSubmitting, 
                     </div>
 
                     {viewMode === 'result' && (
-                        <div className={`mt-4 p-3 rounded-md text-sm border ${
-                            selectedOption?.isCorrect ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-800'
-                        } animate-in fade-in slide-in-from-top-2`}>
+                        <div className={`mt-4 p-3 rounded-md text-sm border ${selectedOption?.isCorrect ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-800'
+                            } animate-in fade-in slide-in-from-top-2`}>
                             <div className="text-sm opacity-90">
                                 <span className="font-semibold underline decoration-dotted mr-1">Giải thích:</span>
                                 <span dangerouslySetInnerHTML={{

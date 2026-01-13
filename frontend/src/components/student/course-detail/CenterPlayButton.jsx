@@ -10,6 +10,7 @@ const CenterPlayButton = ({ visible, onClick }) => {
                 flex items-center justify-center
                 bg-black/20
                 transition-opacity
+                z-30
             "
             onClick={onClick}
         >

@@ -18,6 +18,10 @@ import PromoVideoPlayer from "@/components/student/course-learning/PromoVideoPla
 import { calculateCourseStats } from "@/utils";
 import LogInRequire from "@/components/student/course-detail/LogInRequire";
 import { useSelector } from "react-redux";
+import CourseReviews from "@/components/student/course-detail/CourseReviews";
+import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "@/redux/api/favoriteApiSlice";
+import FavoriteButton from "@/components/student/home-page/FavoriteButton";
+import { toast } from "react-toastify";
 
 const CourseDetail = () => {
     const { courseAlias } = useParams();
@@ -128,65 +132,70 @@ const CourseDetail = () => {
             </div>
             <div className="container mx-auto p-8">
                 <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2 space-y-10 p-6 border border-[#cee1ef] rounded-sm">
-                        {course?.learningOutcomes && course.learningOutcomes.length > 0 && (
-                            <div className="">
-                                <p className="text-2xl font-semibold mb-5">Bạn sẽ học được</p>
-                                <ul className="grid grid-cols-2 gap-x-4 gap-y-4 text-gray-700 text-sm">
-                                    {course.learningOutcomes.map((outcome, index) => (
-                                        <li key={index}>
-                                            <IoCheckmark className="inline text-[#098ce9] mr-2" />
-                                            {outcome}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                    <div className="col-span-2">
+                        <div className="space-y-10 p-6 border border-[#cee1ef] rounded-sm mb-8">
+                            {course?.learningOutcomes && course.learningOutcomes.length > 0 && (
+                                <div className="">
+                                    <p className="text-2xl font-semibold mb-5">Bạn sẽ học được</p>
+                                    <ul className="grid grid-cols-2 gap-x-4 gap-y-4 text-gray-700 text-sm">
+                                        {course.learningOutcomes.map((outcome, index) => (
+                                            <li key={index}>
+                                                <IoCheckmark className="inline text-[#098ce9] mr-2" />
+                                                {outcome}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
-                        <div>
-                            <p className="text-2xl font-semibold mb-5">Thể loại</p>
-                            <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-blue-50 inline-block px-3 py-2 rounded-md">
-                                <span>{course?.category}</span>
-                            </div>
-                        </div>
-
-                        <div className="">
-                            <p className="text-2xl font-semibold mb-5">Nội dung khoá học</p>
-                            <CourseContent course={course} courseWithDurations={courseWithDurations} formatDuration={formatDuration} />
-                        </div>
-                        {course?.requirements && course.requirements.length > 0 && (
-                            <div className="">
-                                <p className="text-2xl font-semibold mb-5">Yêu cầu</p>
-                                <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
-                                    {course.requirements.map((requirement, index) => (
-                                        <li key={index}>
-                                            {requirement}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {course?.intendedLearners && course.intendedLearners.length > 0 && (
-                            <div className="">
-                                <p className="text-2xl font-semibold mb-5">Đối tượng khoá học</p>
-                                <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
-                                    {course.intendedLearners.map((intendedLearner, index) => (
-                                        <li key={index}>
-                                            {intendedLearner}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                        {course?.description && (
                             <div>
-                                <p className="text-2xl font-semibold mb-5">Mô tả</p>
-                                <div
-                                    className="text-gray-700 text-sm html-content font-light"
-                                    dangerouslySetInnerHTML={{ __html: course.description }}
-                                ></div>
+                                <p className="text-2xl font-semibold mb-5">Thể loại</p>
+                                <div className="border-[#b5daf4] ml-3 font-semibold cursor-pointer border hover:bg-blue-50 inline-block px-3 py-2 rounded-md">
+                                    <span>{course?.category}</span>
+                                </div>
                             </div>
-                        )}
+
+                            <div className="">
+                                <p className="text-2xl font-semibold mb-5">Nội dung khoá học</p>
+                                <CourseContent course={course} courseWithDurations={courseWithDurations} formatDuration={formatDuration} />
+                            </div>
+                            {course?.requirements && course.requirements.length > 0 && (
+                                <div className="">
+                                    <p className="text-2xl font-semibold mb-5">Yêu cầu</p>
+                                    <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
+                                        {course.requirements.map((requirement, index) => (
+                                            <li key={index}>
+                                                {requirement}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {course?.intendedLearners && course.intendedLearners.length > 0 && (
+                                <div className="">
+                                    <p className="text-2xl font-semibold mb-5">Đối tượng khoá học</p>
+                                    <ul className="list-disc ml-6 text-gray-700 text-sm space-y-3">
+                                        {course.intendedLearners.map((intendedLearner, index) => (
+                                            <li key={index}>
+                                                {intendedLearner}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {course?.description && (
+                                <div>
+                                    <p className="text-2xl font-semibold mb-5">Mô tả</p>
+                                    <div
+                                        className="text-gray-700 text-sm html-content font-light"
+                                        dangerouslySetInnerHTML={{ __html: course.description }}
+                                    ></div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="">
+                            <CourseReviews courseId={course._id} avg={course.averageRating} />
+                        </div>
                     </div>
                     <div className="col-span-1"></div>
                 </div>
@@ -202,7 +211,33 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
     const navigate = useNavigate()
     const { userInfo, myCoursesId } = useSelector((state) => state.auth)
     const isPurchased = myCoursesId?.includes(course?._id);
-    console.log(myCoursesId)
+
+    const [addToFavorites, { isLoading: isAddingFavorite }] =
+        useAddToFavoritesMutation();
+    const [removeFromFavorites, { isLoading: isRemovingFavorite }] =
+        useRemoveFromFavoritesMutation();
+
+    const handleAddToFavorite = async (e, courseId) => {
+        e.stopPropagation();
+        try {
+            await addToFavorites(courseId).unwrap();
+            toast.success("Đã thêm vào yêu thích");
+        } catch (error) {
+            console.error("Error adding to favorites:", error);
+            toast.error("Lỗi khi thêm vào yêu thích");
+        }
+    };
+
+    const handleRemoveFromFavorite = async (e, courseId) => {
+        e.stopPropagation();
+        try {
+            await removeFromFavorites(courseId).unwrap();
+            toast.success("Đã xóa khỏi yêu thích");
+        } catch (error) {
+            console.error("Error removing from favorites:", error);
+            toast.error("Lỗi khi xóa khỏi yêu thích");
+        }
+    };
     return (
         <div className="bg-white rounded-sm shadow-xl text-gray-800 h-[680px]">
             <div className="w-full h-48 overflow-hidden">
@@ -224,20 +259,27 @@ const RightCard = ({ course, courseWithDurations, formatDuration }) => {
                     </div>
                 )}
             </div>
-            <div className="p-6 space-y-4">
+            <div className="py-4 px-6 space-y-3">
                 <p className="text-2xl font-semibold text-gray-900">
                     {course?.price ? `${course.price.toLocaleString()} ₫` : "Miễn phí"}
                 </p>
                 {/* <button className="w-full bg-[#098ce9] text-white font-semibold py-3 rounded-sm hover:bg-[#0a7ad1] transition duration-200">
                     Thêm vào giỏ hàng
                 </button> */}
+                <FavoriteButton
+                    courseId={course?._id}
+                    onAddToFavorite={handleAddToFavorite}
+                    onRemoveFromFavorite={handleRemoveFromFavorite}
+                    isAddLoading={isAddingFavorite}
+                    isRemoveLoading={isRemovingFavorite}
+                />
                 {userInfo ? (
                     <button
                         disabled={isPurchased}
-                        className={`w-full font-semibold py-3 rounded-sm transition duration-200 cursor-pointer
+                        className={`w-full font-semibold py-2 rounded transition duration-200 cursor-pointer
                                 ${isPurchased
                                 ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                : "bg-[#098ce9] text-white hover:bg-[#0a7ad1]"
+                                : "bg-[#098ce9] text-white hover:bg-[#cee8fb] hover:text-blue-400"
                             }`}
                         onClick={() =>
                             !isPurchased &&
@@ -473,7 +515,7 @@ const AverageRating = ({ averageRating }) => {
             </div>
             <p className="text-sm">
                 <span className="font-semibold text-yellow-500 text-sm">
-                    {r.toFixed(1)}
+                    {r}
                 </span>{" "}
                 /5.0 – {r >= 4 ? "Tuyệt vời" : r >= 3 ? "Tốt" : "Trung bình"}
             </p>

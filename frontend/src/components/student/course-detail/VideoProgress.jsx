@@ -1,3 +1,5 @@
+import VideoNoteMarkers from '@/components/student/course-detail/VideoNoteMarkers';
+import VideoQuestionMarkers from '@/components/student/course-detail/VideoQuestionMarkers';
 import React, { useEffect, useRef, useState } from 'react';
 
 const VideoProgress = ({
@@ -6,7 +8,12 @@ const VideoProgress = ({
     videoRef,
     buffered,
     dragPercent,
-    setDragPercent
+    setDragPercent,
+    questionMarkers,
+    handleMarkerClick,
+    noteMarkers,
+    isFullscreen,
+    containerRef
 }) => {
 
     const isMouseDownRef = useRef(false);
@@ -88,7 +95,7 @@ const VideoProgress = ({
     return (
         <div
             ref={progressRef}
-            className={className}
+            className={`${className} mx-4 bg-gray-200`}
             onMouseDown={handleMouseDown}
             draggable={false}
             onDragStart={(e) => e.preventDefault()}
@@ -101,17 +108,32 @@ const VideoProgress = ({
 
             {/* Progress */}
             <div
-                className="absolute h-full bg-blue-500"
+                className="absolute h-full bg-blue-400"
                 style={{ width: `${percent}%` }}
             />
 
             {/* Thumb */}
             <div
-                className="absolute w-4 h-4 bg-blue-500 border border-blue-200
+                className="absolute w-4 h-4 bg-blue-400 border border-blue-200 z-50
                                 rounded-full shadow-sm scale-0
                                 group-hover/progress:scale-100 transition-transform"
                 style={{ left: `calc(${percent}% - 8px)` }}
             />
+
+            {videoRef && (<VideoQuestionMarkers
+                markers={questionMarkers}
+                duration={duration}
+                onMarkerClick={handleMarkerClick}
+            />)}
+
+            {videoRef && (<VideoNoteMarkers
+                markers={noteMarkers}
+                duration={duration}
+                onMarkerClick={handleMarkerClick}
+                containerRef={containerRef}
+            />)}
+
+
         </div>
     )
 }

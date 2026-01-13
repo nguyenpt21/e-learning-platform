@@ -1,5 +1,5 @@
 import Progress from "../models/progress.js";
-import CourseProgress from "../models/course-progress.js";
+import CourseProgress from "../models/courseProgress.js";
 import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Course from "../models/course.js"

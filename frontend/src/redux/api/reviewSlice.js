@@ -16,6 +16,19 @@ export const reviewApiSlice = apiSlice.injectEndpoints({
             ],
         }),
 
+        getAllReviews: builder.query({
+            query: (params) => {
+                const queryString = new URLSearchParams(params).toString();
+                return `${REVIEW_URL}/all?${queryString}`;
+            },
+            providesTags: (result, error, arg) => [
+                { type: "Reviews", id: "LIST" },
+                ...((result && result.reviews)
+                    ? result.reviews.map((r) => ({ type: "Reviews", id: r._id }))
+                    : []),
+            ],
+        }),
+
         getMyReviews: builder.query({
             query: () => `${REVIEW_URL}/my-reviews`,
             providesTags: (result) =>
@@ -68,4 +81,5 @@ export const {
     useDeleteReviewMutation,
     useGetReviewsQuery,
     useGetSurvetStatsQuery,
+    useGetAllReviewsQuery
 } = reviewApiSlice;

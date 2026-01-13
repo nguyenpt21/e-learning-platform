@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Trash2, X, PlusCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import ReactQuillNew from "react-quill-new";
@@ -21,15 +21,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import VideoPlayer from "@/components/student/course-detail/VideoPlayer";
+import LectureQuestionList from "@/components/instructor/curriculum/LectureQuestionList";
+import { useAddLectureQuestionMutation, useGetLectureQuestionsQuery, useUpdateLectureQuestionMutation } from "@/redux/api/lectureQuestionApiSlice";
+import VideoQuestionOverlay from "@/components/student/course-learning/VideoQuestionOverlay";
 
 const LectureQuestionModal = ({
+    item,
     open,
     onOpenChange,
-    initialData = null,
     itemId,
-    questionId,
-    onAddQuestion = () => { },
-    onUpdateQuestion = () => { },
 }) => {
     const defaultOption = { optionText: "", textExplanation: "", isCorrect: false };
 
@@ -42,28 +43,31 @@ const LectureQuestionModal = ({
     const [activeEditor, setActiveEditor] = useState(null);
     const quillRef = useRef(null);
     const [showConfirmZeroTime, setShowConfirmZeroTime] = useState(false);
-
     const modules = {
         toolbar: [["bold", "italic", "underline"], ["code-block"]],
     };
+    const [currentQuestionId, setCurrentQuestionId] = useState(null);
+
+    const videoRef = useRef(null);
+    const [editingQuestion, setEditingQuestion] = useState(null);
+    const [addQuestion] = useAddLectureQuestionMutation();
+    const [updateQuestion] = useUpdateLectureQuestionMutation();
+
+    const { data: questions, isLoading: isQuestionsLoading } = useGetLectureQuestionsQuery(itemId, {
+        skip: !itemId,
+        selectFromResult: ({ data }) => ({
+            data: data ? data.questions : [],
+        }),
+    });
 
     useEffect(() => {
         if (open) {
-            if (initialData) {
-                setQuestion(initialData.questionText || "");
-                setOptions(initialData.options && initialData.options.length > 0
-                    ? initialData.options
-                    : [{ ...defaultOption }, { ...defaultOption }]
-                );
-                setTimestamp(Number(initialData.displayedAt) || 0);
-            } else {
-                setQuestion("");
-                setOptions([{ ...defaultOption }, { ...defaultOption }]);
-                setTimestamp(0);
-            }
+            setQuestion("");
+            setOptions([{ ...defaultOption }, { ...defaultOption }]);
+            setTimestamp(0);
             setActiveEditor(null);
         }
-    }, [open, initialData]);
+    }, [open]);
 
     useEffect(() => {
         if (activeEditor && quillRef.current) {
@@ -108,20 +112,16 @@ const LectureQuestionModal = ({
         setOptions(newOptions);
     };
 
+    const handleEditorClick = (editorId) => {
+        setActiveEditor(editorId);
+    };
+
+
     const handleSave = () => {
         const stripHtml = (html) => (html ? html.replace(/<[^>]*>?/gm, "") : "");
 
         if (!questionText || stripHtml(questionText).trim() === "") {
             toast.error("Nhập nội dung câu hỏi trước khi lưu");
-            return;
-        }
-
-        if (typeof timestamp !== 'number' || timestamp < 0) {
-            toast.error("Thời gian không hợp lệ");
-            return;
-        }
-        if (timestamp === 0) {
-            setShowConfirmZeroTime(true);
             return;
         }
 
@@ -145,173 +145,342 @@ const LectureQuestionModal = ({
             return;
         }
 
+        if (typeof timestamp !== 'number' || timestamp < 0) {
+            toast.error("Thời gian không hợp lệ");
+            return;
+        }
+        if (timestamp === 0) {
+            setShowConfirmZeroTime(true);
+            return;
+        }
+
         handleConfirmSave();
     };
 
-    const handleConfirmSave = () => {
-        const question = {
-            questionText,
-            displayedAt: timestamp, // số giây
-            options,
-        };
-
-        if (!initialData) {
-            onAddQuestion({ itemId, data: question });
-        } else {
-            if (questionId) onUpdateQuestion({ itemId, questionId, data: question });
+    const handleAddNewQuestion = async (question) => {
+        try {
+            const res = await addQuestion({
+                lectureId: itemId,
+                question: question,
+            }).unwrap();
+            toast.success("Câu hỏi đã được thêm thành công");
+        } catch (error) {
+            console.error("Lỗi khi thêm câu hỏi:", error);
+            toast.error("Có lỗi xảy ra khi thêm câu hỏi");
         }
+    };
 
-        onOpenChange(false);
+    const handleUpdateQuestion = async (questionId, question) => {
+        try {
+            const res = await updateQuestion({
+                lectureId: itemId,
+                questionId: questionId,
+                question: question,
+            }).unwrap();
+            toast.success("Câu hỏi đã được cập nhật thành công");
+        } catch (error) {
+            console.error("Lỗi khi cập nhật câu hỏi:", error);
+            toast.error("Có lỗi xảy ra khi cập nhật câu hỏi");
+        }
     }
 
-    const handleEditorClick = (editorId) => {
-        setActiveEditor(editorId);
+    const handleConfirmSave = async () => {
+        const question = {
+            questionText,
+            displayedAt: timestamp,
+            options,
+        };
+        if (editingQuestion) {
+            await handleUpdateQuestion(editingQuestion._id, question);
+            addNewQuestion();
+        } else {
+            await handleAddNewQuestion(question);
+            addNewQuestion();
+        }
+        setShowConfirmZeroTime(false);
+        setEditingQuestion(null);
+    }
+
+
+    const setUpdateQuestion = async (question) => {
+        if (question) {
+            setEditingQuestion(question);
+            setQuestion(question.questionText || "");
+            setOptions(question.options && question.options.length > 0
+                ? question.options
+                : [{ ...defaultOption }, { ...defaultOption }]
+            );
+            setTimestamp(Number(question.displayedAt) || 0);
+        }
+    }
+
+    const addNewQuestion = () => {
+        setEditingQuestion(null);
+        setQuestion("");
+        setOptions([{ ...defaultOption }, { ...defaultOption }]);
+        setTimestamp(0);
+        setActiveEditor(null);
+    }
+
+
+
+
+
+    const lastTriggeredTime = useRef(-1);
+
+    const currentQuestion = useMemo(() => {
+        if (!currentQuestionId) return null;
+        return questions.find(q => q._id === currentQuestionId) || null;
+    }, [questions, currentQuestionId]);
+
+    const questionsMap = useMemo(() => {
+        if (!questions || questions.length === 0) return new Map();
+        const map = new Map();
+        questions.forEach((q) => {
+            map.set(q.displayedAt, q);
+        });
+        return map;
+    }, [questions]);
+
+    useEffect(() => {
+        if (!currentQuestionId) return;
+
+        const exists = questions.some(q => q._id === currentQuestionId);
+
+        if (!exists) {
+            setCurrentQuestionId(null);
+            videoRef.current?.play();
+        }
+    }, [questions, currentQuestionId]);
+
+
+    const handleVideoTimeUpdate = (currentTime) => {
+        const currentSecond = Math.floor(currentTime);
+
+        if (currentSecond < lastTriggeredTime.current) {
+            lastTriggeredTime.current = -1;
+        }
+
+        if (currentSecond !== lastTriggeredTime.current) {
+            const match = questionsMap.get(currentSecond);
+
+            if (match) {
+                videoRef.current?.pause();
+                setCurrentQuestionId(match._id);
+                lastTriggeredTime.current = currentSecond;
+            }
+        }
+    }
+
+    const handleContinue = () => {
+        setCurrentQuestionId(null);
+        videoRef.current?.play();
     };
+
+    useEffect(() => {
+        lastTriggeredTime.current = -1;
+    }, [questions]);
+
+    const questionMarkers = useMemo(() => {
+        if (!questions || questions.length === 0) return [];
+
+        return questions.map((q) => ({
+            id: q._id,
+            time: Number(q.displayedAt) - 0.00001,
+            type: "question",
+        }));
+    }, [questions]);
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="min-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                className="min-w-[90vw] h-[94vh] flex flex-col overflow-hidden"
+            >
                 <DialogHeader>
                     <DialogTitle className="font-bold">
-                        {initialData ? "Sửa câu hỏi" : "Tạo câu hỏi mới"}
+                        Câu hỏi trong bài giảng
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                    <div className="flex gap-4 items-center">
-                        <div className="flex-1">
-                            <label className="block font-semibold mb-2">Câu hỏi</label>
-                            <div
-                                onClick={() => handleEditorClick(`questionText`)}
-                                className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors"
+                <div className="flex-1 flex overflow-hidden gap-5">
+                    <div className="flex-1 bg-gray-100 p-4">
+                        <div className="bg-black rounded-lg overflow-hidden relative mb-6">
+                            
+                            <VideoPlayer
+                                key={item._id}
+                                ref={videoRef}
+                                videoUrl={item.content.hlsURL || item.content.publicURL}
+                                onTimeUpdate={handleVideoTimeUpdate}
+                                captions={item.content.captions || []}
+                                poster={item?.content.thumbnailURL || "/logo.png"}
+                                questionMarkers={questionMarkers}
                             >
-                                <ReactQuillNew
-                                    ref={quillRef}
-                                    value={questionText}
-                                    onChange={setQuestion}
-                                    modules={{
-                                        toolbar: [
-                                            ["bold", "italic", "underline"],
-                                            ["code-block"],
-                                            ["link", "image"],
-                                        ],
-                                    }}
-                                    placeholder="Nhập câu hỏi..."
-                                />
-                            </div>
+                                {currentQuestion && (
+                                    <VideoQuestionOverlay
+                                        question={currentQuestion}
+                                        onContinue={handleContinue}
+                                        isPreview={true}
+                                    />
+                                )}
+                            </VideoPlayer>
+
                         </div>
-
-                        <div className="w-40">
-                            <label className="block font-semibold mb-2">Thời điểm xuất hiện</label>
-
-                            <TimeInput
-                                value={timestamp}
-                                onChange={(seconds) => setTimestamp(seconds)}
-                            />
-                            <p className="text-[10px] text-gray-500 mt-1 text-center">Giờ : Phút : Giây</p>
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-semibold text-gray-600">Câu hỏi đã thêm:</p>
+                                <button
+                                    className='px-3 py-1 text-xs font-semibold border rounded text-primary cursor-pointer hover:bg-primary/10'
+                                    onClick={addNewQuestion}
+                                >
+                                    Câu hỏi mới
+                                </button>
+                            </div>
+                            <LectureQuestionList itemId={itemId} onUpdate={setUpdateQuestion} />
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block font-semibold mb-3">
-                            Các lựa chọn (Tối đa 4)
-                        </label>
-
-                        {options.map((option, index) => (
-                            <div key={index} className="mb-4">
-                                <div className="flex items-start gap-3">
-                                    <input
-                                        type="radio"
-                                        name="correctOption"
-                                        checked={option.isCorrect}
-                                        onChange={() => setCorrectOption(index)}
-                                        className="mt-4 w-5 h-5 cursor-pointer"
-                                    />
-
-                                    <div className="flex-1">
-                                        <div className="mb-2">
-                                            {activeEditor === `option-${index}` ? (
-                                                <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                                    <ReactQuillNew
-                                                        ref={quillRef}
-                                                        value={option.optionText}
-                                                        onChange={(value) => updateOption(index, "optionText", value)}
-                                                        modules={modules}
-                                                        placeholder="Nhập câu trả lời"
-                                                        className="quiz-option-editor"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => handleEditorClick(`option-${index}`)}
-                                                    className="min-h-[60px] p-3 border rounded-md cursor-text hover:border-gray-400 transition-colors border-gray-300"
-                                                >
-                                                    {option.optionText && option.optionText.replace(/<[^>]+>/g, '').trim().length > 0 ? (
-                                                        <div dangerouslySetInnerHTML={{ __html: option.optionText }} />
-                                                    ) : (
-                                                        <span className="text-gray-400">Nhập câu trả lời.</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="ml-4">
-                                            {activeEditor === `explanation-${index}` ? (
-                                                <div className="rounded-[6px] focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                                                    <ReactQuillNew
-                                                        ref={quillRef}
-                                                        value={option.textExplanation || ""}
-                                                        onChange={(value) => updateOption(index, "textExplanation", value)}
-                                                        modules={modules}
-                                                        placeholder="Giải thích lý do đúng/sai"
-                                                        className="quiz-explanation-editor"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => handleEditorClick(`explanation-${index}`)}
-                                                    className="p-3 border border-gray-300 rounded-md cursor-text hover:border-gray-400 transition-colors text-sm"
-                                                >
-                                                    {option.textExplanation && option.textExplanation.replace(/<[^>]+>/g, '').trim().length > 0 ? (
-                                                        <div dangerouslySetInnerHTML={{ __html: option.textExplanation }} />
-                                                    ) : (
-                                                        <span className="text-gray-400">Giải thích tại sao đây là câu trả lời tốt nhất hoặc sai.</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={() => removeOption(index)}
-                                        disabled={options.length <= 2}
-                                        className={`mt-4 p-2 rounded ${options.length <= 2
-                                            ? "text-gray-300 cursor-not-allowed"
-                                            : "text-gray-500 hover:bg-gray-100"
-                                            }`}
+                    <div className="w-md bg-white h-full flex flex-col">
+                        <div className="flex-1 overflow-y-auto">
+                            <div className="">
+                                <div className="flex-1">
+                                    <label className="block font-semibold mb-2">
+                                        {editingQuestion ? "Sửa câu hỏi" : "Thêm câu hỏi mới"}
+                                    </label>
+                                    <div
+                                        onClick={() => handleEditorClick(`questionText`)}
+                                        className="rounded-[6px]"
                                     >
-                                        <Trash2 size={20} />
-                                    </button>
+                                        <ReactQuillNew
+                                            ref={quillRef}
+                                            value={questionText}
+                                            onChange={setQuestion}
+                                            modules={{
+                                                toolbar: [
+                                                    ["bold", "italic", "underline"],
+                                                    ["code-block"],
+                                                    ["link", "image"],
+                                                ],
+                                            }}
+                                            placeholder="Nhập câu hỏi..."
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 my-3">
+                                    <label className="font-semibold mb-2">Thời điểm xuất hiện</label>
+                                    <div className="w-40">
+                                        <TimeInput
+                                            value={timestamp}
+                                            onChange={(seconds) => setTimestamp(seconds)}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-1 text-center">Giờ : Phút : Giây</p>
                                 </div>
                             </div>
-                        ))}
 
-                        {options.length < 4 && (
-                            <button
-                                onClick={addOption}
-                                className="mt-2 px-4 py-2 text-blue-600 hover:bg-primary/5 rounded-md font-medium transition-colors"
-                            >
-                                + Thêm câu trả lời
-                            </button>
-                        )}
+                            <div>
+                                <label className="block font-semibold mb-3 text-sm">
+                                    Các lựa chọn (Tối đa 4)
+                                </label>
+
+                                {options.map((option, index) => (
+                                    <div key={index} className="mb-4">
+                                        <div className="flex items-start gap-3">
+                                            <input
+                                                type="radio"
+                                                name="correctOption"
+                                                checked={option.isCorrect}
+                                                onChange={() => setCorrectOption(index)}
+                                                className="mt-4 w-5 h-5 cursor-pointer"
+                                            />
+
+                                            <div className="flex-1">
+                                                <div className="mb-2">
+                                                    {activeEditor === `option-${index}` ? (
+                                                        <div className="rounded-[6px]">
+                                                            <ReactQuillNew
+                                                                ref={quillRef}
+                                                                value={option.optionText}
+                                                                onChange={(value) => updateOption(index, "optionText", value)}
+                                                                modules={modules}
+                                                                placeholder="Nhập câu trả lời"
+                                                                className="quiz-option-editor"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            onClick={() => handleEditorClick(`option-${index}`)}
+                                                            className="min-h-[60px] p-3 border rounded-md cursor-text hover:border-gray-400 transition-colors border-gray-300"
+                                                        >
+                                                            {option.optionText && option.optionText.replace(/<[^>]+>/g, '').trim().length > 0 ? (
+                                                                <div dangerouslySetInnerHTML={{ __html: option.optionText }} />
+                                                            ) : (
+                                                                <span className="text-gray-400">Nhập câu trả lời.</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="ml-4">
+                                                    {activeEditor === `explanation-${index}` ? (
+                                                        <div className="rounded-[6px]">
+                                                            <ReactQuillNew
+                                                                ref={quillRef}
+                                                                value={option.textExplanation || ""}
+                                                                onChange={(value) => updateOption(index, "textExplanation", value)}
+                                                                modules={modules}
+                                                                placeholder="Giải thích lý do đúng/sai"
+                                                                className="quiz-explanation-editor"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            onClick={() => handleEditorClick(`explanation-${index}`)}
+                                                            className="p-3 border border-gray-300 rounded-md cursor-text hover:border-gray-400 transition-colors text-sm"
+                                                        >
+                                                            {option.textExplanation && option.textExplanation.replace(/<[^>]+>/g, '').trim().length > 0 ? (
+                                                                <div dangerouslySetInnerHTML={{ __html: option.textExplanation }} />
+                                                            ) : (
+                                                                <span className="text-gray-400 ">Giải thích tại sao câu này đúng/sai.</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => removeOption(index)}
+                                                disabled={options.length <= 2}
+                                                className={`mt-4 p-2 rounded ${options.length <= 2
+                                                    ? "text-gray-300 cursor-not-allowed"
+                                                    : "text-gray-500 hover:bg-gray-100"
+                                                    }`}
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {options.length < 4 && (
+                                    <button
+                                        onClick={addOption}
+                                        className="mt-2 px-4 py-2 text-blue-600 hover:bg-primary/5 rounded-md font-medium transition-colors"
+                                    >
+                                        + Thêm câu trả lời
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <ConfirmZeroTimestampDialog
+                            open={showConfirmZeroTime}
+                            onConfirm={handleConfirmSave}
+                            onCancel={() => setShowConfirmZeroTime(false)}
+                        />
                     </div>
                 </div>
-
-                <ConfirmZeroTimestampDialog
-                    open={showConfirmZeroTime}
-                    onConfirm={handleConfirmSave}
-                    onCancel={() => setShowConfirmZeroTime(false)}
-                />
 
                 <DialogFooter>
                     <button
@@ -324,7 +493,7 @@ const LectureQuestionModal = ({
                         onClick={handleSave}
                         className="px-3 py-2 bg-primary text-white rounded hover:bg-primary/70 font-medium"
                     >
-                        {initialData ? "Sửa câu hỏi" : "Lưu câu hỏi"}
+                        {editingQuestion ? "Sửa câu hỏi" : "Thêm câu hỏi"}
                     </button>
                 </DialogFooter>
             </DialogContent>
@@ -360,7 +529,6 @@ const ConfirmZeroTimestampDialog = ({ open, onConfirm, onCancel }) => {
         </AlertDialog>
     );
 };
-
 
 
 const TimeInput = ({ value = 0, onChange }) => {
@@ -430,7 +598,7 @@ const TimeInput = ({ value = 0, onChange }) => {
     };
 
     return (
-        <div className="flex items-center border border-gray-300 rounded-md px-2 py-2 bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all w-full">
+        <div className="flex items-center border border-gray-300 rounded-md px-2 py-2 bg-white w-full">
             {/* Giờ */}
             <input
                 ref={hourRef}
