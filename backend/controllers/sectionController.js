@@ -4,6 +4,7 @@ import Lecture from "../models/lecture.js";
 import Quiz from "../models/quiz.js";
 import Section from "../models/section.js";
 import { deleteMultipleS3Files, uploadBase64ImagesInContent } from "./uploadController.js";
+import { lectureChatAgent } from "../utils/chatbot/agent.js";
 
 const getAllSectionsByCourse = async (req, res) => {
     try {
@@ -576,6 +577,60 @@ const uploadQuestionsToQuiz = async (req, res) => {
     }
 };
 
+const callLectureChatbotAgent = async (req, res) => {
+    const { lectureId } = req.params;
+    const { question, threadId } = req.body;
+    
+    if (!question || !question.trim()) {
+        return res.status(400).json({
+            success: false,
+            error: 'Question is required'
+        });
+    }
+    
+    
+    try {
+        // Kiểm tra lecture có tồn tại và đã được index
+        const lecture = await Lecture.findById(lectureId)
+            .select('title type embeddingMetadata');
+        
+        if (!lecture) {
+            return res.status(404).json({
+                success: false,
+                error: 'Lecture not found'
+            });
+        }
+        
+        if (!lecture.embeddingMetadata?.isIndexed) {
+            return res.status(400).json({
+                success: false,
+                error: 'Lecture has not been indexed yet. Please wait for indexing to complete.',
+                needsIndexing: true
+            });
+        }
+        
+        // Gọi agent
+        const result = await lectureChatAgent(
+            lectureId,
+            question,
+            threadId
+        );
+        
+        res.json({
+            success: true,
+            data: result
+        });
+        
+    } catch (error) {
+        console.error('Agent chat error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Đã xảy ra lỗi khi xử lý câu hỏi của bạn',
+            details: error.message
+        });
+    }
+}
+
 export {
     getAllSectionsByCourse,
     getAllCurriculumItemsBySection,
@@ -590,4 +645,5 @@ export {
     updateQuestionInQuiz,
     deleteQuestionFromQuiz,
     uploadQuestionsToQuiz,
+    callLectureChatbotAgent
 };

@@ -1,67 +1,111 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Send, Bot, User, ChevronRight, Lightbulb, MessageCircle, Sparkles, GraduationCap } from "lucide-react"
+import { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  Bot,
+  User,
+  ChevronRight,
+  Lightbulb,
+  MessageCircle,
+  Sparkles,
+  GraduationCap,
+} from "lucide-react";
+import { useCallChatBotMutation } from "@/redux/api/courseApiSlice";
 
 const SUGGESTED_QUESTIONS = [
   "Giải thích đơn giản hơn",
-  "Tóm tắt nội dung",
+  "Những nội dung chính của bài giảng",
   "Cho câu hỏi luyện tập",
   "Cho ví dụ thực tế",
-]
+];
 
-export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
-  const [messages, setMessages] = useState([])
-  const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef(null)
-  const inputRef = useRef(null)
+export function ChatbotPanel({ lectureId, isOpen, onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const [currentThreadId, setCurrentThreadId] = useState(null);
+  const [error, setError] = useState(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }, [isOpen])
+  }, [isOpen]);
+
+  const [callChatBotAgent] = useCallChatBotMutation();
 
   const handleSendMessage = async (text) => {
-    if (!text.trim()) return
+    if (!text.trim()) return;
 
     const userMessage = {
-      id: Date.now(),
+      timestamp: new Date(),
       type: "user",
       content: text,
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-    setIsTyping(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
+    setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const botMessage = {
-        id: Date.now() + 1,
-        type: "bot",
-        content: `Đã nhận câu hỏi: "${text}" để phân tích và trả lời.`,
+    // // Simulate AI response
+    // setTimeout(() => {
+    //   const botMessage = {
+    //     id: Date.now() + 1,
+    //     type: "bot",
+    //     content: `Đã nhận câu hỏi: "${text}" để phân tích và trả lời.`,
+    //   }
+    //   setMessages((prev) => [...prev, botMessage])
+    //   setIsTyping(false)
+    // }, 1200)
+
+    try {
+      const response = await callChatBotAgent({
+        lectureId,
+        question: text,
+        threadId: currentThreadId,
+      });
+
+      // console.log(response)
+
+      const assistantMessage = {
+        role: "assistant",
+        content: response.data.data.answer,
+        timestamp: new Date(),
+        threadId: response.data.data.threadId,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Update threadId if this is a new conversation
+      if (!currentThreadId) {
+        setCurrentThreadId(response.data.data.threadId);
       }
-      setMessages((prev) => [...prev, botMessage])
-      setIsTyping(false)
-    }, 1200)
-  }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError(err.response?.data?.error || "Đã xảy ra lỗi khi gửi tin nhắn. Vui lòng thử lại.");
+    } finally {
+      setIsTyping(false);
+      inputRef.current?.focus();
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage(inputValue)
+      e.preventDefault();
+      handleSendMessage(inputValue);
     }
-  }
+  };
 
   return (
     <div className="h-full flex flex-col bg-slate-50 border-l border-slate-200 shadow-xl font-sans">
@@ -91,13 +135,16 @@ export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-5 scroll-smooth relative">
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(#0B8DEB 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-        </div>
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(#0B8DEB 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        ></div>
 
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-4 animate-in fade-in zoom-in duration-500">
-            
             <h4 className="text-xl font-bold text-slate-800 mb-2 text-center">Xin chào!</h4>
             <p className="text-slate-500 text-center text-sm mb-8 px-4 leading-relaxed max-w-[280px]">
               Tôi là trợ lý học tập ảo của bạn. Bạn có thắc mắc gì về bài học hôm nay không?
@@ -126,14 +173,18 @@ export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex items-end gap-3 group animate-in slide-in-from-bottom-2 duration-300 ${msg.type === "user" ? "flex-row-reverse" : ""}`}
+                className={`flex items-end gap-3 group animate-in slide-in-from-bottom-2 duration-300 ${
+                  msg.type === "user" ? "flex-row-reverse" : ""
+                }`}
               >
                 {/* Avatar */}
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border-2 border-white ${
-                  msg.type === "user" 
-                    ? "bg-[#0B8DEB]" 
-                    : "bg-gradient-to-br from-gray-100 to-gray-200"
-                }`}>
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm border-2 border-white ${
+                    msg.type === "user"
+                      ? "bg-[#0B8DEB]"
+                      : "bg-gradient-to-br from-gray-100 to-gray-200"
+                  }`}
+                >
                   {msg.type === "user" ? (
                     <User className="w-5 h-5 text-white" />
                   ) : (
@@ -142,11 +193,13 @@ export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
                 </div>
 
                 {/* Bubble */}
-                <div className={`px-5 py-3.5 max-w-[85%] shadow-sm relative ${
-                  msg.type === "user"
-                    ? "bg-[#0B8DEB] text-white rounded-2xl rounded-br-none"
-                    : "bg-white text-slate-700 rounded-2xl rounded-bl-none border border-slate-100"
-                }`}>
+                <div
+                  className={`px-5 py-3.5 max-w-[85%] shadow-sm relative ${
+                    msg.type === "user"
+                      ? "bg-[#0B8DEB] text-white rounded-2xl rounded-br-none"
+                      : "bg-white text-slate-700 rounded-2xl rounded-bl-none border border-slate-100"
+                  }`}
+                >
                   <p className="text-sm leading-relaxed">{msg.content}</p>
                 </div>
               </div>
@@ -159,11 +212,26 @@ export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
                 </div>
                 <div className="bg-white border border-slate-100 px-4 py-4 rounded-2xl rounded-bl-none shadow-sm">
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span
+                      className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-[#0B8DEB] rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
                 </div>
+              </div>
+            )}
+            {error && (
+              <div className="error-message">
+                <span className="icon">⚠️</span>
+                <span>{error}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -196,20 +264,20 @@ export function ChatbotPanel({ courseTitle, isOpen, onClose }) {
           </button>
         </div>
         <div className="text-center mt-2.5">
-           <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
-             <GraduationCap className="w-3 h-3 text-[#0B8DEB]" />
-             AI hỗ trợ học tập thông minh
-           </p>
+          <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
+            <GraduationCap className="w-3 h-3 text-[#0B8DEB]" />
+            AI hỗ trợ học tập thông minh
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Toggle Button
 export function ChatbotToggleButton({ isOpen, onClick }) {
-  if (isOpen) return null
-  
+  if (isOpen) return null;
+
   return (
     <button
       onClick={onClick}
@@ -217,15 +285,14 @@ export function ChatbotToggleButton({ isOpen, onClick }) {
                bg-[#0A8CE5] rounded-full 
                  backdrop-blur-sm"
     >
-      
       <div className="w-10 h-10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform duration-300 backdrop-blur-md">
         <MessageCircle className="w-6 h-6 text-white drop-shadow-sm" />
       </div>
-      
+
       {/* Glow effect */}
       <div className="absolute inset-0 rounded-full bg-white/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </button>
-  )
+  );
 }
 
-export default ChatbotPanel
+export default ChatbotPanel;

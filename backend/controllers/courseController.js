@@ -13,7 +13,7 @@ import TranscriptionBatch from "../models/transcriptionBatch.js";
 import { deleteS3File, s3Client } from "./uploadController.js";
 import slugify from "slugify";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { generateVTT, parseVTT, streamToString } from "../utils/captionContent.js";
+import { generateVTT, parseVTT, streamToString } from "../utils/chatbot/contentProcessor.js";
 import UserBehavior from "../models/userBehavior.js";
 
 const lambda = new LambdaClient({
