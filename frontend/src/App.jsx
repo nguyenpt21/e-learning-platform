@@ -19,7 +19,6 @@ function App() {
                     <Route path="/student/*" element={<StudentRoutes />} />
                     <Route path="/instructor/*" element={<InstructorRoutes />} />
                     <Route path="*" element={<PublicRoutes />} />
-                    <Route path="test" element={<VideoPlayer/>}/>
                 </Routes>
             </BrowserRouter>
         </>

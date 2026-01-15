@@ -1,4 +1,4 @@
-import { COURSE_URL } from "../constants";
+import { COURSE_URL } from "@/redux/constants";
 import { apiSlice } from "../api/apiSlice";
 
 export const courseApiSlice = apiSlice.injectEndpoints({
@@ -106,6 +106,7 @@ export const courseApiSlice = apiSlice.injectEndpoints({
                 method: "POST",
                 body: { question, threadId },
             }),
+        }),
         getRecommendCourses: builder.query({
             query: () => ({
                 url: `${COURSE_URL}/recommendation`
@@ -127,6 +128,6 @@ export const {
     useDeleteCaptionMutation,
     useGetCaptionContentQuery,
     useUpdateCaptionMutation,
-    useCallChatBotMutation
+    useCallChatBotMutation,
     useGetRecommendCoursesQuery
 } = courseApiSlice;
