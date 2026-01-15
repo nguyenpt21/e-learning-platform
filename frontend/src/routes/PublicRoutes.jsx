@@ -1,16 +1,16 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "../pages/student/HomePage";
-import CourseDetail from "../pages/student/CourseDetail";
-import { CoursesCatalog } from "@/pages/student/CourseCatalog";
+import HomePage from "@/pages/Student/HomePage";
+import CourseDetail from "@/pages/Student/CourseDetail";
+import { CoursesCatalog } from "@/pages/Student/CourseCatalog";
 import Layout from "@/components/student/Layout";
-import Payment from "@/pages/student/Payment";
-import PaypalSuccess from "@/pages/student/PayPalSuccess";
-import VerifyEmail from "@/pages/student/VerifyEmail";
-import AnnouncementsPage from "@/pages/student/AnnouncementsPage";
-import VNPaySuccess from "@/pages/student/VNPaySuccess";
-import VNPayFailed from "@/pages/student/VNPayFailed";
+import Payment from "@/pages/Student/Payment";
+import PaypalSuccess from "@/pages/Student/PayPalSuccess";
+import VNPaySuccess from "@/pages/Student/VNPaySuccess";
+import VNPayFailed from "@/pages/Student/VNPayFailed";
+import MomoSuccess from "@/pages/Student/MoMoSuccess";
+import VerifyEmail from "@/pages/Student/VerifyEmail";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import MomoSuccess from "@/pages/student/MoMoSuccess";
+import AnnouncementsPage from "@/pages/Student/AnnouncementsPage";
 
 const PublicRoutes = () => {
   return (

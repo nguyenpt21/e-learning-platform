@@ -1,7 +1,7 @@
 import CourseLearning from "@/pages/Student/CourseLearning";
 import MyCourses from "@/pages/Student/MyCourses";
-import ProfilePage from "@/pages/student/ProfilePage";
-import WishlistPage from "@/pages/student/WishlistPage";
+import ProfilePage from "@/pages/Student/ProfilePage";
+import WishlistPage from "@/pages/Student/WishlistPage";
 import ProtectedRoutes from "@/routes/ProtectedRoutes";
 import { Routes, Route, Navigate } from "react-router-dom";
 
