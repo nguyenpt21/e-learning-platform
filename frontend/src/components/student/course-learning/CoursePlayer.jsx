@@ -135,7 +135,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     let hasSavedCompletion = false;
     let interval = null;
 
-    const handleSaveProgress = async (currentTime) => {
+    const handleSaveProgress = async (currentTime, isUnmounting = false) => {
       let current;
       if (currentTime) current = currentTime;
       else current = currentVideo.getCurrentTime?.() || 0;
@@ -146,16 +146,21 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       const progressPercent = totalSeconds
         ? Math.round((watchedSeconds / totalSeconds) * 100)
         : 0;
+      const payload = {
+        courseId: item.courseId,
+        sectionId: item.sectionId,
+        itemId: item._id,
+        itemType: "video",
+        watchedSeconds,
+        totalSeconds,
+        progressPercent,
+      };
       try {
-        const res = await updateProgress({
-          courseId: item.courseId,
-          sectionId: item.sectionId,
-          itemId: item._id,
-          itemType: "video",
-          watchedSeconds,
-          totalSeconds,
-          progressPercent,
-        }).unwrap();
+        if (isUnmounting) {
+          updateProgress(payload);
+        } else {
+          await updateProgress(payload).unwrap();
+        }
         // console.log("Progress video saved:", res);
       } catch (err) {
         console.error("Update video failed:", err);
@@ -196,8 +201,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     return () => {
       clearInterval(interval);
       if (currentTimeRef.current != 0) {
-        // console.log("Saving progress on unmount:", currentTimeRef.current);
-        handleSaveProgress(currentTimeRef.current);
+        handleSaveProgress(currentTimeRef.current, true);
       }
       setCurrentQuestionId(null);
     };
@@ -328,7 +332,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             <div className="flex flex-col">
               <div className="relative w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
-                  
+
                   <VideoPlayer
                     key={item._id + "_" + itemProgress?.watchedSeconds}
                     ref={videoRef}
@@ -347,7 +351,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
                         question={currentQuestion}
                         onContinue={handleContinue}
                         isCompleted={!!savedAnswerId}
-                        savedAnswerId={savedAnswerId} 
+                        savedAnswerId={savedAnswerId}
                         isSubmitting={isSubmitting}
                         onSubmit={handleSubmitAnswer}
                       />
