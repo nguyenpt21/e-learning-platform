@@ -30,8 +30,11 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+  origin: [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+  ],
+  credentials: true
 }));
 
 // Kết nối DB với try/catch

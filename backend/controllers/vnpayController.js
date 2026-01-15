@@ -34,7 +34,7 @@ export const createVNPayPayment = async (req, res) => {
       vnp_TxnRef: txnRef,
       vnp_OrderInfo: `Thanh toan khoa hoc ${courseAlias}`,
       vnp_OrderType: "education",
-      vnp_ReturnUrl: process.env.VNP_RETURN_URL,
+      vnp_ReturnUrl: `${process.env.BACKEND_URL}/api/checkout/vnpay/return`,
       vnp_CreateDate: moment().format("YYYYMMDDHHmmss"),
       vnp_Locale: "vn",
       vnp_CurrCode: "VND",

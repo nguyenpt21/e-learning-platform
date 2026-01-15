@@ -51,8 +51,8 @@ export const createOrder = async (req, res) => {
           },
         ],
         application_context: {
-          return_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=success`,
-          cancel_url: `http://localhost:5173/course/${req.body.courseAlias}/paypal-success?status=cancel`,
+          return_url: `${process.env.FRONTEND_URL}/course/${req.body.courseAlias}/paypal-success?status=success`,
+          cancel_url: `${process.env.FRONTEND_URL}/course/${req.body.courseAlias}/paypal-success?status=cancel`,
         },
       };
       const data = JSON.stringify(order_data_json);
