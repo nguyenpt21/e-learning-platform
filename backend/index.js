@@ -33,6 +33,8 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL,
     "http://localhost:5173",
+    "https://www.newzlearn.id.vn",
+    "https://newzlearn.id.vn"
   ],
   credentials: true
 }));
