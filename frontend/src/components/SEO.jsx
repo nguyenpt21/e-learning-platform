@@ -9,7 +9,7 @@ const SEO = ({
     type = 'website'
 }) => {
     const SITE_NAME = "Newzlearn";
-    const DOMAIN = import.meta.env.VITE_APP_DOMAIN || "";
+    const DOMAIN = import.meta.env.VITE_APP_DOMAIN || "https://newzlearn.id.vn";
 
     const location = useLocation();
     const currentUrl = `${DOMAIN}${location.pathname}`;

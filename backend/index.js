@@ -51,12 +51,16 @@ app.use(cors({
 })();
 
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
 });
 
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello, Express!' });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // Mount routes
