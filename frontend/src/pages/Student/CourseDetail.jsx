@@ -74,9 +74,6 @@ const CourseDetail = () => {
         <div className="relative">
             <SEO
                 title={course?.title}
-                description={course?.description}
-                image={course?._id == "68ef1a1ce03f62b51b2cd332" ? `https://res.cloudinary.com/dultbjb6x/image/upload/v1768453305/og-course-image_t3i8ix.png` : ``}
-                keywords={`khóa học ${course?.title} giá rẻ, khóa học ${course?.title} newzlearn, học ${course?.title}, newzlearn`}
             />
 
             <Header />
