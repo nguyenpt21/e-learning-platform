@@ -18,6 +18,7 @@ import VideoQuestionOverlay from "@/components/student/course-learning/VideoQues
 import ArticleViewer from "@/components/student/course-learning/ArticleViewer";
 import { toast } from "react-toastify";
 import { useGetNotesByLectureQuery } from "@/redux/api/notesApiSlice";
+import { Spinner } from "@/components/ui/spinner";
 
 
 const formatDuration = (s) => {
@@ -66,6 +67,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
   const videoRef = useRef(null);
   const lastTriggeredTime = useRef(-1);
   const currentTimeRef = useRef(0);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -332,31 +334,49 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             <div className="flex flex-col">
               <div className="relative w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
-
-                  <VideoPlayer
-                    key={item._id + "_" + itemProgress?.watchedSeconds}
-                    ref={videoRef}
-                    videoUrl={item.content.hlsURL || item.content.publicURL}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    onPlayStateChange={setIsPlaying}
-                    startTime={itemProgress?.watchedSeconds ? itemProgress?.watchedSeconds : 0}
-                    captions={item.content.captions || []}
-                    videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
-                    poster={item?.content.thumbnailURL || "/logo.png"}
-                    questionMarkers={questionMarkers}
-                    noteMarkers={noteMarkers}
-                  >
-                    {currentQuestion && (
-                      <VideoQuestionOverlay
-                        question={currentQuestion}
-                        onContinue={handleContinue}
-                        isCompleted={!!savedAnswerId}
-                        savedAnswerId={savedAnswerId}
-                        isSubmitting={isSubmitting}
-                        onSubmit={handleSubmitAnswer}
-                      />
+                  <>
+                    {!isVideoReady && (
+                      <div className="absolute inset-0 z-60 flex flex-col justify-center items-center bg-gray-900 w-full h-full">
+                        <Skeleton className="h-full w-full" />
+                        <div className="absolute flex items-center gap-2">
+                          <Spinner className={``} />
+                          <div className="font-semibold text-sm text-gray-500">Đang tải video...</div>
+                        </div>
+                      </div>
                     )}
-                  </VideoPlayer>
+
+                    <VideoPlayer
+                      key={item._id + "_" + itemProgress?.watchedSeconds}
+                      ref={videoRef}
+                      videoUrl={item.content.hlsURL || item.content.publicURL}
+                      onTimeUpdate={handleVideoTimeUpdate}
+                      onPlayStateChange={setIsPlaying}
+                      startTime={itemProgress?.watchedSeconds ? itemProgress?.watchedSeconds : 0}
+                      captions={item.content.captions || []}
+                      videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
+                      poster={item?.content.thumbnailURL || "/logo.png"}
+                      questionMarkers={questionMarkers}
+                      noteMarkers={noteMarkers}
+                      onReady={(data) => {
+                        console.log("[Parent] Đã nhận tín hiệu onReady từ con!");
+                        console.log(" -> Data nhận được:", data);
+                        setIsVideoReady(true);
+                      }}
+                    >
+                      {currentQuestion && (
+                        <VideoQuestionOverlay
+                          question={currentQuestion}
+                          onContinue={handleContinue}
+                          isCompleted={!!savedAnswerId}
+                          savedAnswerId={savedAnswerId}
+                          isSubmitting={isSubmitting}
+                          onSubmit={handleSubmitAnswer}
+                        />
+                      )}
+                    </VideoPlayer>
+                  </>
+
+
                 ) : (
                   <Skeleton className="w-full h-full" />
                 )}
