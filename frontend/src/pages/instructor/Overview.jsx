@@ -20,6 +20,18 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import * as XLSX from "xlsx";
+import { pdf } from "@react-pdf/renderer";
+import InstructorReportPDF from "@/components/instructor/InstructorReportPDF";
+
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const formatCurrency = (value) => {
   const num = Number(value) || 0;
@@ -37,6 +49,37 @@ const Overview = () => {
 
   const summary = data?.summary || {};
   const chartData = useMemo(() => data?.chart || [], [data?.chart]);
+
+  const handleExportExcel = () => {
+    if (!chartData || chartData.length === 0) return;
+
+    const worksheet = XLSX.utils.json_to_sheet(
+      chartData.map((item) => ({
+        "Thời gian": item.month,
+        "Doanh thu (VNĐ)": item.revenue,
+        "Lượt đăng ký": item.enrollments,
+      })),
+    );
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tổng quan hiệu suất");
+    XLSX.writeFile(workbook, "bao-cao-tong-quan.xlsx");
+  };
+
+  const handleExportPDF = async () => {
+    if (!data) return;
+
+    const blob = await pdf(
+      <InstructorReportPDF data={data} range={range} />,
+    ).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "bao-cao-tong-quan.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (isLoading) {
     return (
@@ -59,16 +102,38 @@ const Overview = () => {
               gian.
             </p>
           </div>
-          <Select value={range} onValueChange={setRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alltime">Mọi thời điểm</SelectItem>
-              <SelectItem value="6months">6 tháng qua</SelectItem>
-              <SelectItem value="12months">12 tháng qua</SelectItem>
-            </SelectContent>
-          </Select>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Xuất báo cáo
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportExcel}>
+                  <img src="/excel.svg" alt="excel" className="mr-2 h-4 w-4" />
+                  Xuất Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <img src="/pdf.svg" alt="pdf" className="mr-2 h-4 w-4" />
+                  Xuất PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Select value={range} onValueChange={setRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alltime">Mọi thời điểm</SelectItem>
+                <SelectItem value="6months">6 tháng qua</SelectItem>
+                <SelectItem value="12months">12 tháng qua</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card className="mb-6">
