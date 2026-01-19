@@ -74,6 +74,8 @@ const CourseDetail = () => {
         <div className="relative">
             <SEO
                 title={course?.title}
+                description={course?.description}
+                keywords={`khóa học ${course?.title} giá rẻ, khóa học ${course?.title} newzlearn, học ${course?.category}, khóa học ${course?.category}, newzlearn`}
             />
 
             <Header />

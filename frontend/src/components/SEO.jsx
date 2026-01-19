@@ -18,9 +18,9 @@ const SEO = ({
     return (
         <>
             <title>{title}</title>
-            {/* <meta name="title" content={title}></meta> */}
-            {/* <meta name="description" content={description} /> */}
-            {/* <meta name="keywords" content={keywords || "newzlearn, newzlearn Việt Nam, học online, học trực tuyến việt nam, khoá học sinh viên, khoá học giá rẻ, khoá học giá sinh viên, mua khoá học"} />
+            <meta name="title" content={title}></meta>
+            <meta name="description" content={description} />
+            <meta name="keywords" content={keywords || "newzlearn, newzlearn Việt Nam, học online, học trực tuyến việt nam, khoá học sinh viên, khoá học giá rẻ, khoá học giá sinh viên, mua khoá học"} />
             <link rel="canonical" href={currentUrl} />
 
             <meta property="og:site_name" content={SITE_NAME} />
@@ -35,7 +35,9 @@ const SEO = ({
             <meta name="twitter:card" content="summary_large_image" />
             <meta name="twitter:title" content={title} />
             <meta name="twitter:description" content={description} />
-            <meta name="twitter:image" content={img} /> */}
+            <meta name="twitter:image" content={img} />
+
+            
 
         </>
     )
