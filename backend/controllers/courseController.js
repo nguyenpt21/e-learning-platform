@@ -308,10 +308,10 @@ const checkCoursePublishRequirements = async (course) => {
         }
     }
 
-    const hasVideo = await checkHasAtLeastOneVideo(course);
-    if (!hasVideo) {
-        errors.push("Khóa học cần có ít nhất 1 video bài giảng");
-    }
+    // const hasVideo = await checkHasAtLeastOneVideo(course);
+    // if (!hasVideo) {
+    //     errors.push("Khóa học cần có ít nhất 1 video bài giảng");
+    // }
 
     if (course.isFree === false && (!course.price || course.price <= 0)) {
         errors.push("Khóa học trả phí cần có giá hợp lệ");

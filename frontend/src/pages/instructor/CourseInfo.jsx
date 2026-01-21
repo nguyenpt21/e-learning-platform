@@ -17,6 +17,7 @@ import {
 import { generateThumbnailFromVideo } from "@/utils";
 import { useUpdateCourseMutation } from "@/redux/api/courseApiSlice";
 import { Link } from "react-router-dom";
+import { SimpleEditor } from "@/components/tiptap/tiptap-templates/simple/simple-editor";
 
 // const course = {
 //     title: "Demo",
@@ -177,7 +178,6 @@ const CourseInfo = ({ course }) => {
             description: content,
         }));
 
-        console.log("quill change");
         if (content.replace(/<(.|\n)*?>/g, "") !== "") {
             if (!isChanged) {
                 setIsChanged(true);
@@ -472,19 +472,8 @@ const CourseInfo = ({ course }) => {
                 <div>
                     <p className="font-semibold">Mô tả khóa học</p>
                     <div className="rounded-[6px] mt-1 focus-within:ring-blue-500 focus-within:ring-1 transition-colors">
-                        <ReactQuillNew
-                            className="article-lecture-editor description-lecture-editor"
-                            theme="snow"
-                            value={formData.description}
-                            onChange={handleQuillChange}
-                            placeholder="Nhập mô tả khóa học"
-                            modules={{
-                                toolbar: [
-                                    ["bold", "italic", "underline"],
-                                    [{ list: "ordered" }, { list: "bullet" }],
-                                ],
-                            }}
-                        ></ReactQuillNew>
+                        
+                        <SimpleEditor value={formData.description} onChange={handleQuillChange} placeholder={"Nhập mô tả khóa học"} mention={null} type="basic"></SimpleEditor>
                     </div>
                     {errors.description && (
                         <p className="text-red-500 text-sm mt-1">{errors.description}</p>
