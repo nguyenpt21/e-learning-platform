@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const url = process.env.MONGO_URI;
-
+//Newzlearn.123
 export const connectDB = async () => {
     try {
         await mongoose.connect(url, {
