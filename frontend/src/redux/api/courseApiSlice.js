@@ -1,4 +1,4 @@
-import { COURSE_URL } from "../constants";
+import { COURSE_URL } from "@/redux/constants";
 import { apiSlice } from "../api/apiSlice";
 
 export const courseApiSlice = apiSlice.injectEndpoints({

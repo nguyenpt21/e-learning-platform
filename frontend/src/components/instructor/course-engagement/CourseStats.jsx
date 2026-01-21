@@ -95,7 +95,7 @@ const SectionStats = ({ section, id }) => {
                                                         <Info className="h-4 w-4 text-muted-foreground" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Số học viên đã hoàn thành bài học / tổng số học viên khoá học</p>
+                                                        <p>Số học viên đã xem bài học / tổng số học viên khoá học</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>

@@ -31,8 +31,13 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+  origin: [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "https://www.newzlearn.id.vn",
+    "https://newzlearn.id.vn"
+  ],
+  credentials: true
 }));
 
 // Kết nối DB với try/catch
@@ -47,12 +52,16 @@ app.use(cors({
 })();
 
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
 });
 
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Hello, Express!' });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // Mount routes

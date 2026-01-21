@@ -14,6 +14,10 @@ const CourseLearning = () => {
     const params = useParams()
     const { data: course, isLoading: isCourseLoading } = useGetCourseByAliasQuery(params.courseAlias)
     const { data: itemsProgress, isLoading: isProgressLoading } = useGetItemsProgressQuery(course?._id ?? skipToken);
+
+    const [isSwitching, setIsSwitching] = useState(false);
+
+
     const latestProgress = useMemo(() => {
         if (!course) return null
         if (!itemsProgress || itemsProgress.length === 0) {
@@ -51,11 +55,18 @@ const CourseLearning = () => {
     }, [currentItem, course?.sections])
 
     const handleChangeItem = (itemId, itemType) => {
-        setCurrentItem({ itemId, itemType });
+        if (isSwitching) return;
+        if(currentItem?.itemId === itemId) return;
+        setIsSwitching(true);
+
         setIsDone(false);
+        setTimeout(() => {
+            setCurrentItem({ itemId, itemType });
+            setIsSwitching(false);
+        }, 1000);
     };
 
-    if (isCourseLoading || isProgressLoading || !currentItem) {
+    if (isCourseLoading || isProgressLoading || !currentItem || isSwitching) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <Spinner className="size-12" color="#098ce9" />

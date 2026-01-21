@@ -18,6 +18,7 @@ import VideoQuestionOverlay from "@/components/student/course-learning/VideoQues
 import ArticleViewer from "@/components/student/course-learning/ArticleViewer";
 import { toast } from "react-toastify";
 import { useGetNotesByLectureQuery } from "@/redux/api/notesApiSlice";
+import { Spinner } from "@/components/ui/spinner";
 
 
 const formatDuration = (s) => {
@@ -66,6 +67,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
   const videoRef = useRef(null);
   const lastTriggeredTime = useRef(-1);
   const currentTimeRef = useRef(0);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -135,7 +137,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     let hasSavedCompletion = false;
     let interval = null;
 
-    const handleSaveProgress = async (currentTime) => {
+    const handleSaveProgress = async (currentTime, isUnmounting = false) => {
       let current;
       if (currentTime) current = currentTime;
       else current = currentVideo.getCurrentTime?.() || 0;
@@ -146,16 +148,21 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
       const progressPercent = totalSeconds
         ? Math.round((watchedSeconds / totalSeconds) * 100)
         : 0;
+      const payload = {
+        courseId: item.courseId,
+        sectionId: item.sectionId,
+        itemId: item._id,
+        itemType: "video",
+        watchedSeconds,
+        totalSeconds,
+        progressPercent,
+      };
       try {
-        const res = await updateProgress({
-          courseId: item.courseId,
-          sectionId: item.sectionId,
-          itemId: item._id,
-          itemType: "video",
-          watchedSeconds,
-          totalSeconds,
-          progressPercent,
-        }).unwrap();
+        if (isUnmounting) {
+          updateProgress(payload);
+        } else {
+          await updateProgress(payload).unwrap();
+        }
         // console.log("Progress video saved:", res);
       } catch (err) {
         console.error("Update video failed:", err);
@@ -196,8 +203,7 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
     return () => {
       clearInterval(interval);
       if (currentTimeRef.current != 0) {
-        // console.log("Saving progress on unmount:", currentTimeRef.current);
-        handleSaveProgress(currentTimeRef.current);
+        handleSaveProgress(currentTimeRef.current, true);
       }
       setCurrentQuestionId(null);
     };
@@ -328,31 +334,49 @@ const CoursePlayer = ({ itemId, itemType, onDoneChange }) => {
             <div className="flex flex-col">
               <div className="relative w-full bg-black h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]">
                 {item?.content?.publicURL ? (
-                  
-                  <VideoPlayer
-                    key={item._id + "_" + itemProgress?.watchedSeconds}
-                    ref={videoRef}
-                    videoUrl={item.content.hlsURL || item.content.publicURL}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    onPlayStateChange={setIsPlaying}
-                    startTime={itemProgress?.watchedSeconds ? itemProgress?.watchedSeconds : 0}
-                    captions={item.content.captions || []}
-                    videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
-                    poster={item?.content.thumbnailURL || "/logo.png"}
-                    questionMarkers={questionMarkers}
-                    noteMarkers={noteMarkers}
-                  >
-                    {currentQuestion && (
-                      <VideoQuestionOverlay
-                        question={currentQuestion}
-                        onContinue={handleContinue}
-                        isCompleted={!!savedAnswerId}
-                        savedAnswerId={savedAnswerId} 
-                        isSubmitting={isSubmitting}
-                        onSubmit={handleSubmitAnswer}
-                      />
+                  <>
+                    {!isVideoReady && (
+                      <div className="absolute inset-0 z-60 flex flex-col justify-center items-center bg-gray-900 w-full h-full">
+                        <Skeleton className="h-full w-full" />
+                        <div className="absolute flex items-center gap-2">
+                          <Spinner className={``} />
+                          <div className="font-semibold text-sm text-gray-500">Đang tải video...</div>
+                        </div>
+                      </div>
                     )}
-                  </VideoPlayer>
+
+                    <VideoPlayer
+                      key={item._id + "_" + itemProgress?.watchedSeconds}
+                      ref={videoRef}
+                      videoUrl={item.content.hlsURL || item.content.publicURL}
+                      onTimeUpdate={handleVideoTimeUpdate}
+                      onPlayStateChange={setIsPlaying}
+                      startTime={itemProgress?.watchedSeconds ? itemProgress?.watchedSeconds : 0}
+                      captions={item.content.captions || []}
+                      videoHeight={`h-[45vh] md:h-[50vh] lg:h-[calc(60vh-3px)]`}
+                      poster={item?.content.thumbnailURL || "/logo.png"}
+                      questionMarkers={questionMarkers}
+                      noteMarkers={noteMarkers}
+                      onReady={(data) => {
+                        console.log("[Parent] Đã nhận tín hiệu onReady từ con!");
+                        console.log(" -> Data nhận được:", data);
+                        setIsVideoReady(true);
+                      }}
+                    >
+                      {currentQuestion && (
+                        <VideoQuestionOverlay
+                          question={currentQuestion}
+                          onContinue={handleContinue}
+                          isCompleted={!!savedAnswerId}
+                          savedAnswerId={savedAnswerId}
+                          isSubmitting={isSubmitting}
+                          onSubmit={handleSubmitAnswer}
+                        />
+                      )}
+                    </VideoPlayer>
+                  </>
+
+
                 ) : (
                   <Skeleton className="w-full h-full" />
                 )}

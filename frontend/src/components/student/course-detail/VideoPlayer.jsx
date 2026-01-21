@@ -18,7 +18,7 @@ const VideoPlayer = forwardRef(({
     className = "", videoHeight = "",
     videoUrl = "",
     onTimeUpdate, onPlayStateChange, startTime = 0, captions = [], poster,
-    questionMarkers, noteMarkers,
+    questionMarkers, noteMarkers, onReady,
     children
 }, ref) => {
 
@@ -148,6 +148,15 @@ const VideoPlayer = forwardRef(({
             setIsMetadataLoaded(true);
         };
 
+        const onCanPlay = () => {
+            if (onReady) {
+                onReady({
+                    duration: video.duration,
+                    readyState: video.readyState
+                });
+            }
+        };
+
         const onTimeUpdate = () => {
             setCurrentTime(video.currentTime);
         };
@@ -175,6 +184,7 @@ const VideoPlayer = forwardRef(({
         };
 
         video.addEventListener("loadedmetadata", onLoadedMetadata);
+        video.addEventListener("canplay", onCanPlay);
         video.addEventListener("timeupdate", onTimeUpdate);
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
@@ -183,13 +193,14 @@ const VideoPlayer = forwardRef(({
 
         return () => {
             video.removeEventListener("loadedmetadata", onLoadedMetadata);
+            video.removeEventListener("canplay", onCanPlay);
             video.removeEventListener("timeupdate", onTimeUpdate);
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
             video.removeEventListener("ended", onEnded);
             video.removeEventListener("progress", handleProgress);
         };
-    }, [onPlayStateChange]);
+    }, [onPlayStateChange, onReady]);
 
     //tua bằng phím
     useEffect(() => {
@@ -342,10 +353,6 @@ const VideoPlayer = forwardRef(({
                     />
 
                     <div className="absolute inset-0 z-70 w-full h-full pointer-events-none cursor-auto">
-                        {/* pointer-events-none: Để khi không có overlay, click xuyên qua xuống video.
-                            Children bên trong (Overlay) phải có pointer-events-auto.
-                            cursor-auto: Để đè lên cursor-none của cha khi hiển thị overlay.
-                        */}
                         {children}
                     </div>
 

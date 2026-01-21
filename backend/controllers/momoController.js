@@ -4,14 +4,15 @@ import Course from "../models/course.js";
 import Order from "../models/order.js";
 import { updateCourseProgress } from "./progressController.js";
 import UserBehavior from "../models/userBehavior.js";
+import dotenv from "dotenv";
 
 export const createMoMoPayment = async (req, res) => {
   try {
     const { amount, courseAlias } = req.body;
     const userId = req.user._id;
 
-    const accessKey = "F8BBA842ECF85";
-    const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+    const accessKey = process.env.MOMO_ACCESS_KEY;
+    const secretKey = process.env.MOMO_SECRET_KEY;
     const partnerCode = "MOMO";
 
     const requestId = `${partnerCode}_${Date.now()}`;

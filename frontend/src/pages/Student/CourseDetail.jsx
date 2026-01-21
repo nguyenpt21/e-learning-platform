@@ -22,6 +22,7 @@ import CourseReviews from "@/components/student/course-detail/CourseReviews";
 import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "@/redux/api/favoriteApiSlice";
 import FavoriteButton from "@/components/student/home-page/FavoriteButton";
 import { toast } from "react-toastify";
+import SEO from "@/components/SEO";
 
 const CourseDetail = () => {
     const { courseAlias } = useParams();
@@ -71,6 +72,12 @@ const CourseDetail = () => {
     }
     return (
         <div className="relative">
+            <SEO
+                title={course?.title}
+                description={course?.description}
+                keywords={`khóa học ${course?.title} giá rẻ, khóa học ${course?.title} newzlearn, học ${course?.category}, khóa học ${course?.category}, newzlearn`}
+            />
+
             <Header />
             <div
                 className={`fixed left-0 w-full transition-all duration-500
