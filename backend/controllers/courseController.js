@@ -75,37 +75,37 @@ const getCourseByAlias = async (req, res) => {
             }));
 
         if (userId) {
-          // đảm bảo document tồn tại
-          await UserBehavior.updateOne(
-            { user: userId },
-            { $setOnInsert: { user: userId } },
-            { upsert: true }
-          );
-          // tăng count
-          const incResult = await UserBehavior.updateOne(
-            { user: userId, "viewed.course": course._id },
-            {
-              $inc: { "viewed.$.count": 1 },
-              $set: { "viewed.$.lastView": new Date() },
-            }
-          );
-          // push mới
-          if (incResult.matchedCount === 0) {
+            // đảm bảo document tồn tại
             await UserBehavior.updateOne(
-              { user: userId },
-              {
-                $push: {
-                  viewed: {
-                    course: course._id,
-                    count: 1,
-                    lastView: new Date(),
-                  },
-                },
-              }
+                { user: userId },
+                { $setOnInsert: { user: userId } },
+                { upsert: true },
             );
-          }
+            // tăng count
+            const incResult = await UserBehavior.updateOne(
+                { user: userId, "viewed.course": course._id },
+                {
+                    $inc: { "viewed.$.count": 1 },
+                    $set: { "viewed.$.lastView": new Date() },
+                },
+            );
+            // push mới
+            if (incResult.matchedCount === 0) {
+                await UserBehavior.updateOne(
+                    { user: userId },
+                    {
+                        $push: {
+                            viewed: {
+                                course: course._id,
+                                count: 1,
+                                lastView: new Date(),
+                            },
+                        },
+                    },
+                );
+            }
         } else {
-          console.log("User not logged in, skipping behavior tracking.");
+            console.log("User not logged in, skipping behavior tracking.");
         }
         res.status(200).json({ ...course, sections });
     } catch (error) {
@@ -172,7 +172,7 @@ const updateCourse = async (req, res) => {
             return res.status(404).json({ message: "Course not found" });
         }
 
-        const courseId = course._id
+        const courseId = course._id;
         const fields = [
             "learningOutcomes",
             "requirements",
@@ -213,7 +213,9 @@ const updateCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
     try {
         const { courseAlias } = req.params;
-        const course = await Course.findOne({ alias: courseAlias }).populate("sections.sectionId").lean();
+        const course = await Course.findOne({ alias: courseAlias })
+            .populate("sections.sectionId")
+            .lean();
         if (!course) return res.status(404).json({ message: "Course not found" });
         for (const section of course.sections) {
             for (const item of section.curriculumItems) {
@@ -259,7 +261,7 @@ const checkCoursePublishRequirements = async (course) => {
         errors.push("Cần ít nhất 4 mục tiêu học tập");
     } else {
         const validOutcomes = course.learningOutcomes.filter(
-            (outcome) => outcome && outcome.trim() !== ""
+            (outcome) => outcome && outcome.trim() !== "",
         );
         if (validOutcomes.length < 4) {
             errors.push("Cần ít nhất 4 mục tiêu học tập hợp lệ");
@@ -279,7 +281,7 @@ const checkCoursePublishRequirements = async (course) => {
         errors.push("Cần ít nhất 1 đối tượng học viên");
     } else {
         const validLearners = course.intendedLearners.filter(
-            (learner) => learner && learner.trim() !== ""
+            (learner) => learner && learner.trim() !== "",
         );
         if (validLearners.length < 1) {
             errors.push("Cần ít nhất 1 đối tượng học viên hợp lệ");
@@ -297,8 +299,9 @@ const checkCoursePublishRequirements = async (course) => {
                 sectionDetail.curriculumItems.length === 0
             ) {
                 errors.push(
-                    `Chương ${section.order}: "${sectionDetail?.title || section.sectionId
-                    }" cần có ít nhất 1 bài học hoặc quiz`
+                    `Chương ${section.order}: "${
+                        sectionDetail?.title || section.sectionId
+                    }" cần có ít nhất 1 bài học hoặc quiz`,
                 );
                 break;
             }
@@ -562,7 +565,7 @@ const handleVideoWebhook = async (req, res) => {
         const progress = Math.round((totalProcessed / batch.totalVideos) * 100);
 
         console.log(
-            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`
+            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`,
         );
 
         if (totalProcessed === batch.totalVideos) {
@@ -590,14 +593,14 @@ const handleVideoWebhook = async (req, res) => {
 
 const getCourses = async (req, res) => {
     try {
-        const { sort, search, category, level, isPublished, isFree } = req.query;
+        const { sort, search, page = 1, limit = 9 } = req.query;
 
         let sortOption = {};
         switch (sort) {
-            case "newest":
+            case "Mới nhất":
                 sortOption = { createdAt: -1 };
                 break;
-            case "oldest":
+            case "Cũ nhất":
                 sortOption = { createdAt: 1 };
                 break;
             case "A-Z":
@@ -614,22 +617,27 @@ const getCourses = async (req, res) => {
         if (search) {
             filter.title = { $regex: search, $options: "i" };
         }
-        if (category) {
-            filter.category = category;
-        }
-        if (level) {
-            filter.level = level;
-        }
-        if (isPublished !== undefined) {
-            filter.isPublished = isPublished === "true";
-        }
-        if (isFree !== undefined) {
-            filter.isFree = isFree === "true";
-        }
 
-        const courses = await Course.find(filter).sort(sortOption);
+        const pageNumber = parseInt(page, 10);
+        const limitNumber = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * limitNumber;
 
-        res.status(200).json(courses);
+        /* -------- QUERY -------- */
+        const [courses, totalCourses] = await Promise.all([
+            Course.find(filter).sort(sortOption).skip(skip).limit(limitNumber),
+            Course.countDocuments(filter),
+        ]);
+
+        res.status(200).json({
+            courses,
+            pagination: {
+                total: totalCourses,
+                page: pageNumber,
+                limit: limitNumber,
+                totalPages: Math.ceil(totalCourses / limitNumber),
+            },
+        });
+
     } catch (error) {
         console.error("Error fetching courses:", error);
         res.status(500).json({ message: "Server Error" });
@@ -863,7 +871,7 @@ const getSearchCourseSuggestion = async (req, res) => {
 
 const getSearchCourseResults = async (req, res) => {
     try {
-        const userId = req.user? req.user._id : null
+        const userId = req.user ? req.user._id : null;
         const { q, courseDuration, level, category, language, selectedPrices, sort, page, limit } =
             req.query;
         console.log(q);
@@ -883,42 +891,42 @@ const getSearchCourseResults = async (req, res) => {
                     },
                 },
             ];
-          // thêm từ khóa (q) vào searched của userBehavior
-          if (userId && normalizedQuery) {
-            // Chắc chắn tồn tại
-            await UserBehavior.updateOne(
-              { user: userId },
-              { $setOnInsert: { user: userId } },
-              { upsert: true }
-            );
-            // Tăng count
-            const updated = await UserBehavior.updateOne(
-              {
-                user: userId,
-                "searched.normalized": normalizedQuery,
-              },
-              {
-                $inc: { "searched.$.count": 1 },
-                $set: { "searched.$.lastSearch": new Date() },
-              }
-            );
-            // Push mới
-            if (updated.matchedCount === 0) {
-              await UserBehavior.updateOne(
-                { user: userId },
-                {
-                  $push: {
-                    searched: {
-                      keyword: q,
-                      normalized: normalizedQuery,
-                      count: 1,
-                      lastSearch: new Date(),
+            // thêm từ khóa (q) vào searched của userBehavior
+            if (userId && normalizedQuery) {
+                // Chắc chắn tồn tại
+                await UserBehavior.updateOne(
+                    { user: userId },
+                    { $setOnInsert: { user: userId } },
+                    { upsert: true },
+                );
+                // Tăng count
+                const updated = await UserBehavior.updateOne(
+                    {
+                        user: userId,
+                        "searched.normalized": normalizedQuery,
                     },
-                  },
+                    {
+                        $inc: { "searched.$.count": 1 },
+                        $set: { "searched.$.lastSearch": new Date() },
+                    },
+                );
+                // Push mới
+                if (updated.matchedCount === 0) {
+                    await UserBehavior.updateOne(
+                        { user: userId },
+                        {
+                            $push: {
+                                searched: {
+                                    keyword: q,
+                                    normalized: normalizedQuery,
+                                    count: 1,
+                                    lastSearch: new Date(),
+                                },
+                            },
+                        },
+                    );
                 }
-              );
             }
-          }
         }
 
         let filterStage = {
@@ -951,8 +959,9 @@ const getSearchCourseResults = async (req, res) => {
                 filterStage.$match.$or = priceFilters;
             }
         }
-        console.log("decoded:", decodeURIComponent(category).trim())
-        if (category) filterStage.$match.category = { $in: decodeURIComponent(category).trim().split(",") };
+        console.log("decoded:", decodeURIComponent(category).trim());
+        if (category)
+            filterStage.$match.category = { $in: decodeURIComponent(category).trim().split(",") };
         if (language) filterStage.$match.language = { $in: language.split(",") };
         if (level) filterStage.$match.level = { $in: level.split(",") };
 
@@ -961,30 +970,29 @@ const getSearchCourseResults = async (req, res) => {
 
             switch (courseDuration) {
                 case "0-3": {
-                    
                     filterStage.$match.courseDuration = {
                         $gte: 0,
-                        $lte: 3 * ONE_HOUR_IN_SECONDS
+                        $lte: 3 * ONE_HOUR_IN_SECONDS,
                     };
                     break;
                 }
                 case "3-6": {
                     filterStage.$match.courseDuration = {
                         $gt: 3 * ONE_HOUR_IN_SECONDS,
-                        $lte: 6 * ONE_HOUR_IN_SECONDS
+                        $lte: 6 * ONE_HOUR_IN_SECONDS,
                     };
                     break;
                 }
                 case "6-17": {
                     filterStage.$match.courseDuration = {
                         $gt: 6 * ONE_HOUR_IN_SECONDS,
-                        $lte: 17 * ONE_HOUR_IN_SECONDS
+                        $lte: 17 * ONE_HOUR_IN_SECONDS,
                     };
                     break;
                 }
                 case "17-more": {
                     filterStage.$match.courseDuration = {
-                        $gt: 17 * ONE_HOUR_IN_SECONDS
+                        $gt: 17 * ONE_HOUR_IN_SECONDS,
                     };
                     break;
                 }
@@ -1323,7 +1331,7 @@ const handleCaptionWebhook = async (req, res) => {
         const progress = Math.round((totalProcessed / batch.totalVideos) * 100);
 
         console.log(
-            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`
+            `📊 Batch ${batch.batchNumber}: ${totalProcessed}/${batch.totalVideos} (${progress}%)`,
         );
 
         if (totalProcessed === batch.totalVideos) {
@@ -1496,7 +1504,7 @@ const addCaptionVideo = async (req, res) => {
             }
 
             const existingCaptionIndex = lecture.content.captions.findIndex(
-                (c) => c.language === caption.language
+                (c) => c.language === caption.language,
             );
 
             if (existingCaptionIndex !== -1) {
