@@ -1,4 +1,4 @@
-import { Outlet, useLocation, Link, useParams } from "react-router-dom";
+import { Outlet, useLocation, Link, useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FaRegCheckCircle } from "react-icons/fa";
 import {
@@ -13,6 +13,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useProcessCourseMutation } from "@/redux/api/courseApiSlice";
 const CourseManageLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate()
     const { courseAlias } = useParams();
     const MENU_ITEMS = [
         {
@@ -35,8 +36,9 @@ const CourseManageLayout = () => {
 
     const [processCourse, { isLoading }] = useProcessCourseMutation();
     const [showErrorModal, setShowErrorModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
-
+    const [successData, setSuccessData] = useState(null);
     const handlePublish = async () => {
         try {
             const result = await processCourse(courseAlias).unwrap();
@@ -45,6 +47,9 @@ const CourseManageLayout = () => {
             if (!result.success) {
                 setShowErrorModal(true);
                 setValidationErrors(result.errors);
+            } else {
+                setSuccessData(result);
+                setShowSuccessModal(true);
             }
         } catch (error) {
             console.error(error);
@@ -130,6 +135,42 @@ const CourseManageLayout = () => {
                             onClick={() => setShowErrorModal(false)}
                         >
                             Đã hiểu
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            {successData?.state === "processing"
+                                ? "Khóa học đang được xử lý"
+                                : "Phát hành thành công"}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <p className="text-muted-foreground">{successData?.message}</p>
+                        {successData?.state === "processing" && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                                Bạn sẽ nhận được thông báo khi các video đã được xử lý xong.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-4">
+                        <button
+                            className="px-4 py-2 hover:bg-gray-100 rounded cursor-pointer"
+                            onClick={() => setShowSuccessModal(false)}
+                        >
+                            Đóng
+                        </button>
+                        <button
+                            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 cursor-pointer"
+                            onClick={() => navigate("/instructor/courses")}
+                        >
+                            Về trang danh sách khóa học
                         </button>
                     </div>
                 </DialogContent>
