@@ -97,7 +97,7 @@ export const courseApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: (result, error, { courseId, lectureId, language }) => [
                 { type: "Caption", id: `${courseId}-${lectureId}-${language}` },
-                { type: "Caption" }
+                { type: "Caption" },
             ],
         }),
         callChatBot: builder.mutation({
@@ -109,9 +109,21 @@ export const courseApiSlice = apiSlice.injectEndpoints({
         }),
         getRecommendCourses: builder.query({
             query: () => ({
-                url: `${COURSE_URL}/recommendation`
-            })
-        })
+                url: `${COURSE_URL}/recommendation`,
+            }),
+        }),
+        getManageCourses: builder.query({
+            query: ({ page = 1, limit = 10, sort, search }) => {
+                const params = new URLSearchParams();
+                params.append("page", page);
+                params.append("limit", limit);
+
+                if (sort) params.append("sort", sort);
+                if (search) params.append("search", search);
+
+                return `${COURSE_URL}/manage?${params.toString()}`;
+            },
+        }),
     }),
 });
 
@@ -129,5 +141,6 @@ export const {
     useGetCaptionContentQuery,
     useUpdateCaptionMutation,
     useCallChatBotMutation,
-    useGetRecommendCoursesQuery
+    useGetRecommendCoursesQuery,
+    useGetManageCoursesQuery,
 } = courseApiSlice;

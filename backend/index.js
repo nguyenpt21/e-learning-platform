@@ -19,12 +19,13 @@ import announcementRoute from "./routes/announcement.js";
 import reviewRoute from "./routes/reviewRoute.js";
 import favoriteRoute from "./routes/favoriteRoute.js";
 import lectureQuestionRoute from "./routes/lectureQuestionRoute.js";
+import sessionRoute from "./routes/sessionRoute.js"
+import { app, server } from "./config/socket.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.json());
@@ -87,9 +88,9 @@ app.use("/api/favorites", favoriteRoute);
 app.use("/api/instructor/students", studentRoute);
 
 app.use("/api/lectureQuestions", lectureQuestionRoute);
+app.use("/api/sessions", sessionRoute)
 
 
-
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });

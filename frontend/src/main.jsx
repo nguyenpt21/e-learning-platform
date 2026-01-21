@@ -13,29 +13,27 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="vi">
-      <Provider store={store}>
-        <App />
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-          toastStyle={{
-            borderRadius: "12px",
-            fontSize: "14px",
-            fontWeight: "500",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-          }}
-        />
-      </Provider>
-    </GoogleOAuthProvider>
-  </StrictMode>
+  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="vi">
+    <Provider store={store}>
+      <App />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastStyle={{
+          borderRadius: "12px",
+          fontSize: "14px",
+          fontWeight: "500",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        }}
+      />
+    </Provider>
+  </GoogleOAuthProvider>
 );

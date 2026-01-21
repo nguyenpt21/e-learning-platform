@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { MdOutlineMessage, MdKeyboardArrowRight } from "react-icons/md";
 import { MdLiveTv } from "react-icons/md";
 import { FaChartBar, FaRegBell } from "react-icons/fa";
-
+import { RiLiveLine } from "react-icons/ri";
 const NavItem = ({ buttonContennt, linkTo, Dropdown }) => {
     const [showDropdown, setShowDropdown] = useState(false);
     return (
@@ -30,6 +30,11 @@ const InstructorLayout = () => {
             title: "Khóa học",
             to: "/instructor/courses",
             icon: <MdLiveTv className="text-lg" />,
+        },
+        {
+            title: "Buổi học live",
+            to: "/instructor/sessions",
+            icon: <RiLiveLine className="text-lg" />,
         },
         {
             title: "Giao tiếp",

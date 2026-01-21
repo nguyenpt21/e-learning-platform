@@ -448,3 +448,9 @@ body.no-scroll {
         
     }
 }
+
+[id^="remote-screen-"] video {
+    object-fit: contain !important;
+    width: 100% !important;
+    height: 100% !important;
+}

@@ -56,7 +56,7 @@ router.route("/search")
 router.get("/instructor", getInstructorCourses)
 
 router.get("/recommendation", protectRoute, getRecommendations)
-
+router.get("/manage", getCourses);
 //course
 router.route("/alias/:courseAlias")
     .get(publicRoute, getCourseByAlias)
@@ -67,7 +67,6 @@ router.route("/:courseAlias")
     .get(getCourseByAlias)
     .put(updateCourse)
     .delete(deleteCourse);
-router.get("/manage", getCourses);
 router.get("/:courseAlias/info", getCourseInfo)
 router.post("/:courseAlias/process", processCourse)
 // section
