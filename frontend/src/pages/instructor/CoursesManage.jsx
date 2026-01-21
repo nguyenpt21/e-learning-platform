@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch } from "react-icons/fi";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
@@ -13,14 +13,25 @@ import {
     DialogFooter,
     DialogClose,
 } from "@/components/ui/dialog";
-
-import { useCreateCourseMutation, useGetInstructorCoursesQuery } from "@/redux/api/courseApiSlice";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+    useCreateCourseMutation,
+    useGetManageCoursesQuery,
+} from "@/redux/api/courseApiSlice";
 import { useAddSectionToCourseMutation } from "@/redux/api/sectionApiSlice";
 import { Spinner } from "@/components/ui/spinner";
 import InstructorCourseCard from "@/components/instructor/courses-manage/InstructorCourseCard";
 const CoursesManage = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortOption, setSortOption] = useState("Mới nhất");
+    const [page, setPage] = useState(1);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +56,26 @@ const CoursesManage = () => {
 
     const navigate = useNavigate();
 
-    const { data: courses, isLoading: isLoadingCourses } = useGetInstructorCoursesQuery();
+    const [debouncedValue, setDebouncedValue] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(searchQuery);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const { data, isLoading: isLoadingCourses } = useGetManageCoursesQuery({
+        search: debouncedValue,
+        page,
+        limit: 9,
+        sort: sortOption,
+    });
+
+    console.log(data)
+
+    const courses = data?.courses || [];
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -67,6 +97,10 @@ const CoursesManage = () => {
         }
     };
 
+    const handlePageChange = (page) => {
+        setPage(page);
+    };
+
     const [createCourse, { isLoading: isLoadingCreateCourse }] = useCreateCourseMutation();
     const [createSection, { isLoading: isLoadingCreateSection }] = useAddSectionToCourseMutation();
 
@@ -77,7 +111,7 @@ const CoursesManage = () => {
                 category: selectedCourseCategory,
             }).unwrap();
             const courseAlias = courseResponse.alias;
-            const courseId = courseResponse._id
+            const courseId = courseResponse._id;
             const sectionResponse = await createSection({
                 courseId,
                 sectionData: {
@@ -236,7 +270,7 @@ const CoursesManage = () => {
                                                                 onClick={() => {
                                                                     setSelectedCourseCategory(cate);
                                                                     setIsCategoryDropdownOpen(
-                                                                        false
+                                                                        false,
                                                                     );
                                                                 }}
                                                                 className={`w-full px-4 py-1 text-left hover:bg-gray-50  transition-colors ${
@@ -305,6 +339,64 @@ const CoursesManage = () => {
                         <InstructorCourseCard course={course} key={index}></InstructorCourseCard>
                     ))}
                 </div>
+                {data?.pagination && data.pagination.totalPages > 1 && (
+                    <div className="mt-6">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        onClick={() => handlePageChange(Math.max(1, page - 1))}
+                                        className={
+                                            page <= 1 ? "pointer-events-none opacity-50" : ""
+                                        }
+                                    />
+                                </PaginationItem>
+
+                                {Array.from(
+                                    { length: Math.min(5, data.pagination.totalPages) },
+                                    (_, i) => {
+                                        let pageNum;
+                                        if (data.pagination.totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (page <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (page >= data.pagination.totalPages - 2) {
+                                            pageNum = data.pagination.totalPages - 4 + i;
+                                        } else {
+                                            pageNum = page - 2 + i;
+                                        }
+
+                                        return (
+                                            <PaginationItem key={pageNum}>
+                                                <PaginationLink
+                                                    onClick={() => handlePageChange(pageNum)}
+                                                    isActive={page === pageNum}
+                                                >
+                                                    {pageNum}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        );
+                                    },
+                                )}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        onClick={() =>
+                                            handlePageChange(
+                                                Math.min(data.pagination.totalPages, page + 1),
+                                            )
+                                        }
+                                        className={
+                                            page >= data.pagination.totalPages
+                                                ? "pointer-events-none opacity-50"
+                                                : ""
+                                        }
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
             </div>
         </div>
     );

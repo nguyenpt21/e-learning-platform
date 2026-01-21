@@ -1,3 +1,5 @@
+import PreJoinPage from "@/components/PreJoinPage";
+import SessionPage from "@/components/SessionPage";
 import CourseLearning from "@/pages/Student/CourseLearning";
 import MyCourses from "@/pages/Student/MyCourses";
 import ProfilePage from "@/pages/student/ProfilePage";
@@ -16,6 +18,8 @@ const StudentRoutes = () => {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/my-courses" element={ <MyCourses/>} />
                 <Route path="/wishlist" element={ <WishlistPage/>} />
+                <Route  path="/sessions/prejoin/:sessionId" element={<PreJoinPage />} />
+                <Route path="/sessions/join/:sessionId" element={<SessionPage />}  />
             </Route>
         </Routes>
     );

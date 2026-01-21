@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from 'react-redux';
 import { openNotesPanel } from '@/redux/features/notesSlice';
 import NotesPanel from './NotesPanel';
+import LiveSessionsSheet from './LiveSessionsSheet';
 
 const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
     const navigate = useNavigate();
@@ -49,10 +50,7 @@ const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
                         <NotepadText size={18} />
                         <span className="text-sm font-medium">Ghi chú</span>
                     </button>
-                    <button className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200">
-                        <CircleQuestionMark size={18} />
-                        <span className="text-sm font-medium">Hướng dẫn</span>
-                    </button>
+                    <LiveSessionsSheet courseId={courseId}></LiveSessionsSheet>
                 </div>
             </div>
             <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} />

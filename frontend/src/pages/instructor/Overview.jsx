@@ -33,7 +33,7 @@ const Overview = () => {
 
     return (
         <div className="bg-background min-h-screen">
-            <div className="container mx-auto px-6 py-6">
+            <div className="container mx-auto px-6 py-4">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-foreground mb-1">Tổng quan hiệu suất</h1>
