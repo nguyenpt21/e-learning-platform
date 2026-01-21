@@ -147,9 +147,9 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
       return;
     }
 
-    const passwordStrengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+    const passwordStrengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/;
     if (!passwordStrengthRegex.test(password)) {
-      toast.error("Mật khẩu phải gồm chữ hoa, chữ thường và số", {
+      toast.error("Mật khẩu phải gồm chữ hoa, thường, số và ký tự đặc biệt", {
         position: "bottom-right",
       });
       return;
@@ -174,7 +174,7 @@ const SignUpModal = ({ isOpen, onClose, onSwitchToSignIn }) => {
 
       toast.success(
         response?.message ||
-          "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
+        "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
         { position: "bottom-right", autoClose: 5000 }
       );
 
