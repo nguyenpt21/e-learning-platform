@@ -9,6 +9,7 @@ import {
 } from "@/redux/api/favoriteApiSlice";
 import { useGetRecommendCoursesQuery } from "@/redux/api/courseApiSlice";
 import { useSelector } from "react-redux";
+import { ChevronLeft, ChevronRight, Star, Heart } from "lucide-react";
 
 function NextArrow(props) {
   const { className, style, onClick } = props;
