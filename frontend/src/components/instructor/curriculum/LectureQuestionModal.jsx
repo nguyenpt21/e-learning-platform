@@ -304,9 +304,8 @@ const LectureQuestionModal = ({
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden gap-5">
-                    <div className="flex-1 bg-gray-100 p-4">
-                        <div className="bg-black rounded-lg overflow-hidden relative mb-6">
-                            
+                    <div className="flex-1 bg-gray-100 p-4 overflow-auto">
+                        <div className="bg-black rounded-lg  relative mb-6">
                             <VideoPlayer
                                 key={item._id}
                                 ref={videoRef}
@@ -473,7 +472,20 @@ const LectureQuestionModal = ({
                                 )}
                             </div>
                         </div>
-
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                onClick={() => onOpenChange(false)}
+                                className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="px-3 py-2 bg-primary text-white rounded hover:bg-primary/70 font-medium"
+                            >
+                                {editingQuestion ? "Sửa câu hỏi" : "Thêm câu hỏi"}
+                            </button>
+                        </div>
                         <ConfirmZeroTimestampDialog
                             open={showConfirmZeroTime}
                             onConfirm={handleConfirmSave}
@@ -481,21 +493,6 @@ const LectureQuestionModal = ({
                         />
                     </div>
                 </div>
-
-                <DialogFooter>
-                    <button
-                        onClick={() => onOpenChange(false)}
-                        className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50"
-                    >
-                        Hủy
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        className="px-3 py-2 bg-primary text-white rounded hover:bg-primary/70 font-medium"
-                    >
-                        {editingQuestion ? "Sửa câu hỏi" : "Thêm câu hỏi"}
-                    </button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

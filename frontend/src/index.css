@@ -454,3 +454,8 @@ body.no-scroll {
     width: 100% !important;
     height: 100% !important;
 }
+
+[data-radix-popper-content-wrapper] > svg {
+  fill: white !important;
+  background-color: white
+}
