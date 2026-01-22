@@ -7,10 +7,11 @@ import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
 import { IoMdCheckmark } from "react-icons/io";
 import ReviewStats from '@/components/instructor/review/ReviewStats';
 import MetricCard from '@/components/instructor/course-engagement/MetricCard';
+import { CourseComboBox } from '@/components/instructor/course-qa/CourseComboBox';
 
 const Review = () => {
     const { data: courses, isLoading: isLoadingCourses } = useGetAllCoursesInfoQuery();
-    const [selectedCourse, setSelectedCourse] = useState("all");
+    const [selectedCourse, setSelectedCourse] = useState({ _id: "all", title: "Tất cả khóa học",});
     const [avgRating, setAvgRating] = useState('all');
     const [sort, setSort] = useState('newest');
     const [page, setPage] = useState(1);
@@ -18,7 +19,7 @@ const Review = () => {
     const limit = 5;
 
     const { data: reviews, isLoading: isLoadingReviews } = useGetReviewsQuery({
-        courseId: selectedCourse !== "all" ? selectedCourse : undefined,
+        courseId: selectedCourse !== "all" ? selectedCourse._id : undefined,
         rating: avgRating !== "all" ? Number(avgRating) : undefined,
         sortBy: sort,
         page,
@@ -36,26 +37,10 @@ const Review = () => {
     }
 
     return (
-        <div className="bg-background">
-            <div className="container mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="bg-background mb-20">
+            <div className="container mx-auto px-6 py-4 flex items-center gap-4 ">
                 <h1 className="text-2xl font-bold text-foreground">Đánh giá khóa học</h1>
-                <Select value={selectedCourse} onValueChange={setSelectedCourse} defaultValue="all">
-                    <SelectTrigger className="w-[250px]">
-                        <SelectValue placeholder="Chọn khóa học" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem className="data-[state=checked]:font-bold" value="all">Tất cả khóa học</SelectItem>
-                        {courses?.map((course, id) => (
-                            <SelectItem
-                                key={id}
-                                value={course?._id}
-                                className="truncate max-w-full data-[state=checked]:font-bold"
-                            >
-                                {course?.title}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <CourseComboBox value={selectedCourse} setValue={setSelectedCourse}></CourseComboBox>
             </div>
 
             <div className="flex border-b border-gray-200 container mx-auto px-6">
@@ -129,7 +114,7 @@ const Review = () => {
                 {activeTab === "stats" && (
                     <div className='ml-4'>
                         <p className='text-2xl font-semibold mb-4'>Tổng quan đánh giá khóa học từ học viên</p>
-                        <ReviewStats courseId={selectedCourse}/>
+                        <ReviewStats courseId={selectedCourse._id}/>
                     </div>
                 )}
             </div>

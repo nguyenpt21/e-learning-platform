@@ -17,7 +17,7 @@ function CourseStudents() {
       </div>
     );
   return (
-    <div className="bg-white px-6 py-4 overflow-y-auto mb-10">
+    <div className="bg-white px-6 py-4 overflow-y-auto mb-16">
       <div className="flex items-center space-x-10 mb-5">
         <h1 className="text-2xl font-semibold">Học viên</h1>
         <CourseComboBox

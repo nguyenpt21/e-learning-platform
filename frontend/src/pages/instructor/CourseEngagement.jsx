@@ -6,11 +6,11 @@ import { Spinner } from '@/components/ui/spinner';
 import MinutesTaught from '@/components/instructor/course-engagement/MinutesTaught';
 import CountItems from '@/components/instructor/course-engagement/CountItems';
 import CourseStats from '@/components/instructor/course-engagement/CourseStats';
-
+import { CourseComboBox } from '@/components/instructor/course-qa/CourseComboBox';
 
 const CourseEngagement = () => {
     const { data: courses, isLoading: isLoadingCourses } = useGetAllCoursesInfoQuery();
-    const [selectedCourse, setSelectedCourse] = useState("all");
+    const [selectedCourse, setSelectedCourse] = useState({ _id: "all", title: "Tất cả khóa học",});
 
     if (isLoadingCourses) {
         return (
@@ -25,7 +25,7 @@ const CourseEngagement = () => {
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex items-center gap-4">
                         <h1 className="text-2xl font-bold text-foreground">Mức độ tương tác khóa học</h1>
-                        <Select value={selectedCourse} onValueChange={setSelectedCourse} defaultValue="all">
+                        {/* <Select value={selectedCourse} onValueChange={setSelectedCourse} defaultValue="all">
                             <SelectTrigger className="w-[250px]">
                                 <SelectValue placeholder="Chọn khóa học" />
                             </SelectTrigger>
@@ -41,14 +41,15 @@ const CourseEngagement = () => {
                                     </SelectItem>
                                 ))}
                             </SelectContent>
-                        </Select>
+                        </Select> */}
+                        <CourseComboBox value={selectedCourse} setValue={setSelectedCourse}></CourseComboBox>
                     </div>
                 </div>
             </div>
             <div className="space-y-8 container mx-auto px-6">
-                <MinutesTaught selectedCourse={selectedCourse} />
-                <CountItems selectedCourse={selectedCourse} />
-                <CourseStats selectedCourse={selectedCourse} />
+                <MinutesTaught selectedCourse={selectedCourse._id} />
+                <CountItems selectedCourse={selectedCourse._id} />
+                <CourseStats selectedCourse={selectedCourse._id} />
             </div>
         </div>
     )
