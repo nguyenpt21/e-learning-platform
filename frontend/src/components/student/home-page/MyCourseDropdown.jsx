@@ -46,7 +46,7 @@ const MyCourseDropdown = () => {
             <div className="px-2 pt-2 font-semibold text-lg">Khóa học của tôi</div>
             {myCourses && myCourses.length > 0 ? (
                 <div className="py-1">
-                    {myCourses.map((course) => (
+                    {myCourses.slice(0, 3).map((course) => (
                         <div
                             key={course.courseId._id}
                             className="flex space-x-3 hover:bg-gray-100 px-3 py-2 mb-2 rounded-md cursor-pointer"

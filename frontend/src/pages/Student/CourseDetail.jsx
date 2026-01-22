@@ -23,6 +23,7 @@ import { useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "@/red
 import FavoriteButton from "@/components/student/home-page/FavoriteButton";
 import { toast } from "react-toastify";
 import SEO from "@/components/SEO";
+import { useFetchMyCourses } from "@/hooks/useFetchMyCourses";
 
 const CourseDetail = () => {
     const { courseAlias } = useParams();
@@ -32,6 +33,8 @@ const CourseDetail = () => {
     const [showSticky, setShowSticky] = useState(false);
     const [reachedFooter, setReachedFooter] = useState(false);
     const footerRef = useRef(null);
+
+    useFetchMyCourses();
 
     const formatDuration = (seconds) => {
         const hrs = Math.floor(seconds / 3600);
