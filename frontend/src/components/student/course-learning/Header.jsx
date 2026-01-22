@@ -7,54 +7,61 @@ import { useDispatch } from 'react-redux';
 import { openNotesPanel } from '@/redux/features/notesSlice';
 import NotesPanel from './NotesPanel';
 import LiveSessionsSheet from './LiveSessionsSheet';
+import SEO from '@/components/SEO';
 
 const Header = ({ courseTitle, courseId, lectureId, sectionId }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    
+
     const handleGoBack = () => {
         navigate(`/student/my-courses`);
     };
-    
+
     const handleOpenNotes = () => {
         dispatch(openNotesPanel());
     };
-    
+
     const { data: progress, isLoading: isProgressLoading } = useGetCourseProgressQuery(courseId);
     return (
-        <div className="sticky top-0 z-50 flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
-            <button 
-                className="px-5 hover:bg-[#2a364c] transition-colors duration-300 hover:cursor-pointer"
-                onClick={handleGoBack}
-            >
-                <ChevronLeft size={24} />
-            </button>
+        <>
+            <SEO
+                title={courseTitle}
+            />
 
-            <div className="flex items-center pl-2">
-                <div className="flex items-end gap-3 py-3">
-                    <img src="/logo_with_text.png" alt="Logo" className="h-8 w-auto" />
-                    <span className="font-semibold text-[15px]">{courseTitle}</span>
+            <div className="sticky top-0 z-50 flex items-stretch bg-[#2f3f57] w-full shadow-lg text-white">
+                <button
+                    className="px-5 hover:bg-[#2a364c] transition-colors duration-300 hover:cursor-pointer"
+                    onClick={handleGoBack}
+                >
+                    <ChevronLeft size={24} />
+                </button>
+
+                <div className="flex items-center pl-2">
+                    <div className="flex items-end gap-3 py-3">
+                        <img src="/logo_with_text.png" alt="Logo" className="h-8 w-auto" />
+                        <span className="font-semibold text-[15px]">{courseTitle}</span>
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex items-center gap-6 ml-auto">
-                {isProgressLoading ? <ProgressSkeleton /> : <Progress progress={progress} />}
+                <div className="flex items-center gap-6 ml-auto">
+                    {isProgressLoading ? <ProgressSkeleton /> : <Progress progress={progress} />}
 
-                <div className="h-8 w-px bg-slate-500/50"></div>
+                    <div className="h-8 w-px bg-slate-500/50"></div>
 
-                <div className="flex items-center gap-6 pr-5">
-                    <button 
-                        onClick={handleOpenNotes}
-                        className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200"
-                    >
-                        <NotepadText size={18} />
-                        <span className="text-sm font-medium">Ghi chú</span>
-                    </button>
-                    <LiveSessionsSheet courseId={courseId}></LiveSessionsSheet>
+                    <div className="flex items-center gap-6 pr-5">
+                        <button
+                            onClick={handleOpenNotes}
+                            className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors duration-200"
+                        >
+                            <NotepadText size={18} />
+                            <span className="text-sm font-medium">Ghi chú</span>
+                        </button>
+                        <LiveSessionsSheet courseId={courseId}></LiveSessionsSheet>
+                    </div>
                 </div>
+                <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} />
             </div>
-            <NotesPanel lectureId={lectureId} courseId={courseId} sectionId={sectionId} />
-        </div>
+        </>
     );
 };
 
