@@ -36,107 +36,18 @@ const LEVEL_OPTIONS = [
     { value: "All Levels", label: "Mọi trình độ" },
 ];
 
-const CATEGORY_OPTIONS = {
-    development: {
-        label: "Phát triển",
-        subcategories: [
-            { label: "Phát triển web", value: "web-development" },
-            { label: "Khoa học dữ liệu", value: "data-science" },
-            { label: "Phát triển ứng dụng di động", value: "mobile-development" },
-            { label: "Phát triển game", value: "game-development" },
-            { label: "Phát triển và thiết kế cơ sở dữ liệu" },
-        ],
-    },
+const courseCategories = [
+        "Chọn danh mục",
+        "Lập trình",
+        "Kinh doanh",
+        "Thiết kế",
+        "Tiếp thị",
+        "CNTT & Phần mềm",
+        "Phát triển cá nhân",
+        "Nhiếp ảnh",
+        "Âm nhạc",
+    ];
 
-    business: {
-        label: "Kinh doanh",
-        subcategories: [
-            { label: "Quản lý", value: "management" },
-            { label: "Bán hàng", value: "sales" },
-            { label: "Chiến dịch kinh doanh", value: "business-strategy" },
-            { label: "Luật kinh doanh", value: "business-law" },
-            { label: "Thương mại điện tử", value: "e-commerce" },
-        ],
-    },
-    "finance-accounting": {
-        label: "Tài chính & Kế toán",
-        subcategories: [
-            { label: "Kế toán & Ghi sổ", value: "accounting-bookkeeping" },
-            { label: "Tài chính", value: "finance" },
-            { label: "Đầu tư", value: "investing" },
-            { label: "Thuế", value: "taxes" },
-        ],
-    },
-    "it-software": {
-        label: "IT & Phần mềm",
-        subcategories: [
-            { label: "Mạng và Bảo mật", value: "network-security" },
-            { label: "Phần cứng", value: "hardware" },
-            { label: "Hệ điều hành", value: "operating" },
-            { label: "Khác", value: "other-it" },
-        ],
-    },
-    design: {
-        label: "Thiết kế",
-        subcategories: [
-            { label: "Thiết kế web", value: "web-design" },
-            { label: "Thiế kế đồ họa", value: "graphic-design" },
-            { label: "3D & Animation", value: "animation" },
-            { label: "Thiết kế thời trang", value: "fashion-design" },
-        ],
-    },
-    marketing: {
-        label: "Tiếp thị",
-        subcategories: [
-            { value: "digital-marketing", label: "Tiếp thị kỹ thuật số" },
-            {
-                value: "social-media-marketing",
-                label: "Tiếp thị mạng xã hội",
-            },
-            { value: "branding", label: "Xây dựng thương hiệu" },
-            { value: "content-marketing", label: "Tiếp thị nội dung" },
-        ],
-    },
-    health: {
-        label: "Sức khỏe",
-        subcategories: [
-            { value: "nutrition", label: "Dinh dưỡng" },
-            { value: "mental-health", label: "Sức khỏe tinh thần" },
-            { value: "fitness", label: "Thể hình & Tập luyện" },
-            { value: "yoga", label: "Yoga & Thiền" },
-        ],
-    },
-    "photography-video": {
-        label: "Nhiếp ảnh & Video",
-        subcategories: [
-            {
-                value: "photography-basics",
-                label: "Nhiếp ảnh cơ bản",
-            },
-            { value: "photo-editing", label: "Chỉnh sửa ảnh" },
-            { value: "videography", label: "Quay video" },
-            { value: "video-editing", label: "Dựng phim & Hậu kỳ" },
-        ],
-    },
-    music: {
-        label: "Âm nhạc",
-        subcategories: [
-            { value: "music-theory", label: "Lý thuyết âm nhạc" },
-            { value: "instrument", label: "Chơi nhạc cụ" },
-            { value: "singing", label: "Thanh nhạc" },
-            { value: "music-production", label: "Sản xuất âm nhạc" },
-        ],
-    },
-    teaching: {
-        label: "Giảng dạy",
-        subcategories: [
-            { id: "teaching-methods", label: "Phương pháp giảng dạy" },
-            { id: "education-technology", label: "Công nghệ giáo dục" },
-            { id: "classroom-management", label: "Quản lý lớp học" },
-            { id: "curriculum-design", label: "Thiết kế chương trình học" },
-        ],
-    },
-};
 
 const CourseInfo = ({ course }) => {
     const [formData, setFormData] = useState({
@@ -541,10 +452,10 @@ const CourseInfo = ({ course }) => {
                                         <SelectValue placeholder="--Chọn danh mục--" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Object.entries(CATEGORY_OPTIONS).map(
-                                            ([value, { label }]) => (
-                                                <SelectItem key={value} value={label}>
-                                                    {label}
+                                        {courseCategories.map(
+                                            (value) => (
+                                                <SelectItem key={value} value={value}>
+                                                    {value}
                                                 </SelectItem>
                                             )
                                         )}
