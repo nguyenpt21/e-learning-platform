@@ -85,7 +85,7 @@ function CourseQA() {
     );
   // -------------- main component -----------------
   return (
-    <div className="bg-white px-6 py-4 overflow-y-auto overflow-x-auto">
+    <div className="bg-white px-6 py-4 overflow-y-auto overflow-x-auto mb-16">
       <div className="flex items-center space-x-10 mb-5">
         <h1 className="text-2xl font-semibold">Hỏi & Đáp</h1>
         <CourseComboBox value={selectedCourse} setValue={setSelectedCourse} />

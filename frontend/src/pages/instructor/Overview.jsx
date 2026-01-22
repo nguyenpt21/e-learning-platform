@@ -90,7 +90,7 @@ const Overview = () => {
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen mb-20">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between mb-6">
           <div>

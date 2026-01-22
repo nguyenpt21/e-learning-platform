@@ -102,7 +102,7 @@ const Sessions = () => {
     }
 
     return (
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-6 py-4 mb-16">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold text-foreground">Buổi học live</h1>

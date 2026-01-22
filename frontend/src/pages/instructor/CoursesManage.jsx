@@ -41,15 +41,14 @@ const CoursesManage = () => {
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
     const courseCategories = [
         "Chọn danh mục",
+        "Lập trình",
         "Kinh doanh",
-        "Tài chính & Kế toán",
-        "IT & Phần mềm",
         "Thiết kế",
-        "Marketing",
-        "Sức khỏe",
-        "Nhiếp ảnh & Video",
+        "Tiếp thị",
+        "CNTT & Phần mềm",
+        "Phát triển cá nhân",
+        "Nhiếp ảnh",
         "Âm nhạc",
-        "Giáo dục",
     ];
 
     const sortOptions = ["Mới nhất", "Cũ nhất", "A-Z", "Z-A"];
@@ -136,7 +135,7 @@ const CoursesManage = () => {
     console.log(courses);
 
     return (
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 mb-16">
             <h2 className="font-bold text-2xl">Khóa học</h2>
             <div className=" mt-6">
                 <div className="flex justify-between">
