@@ -199,7 +199,7 @@ const CourseGoal = ({ course }) => {
     };
 
     return (
-        <div>
+        <div className="">
             <div className="fixed w-full min-h-[50px] py-[10px] top-0 left-0 bg-gray-800 z-50">
                 <div className="container flex items-center justify-between text-white font-semibold">
                     <div className="flex items-center gap-2">
