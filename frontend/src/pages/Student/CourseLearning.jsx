@@ -128,10 +128,10 @@ const CourseLearning = () => {
             </div>
             
             {/* Chatbot Toggle Button */}
-            <ChatbotToggleButton 
+            {currentItem.itemType === 'Lecture' && <ChatbotToggleButton 
                 isOpen={isChatbotOpen} 
                 onClick={() => setIsChatbotOpen(!isChatbotOpen)} 
-            />
+            />}
         </div>
     )
 }
