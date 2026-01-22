@@ -144,7 +144,7 @@ const Captions = () => {
             if (filteredItems.length === 0) {
                 toast.info("Các video đã có phụ đề.");
             } else {
-                await generateCaptions(course?.courseId).unwrap();
+                await generateCaptions(course?._id).unwrap();
                 toast.info("Phụ đề đang được tạo.");
             }
         } catch (error) {

@@ -58,7 +58,7 @@ const CourseManageLayout = () => {
 
     return (
         <div>
-            <div className="flex container mt-[60px] gap-[30px] px-4">
+            <div className="flex container mt-[60px] pb-[60px] gap-[30px] px-4">
                 <div className="w-[20%] py-5">
                     <p className="font-medium pl-5">Nội dung khóa học</p>
                     <nav className="mt-4 flex flex-col gap-1">
