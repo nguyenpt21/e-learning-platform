@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import LectureQuestionModal from "@/components/instructor/curriculum/LectureQuestionModal";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { LuPencil } from "react-icons/lu";
@@ -17,19 +17,24 @@ import {
 
 
 const LectureQuestionList = ({ itemId, onUpdate }) => {
-    const { data: questions } = useGetLectureQuestionsQuery(itemId, {
+    const { data: rawQuestions } = useGetLectureQuestionsQuery(itemId, {
         skip: !itemId,
         selectFromResult: ({ data }) => ({
             data: data ? data.questions : [],
         }),
     });
+
+    const questions = useMemo(() => {
+        return [...rawQuestions].sort((a, b) => Number(a.displayedAt) - Number(b.displayedAt));
+    }, [rawQuestions]);
+
     const [deleteQuestion] = useDeleteLectureQuestionMutation();
 
     const [deleteId, setDeleteId] = useState(null);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
     const sendQuestionToParent = async (question) => {
-        if (question){
+        if (question) {
             onUpdate(question);
         }
     }
@@ -114,10 +119,10 @@ const LectureQuestionList = ({ itemId, onUpdate }) => {
                                 key={question._id}
                                 question={question}
                                 index={index}
-                            onEdit={() => {
-                                sendQuestionToParent(question);
-                            }}
-                            onDelete={() => requestDelete(question._id)}
+                                onEdit={() => {
+                                    sendQuestionToParent(question);
+                                }}
+                                onDelete={() => requestDelete(question._id)}
                             />
                         ))}
                     </div>
@@ -147,8 +152,10 @@ const LectureQuestionList = ({ itemId, onUpdate }) => {
 }
 
 
-const stripHtml = (html = "") => {
-    return html.replace(/<[^>]*>/g, "").trim();
+const stripHtml = (html) => {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
 };
 
 const Question = ({ question, index, sectionId, onEdit, onDelete }) => {

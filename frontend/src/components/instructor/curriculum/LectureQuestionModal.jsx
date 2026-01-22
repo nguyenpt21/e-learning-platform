@@ -39,6 +39,7 @@ const LectureQuestionModal = ({
         { ...defaultOption },
     ]);
     const [questionText, setQuestion] = useState("");
+    const [currentTime, setCurrentTime] = useState(0);
     const [timestamp, setTimestamp] = useState(0); // Lưu số giây (Number)
     const [activeEditor, setActiveEditor] = useState(null);
     const quillRef = useRef(null);
@@ -256,6 +257,11 @@ const LectureQuestionModal = ({
 
     const handleVideoTimeUpdate = (currentTime) => {
         const currentSecond = Math.floor(currentTime);
+        setCurrentTime(currentSecond);
+
+        if (!editingQuestion) {
+            setTimestamp(currentSecond);
+        }
 
         if (currentSecond < lastTriggeredTime.current) {
             lastTriggeredTime.current = -1;
